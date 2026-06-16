@@ -1,0 +1,310 @@
+import React, { useState, useEffect } from 'react';
+import { Screen, Activity, SystemSettings } from '../types';
+import { copyToClipboard } from '../utils/clipboard';
+import { getNiaDeposits, getNiaWithdrawals } from '../utils/niaApi';
+import { 
+  ArrowUpRight, 
+  ArrowDownLeft, 
+  ArrowLeftRight, 
+  CheckCircle, 
+  UserCheck, 
+  Copy, 
+  Check, 
+  Cpu, 
+  RefreshCw,
+  ExternalLink,
+  Lock
+} from 'lucide-react';
+
+interface ActivityHistoryProps {
+  activities: Activity[];
+  settings: SystemSettings;
+  onNavigate: (toScreen: Screen, direction: 'push' | 'push_back' | 'slide_up' | 'none') => void;
+}
+
+export default function ActivityHistory({ activities, settings, onNavigate }: ActivityHistoryProps) {
+  const [filter, setFilter] = useState<'All' | 'Completed' | 'Pending'>('All');
+  const [copiedTx, setCopiedTx] = useState<string | null>(null);
+
+  // Live deposits/withdrawals from Nia-Hub (falls back to demo data when empty).
+  const [liveActs, setLiveActs] = useState<Activity[] | null>(null);
+  const [source, setSource] = useState<'loading' | 'live' | 'demo'>('loading');
+
+  useEffect(() => {
+    let cancelled = false;
+    const mapStatus = (s: string): Activity['status'] =>
+      s === 'COMPLETED' ? 'Completed' : s === 'PENDING' ? 'Pending' : s === 'FAILED' ? 'Failed' : 'Completed';
+    const fmt = (iso: string) => {
+      try { return new Date(iso).toISOString().replace('T', ' ').slice(0, 16) + ' UTC'; } catch { return iso || ''; }
+    };
+
+    (async () => {
+      try {
+        const [deps, wds] = await Promise.all([getNiaDeposits(), getNiaWithdrawals()]);
+        if (cancelled) return;
+        const mapped: Activity[] = [
+          ...deps.map((d: any): Activity => ({
+            id: d.id || `dep-${d.txHash || Math.random()}`,
+            type: 'Receive', title: `Deposited ${d.amount} ${d.currency}`,
+            description: `${d.network || ''} network deposit`,
+            fromAmount: '0', fromSymbol: '', toAmount: String(d.amount ?? ''), toSymbol: d.currency || '',
+            timestamp: fmt(d.createdAt), status: mapStatus(d.status), txHash: d.txHash || d.id || '', gasFee: '—',
+          })),
+          ...wds.map((w: any): Activity => ({
+            id: w.id || w.withdrawalId || `wd-${Math.random()}`,
+            type: 'Send', title: `Withdrew ${w.amount} ${w.currency}`,
+            description: `${w.network || ''} network withdrawal`,
+            fromAmount: String(w.amount ?? ''), fromSymbol: w.currency || '', toAmount: '0', toSymbol: '',
+            timestamp: fmt(w.createdAt), status: mapStatus(w.status), txHash: w.txHash || w.withdrawalId || w.id || '', gasFee: '—',
+          })),
+        ];
+        if (mapped.length > 0) { setLiveActs(mapped); setSource('live'); }
+        else { setLiveActs(null); setSource('demo'); }
+      } catch {
+        if (!cancelled) { setLiveActs(null); setSource('demo'); }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleCopyTx = async (hash: string) => {
+    await copyToClipboard(hash);
+    setCopiedTx(hash);
+    setTimeout(() => setCopiedTx(null), 1500);
+  };
+
+  // Use live records when available; otherwise the demo list.
+  const sourceActs = liveActs && liveActs.length > 0 ? liveActs : activities;
+  const filteredActivities = sourceActs.filter((act) => {
+    if (filter === 'All') return true;
+    return act.status === filter;
+  });
+
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'Swap':
+        return <ArrowLeftRight className="h-4.5 w-4.5 text-indigo-400" />;
+      case 'Send':
+        return <ArrowUpRight className="h-4.5 w-4.5 text-rose-400" />;
+      case 'Receive':
+        return <ArrowDownLeft className="h-4.5 w-4.5 text-emerald-400" />;
+      case 'Approve':
+        return <UserCheck className="h-4.5 w-4.5 text-purple-400" />;
+      default:
+        return <Lock className="h-4.5 w-4.5 text-slate-400" />;
+    }
+  };
+
+  const handleNav = (target: Screen, dir: 'push' | 'push_back' | 'none') => {
+    onNavigate(target, dir);
+  };
+
+  return (
+    <div className="flex-1 min-h-full bg-[#020617] text-slate-100 p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
+
+      {/* Safe Breadcrumbs Navigation List (Saves xpath lookups additionally!) */}
+      <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-mono text-slate-400 bg-slate-900 p-3 rounded-2xl border border-slate-800 select-none">
+        <span className="text-indigo-400 font-bold">NODE MANIFEST REGISTRY:</span>
+        <a 
+          href="#portfolio" 
+          onClick={(e) => { e.preventDefault(); handleNav('PORTFOLIO_DASHBOARD', 'push_back'); }}
+          className="hover:text-slate-200 hover:underline transition-all cursor-pointer font-semibold"
+        >
+          Portfolio
+        </a>
+        <span>/</span>
+        <a 
+          href="#swap" 
+          onClick={(e) => { e.preventDefault(); handleNav('SWAP_INTERFACE', 'push'); }}
+          className="hover:text-slate-200 hover:underline transition-all cursor-pointer font-semibold"
+        >
+          Swap
+        </a>
+        <span>/</span>
+        <a 
+          href="#settings" 
+          onClick={(e) => { e.preventDefault(); handleNav('SETTINGS_INTERFACE', 'push'); }}
+          className="hover:text-slate-200 hover:underline transition-all cursor-pointer font-semibold"
+        >
+          Settings
+        </a>
+      </nav>
+
+      {/* Main Page Header */}
+      <header className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center pb-3 border-b border-slate-800">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            System Activity Log
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-400 mt-1 font-mono">
+            Full cryptographic execution trails synced across private RPC block indexing relays.
+          </p>
+        </div>
+
+        {/* Quick Filter tabs */}
+        <div className="flex bg-slate-950 p-1.5 rounded-xl border border-slate-800 select-none text-xs self-start sm:self-center gap-1.5">
+          {(['All', 'Completed', 'Pending'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setFilter(tab)}
+              className={`px-3 py-1.5 rounded-lg font-bold font-sans transition-all cursor-pointer ${
+                filter === tab
+                  ? 'bg-indigo-600 text-white shadow-md font-extrabold'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {tab === 'All' ? 'All Activities' : tab}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      {/* Main Activities Board Card */}
+      <section className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-4 shadow-lg bento-hover">
+        
+        {/* Table Rows layout */}
+        <div className="overflow-x-auto -mx-2 px-2">
+          <table className="w-full min-w-[680px] text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-800 text-[11px] font-mono text-slate-400 uppercase tracking-wider font-bold">
+                <th className="pb-3 pl-2.5 font-semibold">Action</th>
+                <th className="pb-3 font-semibold">Description</th>
+                <th className="pb-3 font-semibold">EVM Inputs/Outputs</th>
+                <th className="pb-3 text-right font-semibold">Network Gas</th>
+                <th className="pb-3 text-right font-semibold">Status Hash</th>
+                <th className="pb-3 text-right font-semibold pr-2.5">Copy</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/40">
+              {filteredActivities.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-sm font-mono text-slate-450">
+                    No corresponding transaction activities recorded under filter "{filter}"
+                  </td>
+                </tr>
+              ) : (
+                filteredActivities.map((act) => (
+                  <tr key={act.id} className="hover:bg-slate-950/40 transition-colors group">
+                    
+                    {/* Symbol type indicator */}
+                    <td className="py-4 pl-2.5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-slate-950 border border-slate-805 flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
+                          {getIcon(act.type)}
+                        </div>
+                        <div>
+                          <div className="font-extrabold text-white text-[14px] group-hover:text-indigo-400 transition-colors">
+                            {act.type}
+                          </div>
+                          <span className="text-[10px] font-mono text-slate-500 font-semibold">{act.timestamp}</span>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Brief description summary */}
+                    <td className="py-4 max-w-xs">
+                      <div className="text-xs font-sans text-slate-200 font-semibold">{act.title}</div>
+                      <p className="text-[10px] text-slate-400 mt-0.5 font-mono leading-relaxed truncate">
+                        {act.description}
+                      </p>
+                    </td>
+
+                    {/* Inputs & Outputs transfer value representation */}
+                    <td className="py-4 font-mono text-xs text-white">
+                      {act.type === 'Swap' ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-rose-450 text-rose-400">-{act.fromAmount} {act.fromSymbol}</span>
+                          <span className="text-slate-500 text-[10px] font-bold">&rarr;</span>
+                          <span className="text-emerald-450 text-emerald-400">+{act.toAmount} {act.toSymbol}</span>
+                        </div>
+                      ) : act.type === 'Send' ? (
+                        <span className="text-rose-450 text-rose-400">-{act.fromAmount} {act.fromSymbol}</span>
+                      ) : act.type === 'Receive' ? (
+                        <span className="text-emerald-450 text-emerald-400">+{act.toAmount} {act.toSymbol}</span>
+                      ) : (
+                        <span className="text-purple-300">Approve spend threshold</span>
+                      )}
+                    </td>
+
+                    {/* Gas Fee */}
+                    <td className="py-4 text-right font-mono text-xs text-slate-400">
+                      <div>{act.gasFee}</div>
+                      <span className="text-[9px] uppercase tracking-wide">PRIVATE Relayer</span>
+                    </td>
+
+                    {/* Transaction Status Badge */}
+                    <td className="py-4 text-right">
+                      <div className="flex flex-col items-end gap-1">
+                        <span className={`inline-flex items-center gap-1 text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                          act.status === 'Completed'
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                            : act.status === 'Pending'
+                            ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                            : 'bg-red-500/10 text-red-500 border-red-500/20'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            act.status === 'Completed'
+                              ? 'bg-emerald-400'
+                              : act.status === 'Pending'
+                              ? 'bg-blue-400'
+                              : 'bg-red-500'
+                          } animate-pulse`} />
+                          {act.status}
+                        </span>
+                        
+                        <span className="text-[10px] font-mono text-slate-450 font-semibold truncate max-w-[100px]">
+                          {act.txHash}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Copy hash helper */}
+                    <td className="py-4 text-right pr-2.5">
+                      <button 
+                        onClick={() => handleCopyTx(act.txHash)}
+                        className="p-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500/30 rounded-xl transition-all cursor-pointer text-slate-400 hover:text-indigo-400 inline-flex items-center justify-center"
+                        title="Copy Transaction Hash"
+                      >
+                        {copiedTx === act.txHash ? (
+                          <Check className="h-3.5 w-3.5 text-emerald-400" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    </td>
+
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Sync Status Bottom Row */}
+        <div className="mt-4 pt-4 border-t border-slate-800 flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center text-xs text-slate-400">
+          <span className="flex items-center gap-1.5 font-mono">
+            {source === 'loading' ? (
+              <>
+                <RefreshCw className="h-3.5 w-3.5 text-indigo-400 animate-spin" />
+                Syncing with Nia-Hub…
+              </>
+            ) : source === 'live' ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live • {liveActs?.length ?? 0} records from Nia-Hub
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-3.5 w-3.5 text-slate-500" />
+                Demo data — no live activity yet
+              </>
+            )}
+          </span>
+          <span className="font-mono">Address Index: BANA-SECURE-ETH</span>
+        </div>
+
+      </section>
+
+    </div>
+  );
+}

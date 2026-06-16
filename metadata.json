@@ -1,0 +1,6 @@
+{
+  "name": "BANA Wallet",
+  "description": "BANA Wallet — a self-custody dashboard for RWA & Healthcare assets, with swaps, staking, deposits/withdrawals, activity history, and real-time risk simulation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
