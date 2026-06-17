@@ -1,3 +1,7 @@
+// Load .env with dotenv (lenient, same loader Next uses). A standalone tsx/node
+// script does NOT auto-load .env, so this must run before reading process.env.
+// dotenv logs "injected env (N) from .env" — useful to confirm it found the file.
+import 'dotenv/config';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
@@ -15,7 +19,13 @@ async function main() {
   const password = process.env.ADMIN_PASSWORD;
 
   if (!rawEmail || !password) {
-    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD environment variables are required');
+    throw new Error(
+      'ADMIN_EMAIL and ADMIN_PASSWORD are required but were not loaded.\n' +
+        `  ADMIN_EMAIL set: ${Boolean(rawEmail)} | ADMIN_PASSWORD set: ${Boolean(password)} | ` +
+        `DATABASE_URL set: ${Boolean(process.env.DATABASE_URL)}\n` +
+        '  Check that .env exists at the project root, is SAVED, and contains these keys. ' +
+        'If dotenv did not print "injected env (...) from .env" above, the file was not found.',
+    );
   }
 
   const email = rawEmail.trim().toLowerCase();

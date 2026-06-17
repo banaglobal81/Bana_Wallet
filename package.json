@@ -10,11 +10,11 @@
     "lint": "tsc --noEmit",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:seed": "node --env-file-if-exists=.env --import tsx prisma/seed.ts",
+    "db:seed": "tsx prisma/seed.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {
-    "seed": "node --env-file-if-exists=.env --import tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -23,6 +23,7 @@
     "@tailwindcss/postcss": "^4.3.1",
     "bcryptjs": "^3.0.3",
     "decimal.js": "^10.6.0",
+    "dotenv": "^17.4.2",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
     "next": "^15.5.19",
