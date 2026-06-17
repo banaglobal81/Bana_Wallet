@@ -10,11 +10,11 @@
     "lint": "tsc --noEmit",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "node --env-file-if-exists=.env --import tsx prisma/seed.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "node --env-file-if-exists=.env --import tsx prisma/seed.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
