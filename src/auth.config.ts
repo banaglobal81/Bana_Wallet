@@ -2,6 +2,10 @@ import type { NextAuthConfig } from 'next-auth';
 
 export const authConfig = {
   trustHost: true,
+  // Pass the secret explicitly. Auth.js usually auto-reads AUTH_SECRET, but the
+  // Edge middleware (which consumes this config) can fail to pick it up, throwing
+  // MissingSecret. Reading it here resolves it consistently in both runtimes.
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   session: { strategy: 'jwt' },
   pages: { signIn: '/login' },
   providers: [],
