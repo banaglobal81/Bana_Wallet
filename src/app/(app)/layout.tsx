@@ -34,9 +34,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const currentScreen = pathToScreen(pathname);
 
-  // Scam warning takes over the full viewport — hide chrome
-  const hideChrome = pathname === '/swap' && false; // scam is local state inside /swap, never a path
-
   return (
     <div className="flex w-screen h-screen bg-[#06132a] text-[#d8e2ff] overflow-hidden leading-normal font-sans antialiased selection:bg-[#2E7DFF]/30 selection:text-white">
       {/* Sidebar — static on desktop, off-canvas drawer on mobile */}
@@ -48,9 +45,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         onCloseMobile={() => setMobileNavOpen(false)}
       />
 
-      {/* Content column: mobile top bar + routed children */}
+      {/* Content column: top bar (mobile + desktop) + routed children */}
       <div className="flex-1 min-w-0 h-full flex flex-col">
-        {/* Mobile-only top bar with brand + hamburger */}
+        {/* Mobile-only top bar: brand + chrome + hamburger */}
         <header className="lg:hidden flex items-center justify-between gap-3 h-16 px-4 shrink-0 border-b border-slate-800 bg-[#06132a]/95 backdrop-blur z-20">
           <BanaLogo size="sm" />
           <div className="flex items-center gap-3">
@@ -66,11 +63,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Desktop persistent chrome (Notifications + ProfileMenu) */}
-        <div className="hidden lg:flex absolute top-4 right-6 z-30 items-center gap-3">
+        {/* Desktop-only top bar: persistent chrome (Notifications + ProfileMenu),
+            right-aligned in its own row so it never overlaps page headers. */}
+        <header className="hidden lg:flex items-center justify-end gap-3 h-14 px-6 shrink-0 border-b border-slate-800/60 bg-[#06132a]/80 backdrop-blur z-20">
           <Notifications />
           <ProfileMenu settings={settings} onNavigate={navigateAndClose} />
-        </div>
+        </header>
 
         {/* Main content area */}
         <main className="flex-1 min-w-0 relative overflow-hidden bg-[#06132a]">
