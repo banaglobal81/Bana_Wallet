@@ -11,9 +11,23 @@ export async function POST(req: Request) {
   const password = String(body.password ?? '');
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return NextResponse.json({ ok: false, error: 'Invalid email' }, { status: 400 });
   if (password.length < 8) return NextResponse.json({ ok: false, error: 'Password must be at least 8 characters' }, { status: 400 });
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return NextResponse.json({ ok: false, error: 'Email already registered' }, { status: 409 });
-  const passwordHash = await bcrypt.hash(password, 12);
-  await prisma.user.create({ data: { email, passwordHash, role: 'USER' } });
-  return NextResponse.json({ ok: true });
+  try {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) return NextResponse.json({ ok: false, error: 'Email already registered' }, { status: 409 });
+    const passwordHash = await bcrypt.hash(password, 12);
+    await prisma.user.create({ data: { email, passwordHash, role: 'USER' } });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    // P2002 = unique constraint race (two signups, same email)
+    if ((e as { code?: string })?.code === 'P2002') {
+      return NextResponse.json({ ok: false, error: 'Email already registered' }, { status: 409 });
+    }
+    // Most likely the database isn't reachable / not migrated. Log server-side,
+    // return a clear message instead of a blank 500.
+    console.error('[register] database error:', e);
+    return NextResponse.json(
+      { ok: false, error: 'Account service unavailable. Please try again later.' },
+      { status: 503 },
+    );
+  }
 }
