@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import banaLogo from '../assets/images/pb_logo.jpg';
 
@@ -20,7 +22,7 @@ export default function BanaLogo({ className = '', size = 'md' }: BanaLogoProps)
       {/* Hexagonal emblem clipped into a rounded app-icon tile */}
       <div className={`relative flex items-center justify-center ${current.box} rounded-xl overflow-hidden border border-slate-700/60 shadow-[0_0_15px_rgba(82,141,255,0.25)]`}>
         <img
-          src={banaLogo}
+          src={typeof banaLogo === 'string' ? banaLogo : (banaLogo as { src: string }).src}
           alt="BANA Logo"
           className="w-full h-full object-cover scale-110"
           referrerPolicy="no-referrer"

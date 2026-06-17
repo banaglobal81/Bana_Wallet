@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Screen, SystemSettings } from '../types';
 import BanaLogo from './BanaLogo';

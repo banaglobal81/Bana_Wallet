@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Bell,
@@ -58,10 +60,9 @@ const ICONS: Record<NotifType, React.ReactNode> = {
 // We no longer persist full notification objects (they are re-derived from live
 // data on every load). We only persist the set of read ids.
 const READ_KEY = 'bana_notifications_read_v1';
-// Remove the old full-item store if present so it doesn't linger.
-try { localStorage.removeItem('bana_notifications_v1'); } catch { /* ignore */ }
 
 function loadReadIds(): Set<string> {
+  if (typeof window === 'undefined') return new Set<string>(); // SSR guard
   try {
     const raw = localStorage.getItem(READ_KEY);
     if (raw) {
@@ -261,15 +262,25 @@ export default function Notifications() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotifItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [readIds, setReadIds] = useState<Set<string>>(loadReadIds);
+  // Start empty so server and first client render match (no hydration mismatch);
+  // hydrate read ids from localStorage after mount.
+  const [readIds, setReadIds] = useState<Set<string>>(() => new Set<string>());
+  const [hydrated, setHydrated] = useState(false);
   const [, setTick] = useState(0); // forces relative-time refresh
   const wrapRef = useRef<HTMLDivElement>(null);
   const openRef = useRef(open);
 
   useEffect(() => { openRef.current = open; }, [open]);
 
-  // Persist read ids whenever they change.
-  useEffect(() => { saveReadIds(readIds); }, [readIds]);
+  // Client-only: load persisted read ids and drop the legacy full-item store.
+  useEffect(() => {
+    try { localStorage.removeItem('bana_notifications_v1'); } catch { /* ignore */ }
+    setReadIds(loadReadIds());
+    setHydrated(true);
+  }, []);
+
+  // Persist read ids whenever they change (after the initial hydration load).
+  useEffect(() => { if (hydrated) saveReadIds(readIds); }, [readIds, hydrated]);
 
   // Refresh relative timestamps every 20s.
   useEffect(() => {

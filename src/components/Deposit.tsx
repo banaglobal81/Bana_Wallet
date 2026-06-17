@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Screen, Asset, SystemSettings } from '../types';
 import { getNiaDeposits } from '../utils/niaApi';

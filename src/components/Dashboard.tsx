@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { SystemSettings } from '../types';
 import {
@@ -12,8 +14,6 @@ import {
 } from 'lucide-react';
 import Decimal from 'decimal.js';
 import { getNiaBalance, getNiaPrice, getNiaKlines } from '../utils/niaApi';
-import Notifications from './Notifications';
-import ProfileMenu from './ProfileMenu';
 
 // ---------------------------------------------------------------------------
 // Internal types
@@ -487,10 +487,6 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
             Send
           </button>
 
-          <div className="h-10 w-[1px] bg-slate-850 mx-1" />
-
-          <Notifications />
-          <ProfileMenu settings={settings} onNavigate={onNavigate} />
         </div>
       </header>
 

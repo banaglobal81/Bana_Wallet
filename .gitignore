@@ -7,3 +7,7 @@ coverage/
 .pids/
 .env*
 !.env.example
+
+# Next.js build output
+.next/
+out/

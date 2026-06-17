@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Screen, Asset, SystemSettings } from '../types';
 import { 

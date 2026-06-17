@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Screen, Activity, SystemSettings } from '../types';
 import { copyToClipboard } from '../utils/clipboard';
