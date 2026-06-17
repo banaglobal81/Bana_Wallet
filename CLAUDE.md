@@ -7,28 +7,27 @@
 
 - **Description:** BANA — a Nia-Hub B2B crypto wallet platform. Multi-market deposits/withdrawals, balance lookup, orders, trade history, settlement.
 - **Actual tech stack:**
-  - Frontend: **Vite 6 + React 19** (`src/`, `src/components/`, `src/utils/`)
-  - Backend: **Express `server.js`** — Nia-Hub HMAC signing proxy (holds the secret)
-  - Styling: TailwindCSS v4 (`@tailwindcss/vite`), lucide-react, motion
-  - Deploy: Railway
-- **Nia-Hub integration:** two HMAC signing schemes coexist in `server.js`.
-  - **Trading API:** headers `X-Nia-Tenant-Key` / `X-Nia-Signature` / `X-Nia-Timestamp` / `X-Nia-Nonce`, payload = `timestamp + nonce + METHOD + path + (bodyString | queryString)`
-  - **Wallet/Settlement API:** headers `X-Api-Key` / `X-Timestamp` / `X-Nonce` / `X-Signature`, payload = `timestamp + nonce + METHOD + /full/path?query + body`, nonce = UUID v4, timestamp tolerance ±60s
-- **Data flow:** `Browser (React) → /api/nia/* (Express server.js) → Nia-Hub`. The secret lives **only in `server.js`** and is never exposed to the browser.
-
-> Note: this project is **not** a Next.js/Prisma/Flutter monorepo. Some agents (`mobile-expert`, `prisma-db-expert`) stay **dormant** until that stack is introduced.
+  - Framework: **Next.js 15 App Router + React 19** (`src/app/`, `src/components/`, `src/lib/nia/`)
+  - Server: **Single Node process** — 14 Next.js route handlers (`src/app/api/nia/**/route.ts`). HMAC signing lives in `src/lib/nia/client.ts` (server-only).
+  - Styling: TailwindCSS v4, lucide-react, motion
+  - Deploy: Railway (one server, can scale horizontally but in-memory state requires single replica or Redis)
+- **Nia-Hub integration:** two HMAC signing schemes (plain concatenation, no newlines).
+  - **Trading API:** headers `X-Nia-Tenant-Key` / `X-Nia-Signature` / `X-Nia-Timestamp` / `X-Nia-Nonce`, payload = `timestamp + nonce + METHOD + path + (bodyString | queryString)` (plain concat)
+  - **Wallet/Settlement API:** headers `X-Api-Key` / `X-Timestamp` / `X-Nonce` / `X-Signature`, payload = `timestamp + nonce + METHOD + /full/path?query + body` (plain concat), nonce = UUID v4, timestamp tolerance ±60s
+- **Data flow:** `Browser (React) → /api/nia/* (Next.js route handlers) → Nia-Hub`. The secret `NIA_API_SECRET` lives **only in `src/lib/nia/` (server-only)** and is never exposed to the client.
 
 ## Code Tree
 
 ```
-src/                  — React 19 app (App.tsx, main.tsx, types.ts, mockData.ts)
-src/components/        — wallet UI components (Wallet, Dashboard, Deposit, Withdraw, Swap, Staking, ...)
-src/utils/            — frontend client (niaApi.ts), clipboard.ts
-server.js             — Express backend proxy (two HMAC schemes, /api/nia/*)
-server/core/          — (harness) extracted pure logic
-server/infra/         — (harness) real-dependency adapters (fetch/express)
-tests/harness/        — harness tests (mocks/fixtures)
-start.sh / stop.sh    — local up/down (Vite :3000 + Express :8787)
+src/app/              — Next.js 15 App Router. layout.tsx (root), providers.tsx (Context), page.tsx (redirect → /portfolio), globals.css
+src/app/api/nia/      — 14 route handlers (balances, deposits, withdrawals, orders, settlement, etc.)
+src/app/(app)/        — authenticated shell. layout.tsx (Sidebar, Notifications, ProfileMenu), template.tsx, {portfolio,swap,staking,wallet,deposit,withdraw,settings,activity}/page.tsx
+src/components/       — React 19 components ('use client' where needed). Wallet, Dashboard, Deposit, Withdraw, Swap, Staking, ActivityHistory, Notifications, etc.
+src/lib/nia/          — server-only Nia-Hub API layer. config.ts, state.ts (globalThis singleton), client.ts (niaRequest/niaWalletRequest), resolve.ts, respond.ts. All marked `import 'server-only'`.
+src/utils/            — frontend client (niaApi.ts fetches /api/nia/*, relative URLs), clipboard.ts
+server/core/nia-signing.js   — pure HMAC signing logic (reusable, harness-tested)
+tests/harness/        — vitest harness tests (nia-signing/*)
+package.json          — scripts: npm run dev (next dev -p 3000), npm run build, npm start, npm run lint (tsc --noEmit)
 ```
 
 ## Absolute Rules
@@ -36,8 +35,8 @@ start.sh / stop.sh    — local up/down (Vite :3000 + Express :8787)
 1. **Respond in English.** (Code, logs, and error messages may stay in their original language; explanations are in English.)
 2. **Use `decimal.js` only for amounts/quantities.** Do **not** use `Number()` / `parseFloat()` / `+string` for money arithmetic. (Nia-Hub returns balances/amounts as strings.)
    - Scope: new/modified code must comply immediately. Existing violations are flagged by `code-compliance-checker` and replaced incrementally.
-3. **No direct Nia-Hub calls from the browser.** The frontend must only call `src/utils/niaApi.ts` → `/api/nia/*` (Express). No direct fetch to `api.niawallet.com`.
-4. **The HMAC secret (`NIA_API_SECRET`) lives only in `server.js`.** Never leak the secret into the client bundle, logs, or error responses. The two signing schemes in `server.js` are **owned by `web-shared-expert`**.
+3. **No direct Nia-Hub calls from the browser.** The frontend must only call `src/utils/niaApi.ts` → `/api/nia/*` (Next.js route handlers). No direct fetch to `api.niawallet.com`.
+4. **The HMAC secret (`NIA_API_SECRET`) lives only in `src/lib/nia/*` (server-only).** Never leak the secret into the client bundle, logs, or error responses. The two signing schemes (implemented in `src/lib/nia/client.ts` + `server/core/nia-signing.js`) are **owned by `web-shared-expert`**.
 5. **Git commits are `deploy-manager` only.** No history rewrites (`git rebase` / `reset --hard`).
 6. **`git push` is user-only — every agent (including `deploy-manager`) is forbidden from pushing.** Agents stop after `git add` + `git commit` and hand push off to the user.
 7. **No direct edits to production secrets (.env).** Read-only checks (whether config is set) only. Never commit `.env`.
@@ -75,7 +74,7 @@ start.sh / stop.sh    — local up/down (Vite :3000 + Express :8787)
 
 **Test-Harness First · Encapsulation · Observability · Validation**
 
-- **The React/Vite frontend is harness-exempt** → E2E (Playwright) only.
-- **`server.js` (backend) is the primary harness target.** Extract pure logic (HMAC signing, payload canonicalization, query cleaning, envelope unwrap) into `server/core/`, and keep real dependencies (fetch/express) in `server/infra/`.
-- 3-step workflow: (1) define mocks/inputs/expectations in `tests/harness/<feature>/` → (2) split `core` (pure) / `infra` (real deps) → (3) submit harness logs + diff → commit after `qa-lead` approval.
+- **The React frontend (`src/app/` / `src/components/`) is harness-exempt** → E2E (Playwright) only.
+- **`src/lib/nia/client.ts` + `server/core/nia-signing.js` are the primary harness targets.** Pure signing logic lives in `server/core/nia-signing.js` (reusable), and `src/lib/nia/client.ts` wraps it with Next.js-specific context (environment, request handling). Real dependencies (fetch, next/server) stay server-only.
+- 3-step workflow: (1) define mocks/inputs/expectations in `tests/harness/<feature>/` → (2) keep `core` pure, integration in `src/lib/nia/*` → (3) submit harness logs + diff → commit after `qa-lead` approval.
 - Test runner: **vitest** (`npx vitest run`).

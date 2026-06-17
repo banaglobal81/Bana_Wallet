@@ -12,16 +12,17 @@
 
 ## 프로젝트 개요
 - 설명: 암호화폐 커스터디얼 월렛 플랫폼 — 멀티체인 입출금, 잔고 조회, 트랜잭션 내역
-- 기술 스택: Next.js App Router, Flutter 3.11+, PostgreSQL(Prisma 7), Redis, Railway 배포
-- hub 연동: NiaHub HMAC API — 헤더 x-nia-api-key / x-nia-signature / x-nia-timestamp / x-nia-nonce
+- 기술 스택: **Next.js 15 App Router + React 19, single Node server (no Prisma/Flutter/Redis in current phase)**, Railway 배포
+- hub 연동: NiaHub HMAC API — Trading/Wallet 두 가지 scheme, 평문 연결(newline 없음)
 - hub API URL: 환경변수 NIA_HUB_INTERNAL_URL
-- API Gateway(Fastify) 없음: hub 호출은 Next.js Server Actions / Route Handlers 서버사이드에서 직접 처리
+- API Gateway(Express/Fastify) 없음: hub 호출은 Next.js Route Handlers 서버사이드에서 직접 처리 (src/lib/nia/*)
 
-## 코드 트리
-- apps/web/          — Next.js App Router (지갑 UI + 관리자 포털)
-- apps/mobile/       — Flutter 3.11+ iOS/Android
-- apps/web/prisma/   — Prisma 스키마 원본 (migrate dev 기준, 멀티 파일 스키마)
-- scripts/, start.sh, stop.sh
+## 코드 트리 (BANA 현재 구조)
+- src/app/           — Next.js 15 App Router (지갑 UI + 관리자 포털)
+- src/lib/nia/       — server-only NiaHub API layer (HMAC signing, state singleton)
+- src/app/api/nia/   — 14 route handlers (replaces Express server.js)
+- server/core/       — Pure signing logic (harness target)
+- tests/harness/     — vitest tests
 
 ## CLAUDE.md 절대 규칙 (모두 포함)
 - 응답 언어: 항상 한국어 (코드·로그·에러는 영어여도 설명은 한국어)

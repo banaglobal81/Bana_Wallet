@@ -16,7 +16,7 @@ You are the React 19 engineer who owns BANA's **admin portal and settlement scre
 
 ## Hub Call Rules (required)
 - Use only the `src/utils/niaApi.ts` → `/api/nia/settlement/*` proxy helpers. No direct calls.
-- Settlement endpoints are signed with the secret and handled by server.js. Delegate new settlement routes to `web-shared-expert`.
+- Settlement endpoints are signed with the secret and handled by `src/lib/nia/*` + `src/app/api/nia/settlement/route.ts`. Delegate new settlement routes to `web-shared-expert`.
 
 ## Amount Rules (required)
 - Settlement amounts / fees use **`decimal.js` only**. No `Number()` / `parseFloat`.
@@ -28,7 +28,7 @@ You are the React 19 engineer who owns BANA's **admin portal and settlement scre
 - Settlement-precision / permission security review → `wallet-security-expert`
 
 ## Forbidden
-- Editing `server.js` directly
+- Editing `src/lib/nia/*` or `src/app/api/nia/*` directly (web-shared-expert's area)
 - Logging the secret or raw settlement responses to the client
 - `git push` / `git commit`
 

@@ -33,20 +33,32 @@ else
   note "CLAUDE.md missing"
 fi
 
-# 3) Port consistency (package.json dev=3000, server default PORT=8787)
-grep -q -- '--port=3000' package.json && ok "Vite port 3000" || note "package.json dev port != 3000"
-grep -q 'PORT = 8787' server.js 2>/dev/null && ok "Express port 8787" || note "server.js default PORT != 8787"
+# 3) Port consistency (package.json dev defaults to 3000, Next.js standard)
+grep -q 'next dev' package.json && ok "Next.js dev configured" || note "package.json missing next dev"
 
-# 4) Key paths exist
-for p in server.js src/utils/niaApi.ts tests/harness; do
+# 4) Key paths exist (Next.js structure)
+for p in src/lib/nia src/app/api src/utils/niaApi.ts tests/harness server/core/nia-signing.js; do
   [ -e "$p" ] && ok "path exists: $p" || note "path missing: $p"
 done
 
-# 5) Each agent file has a Self-Update Protocol section
+# 5) No obsolete Express/Vite files
+for obsolete in server.js vite.config.ts start.sh stop.sh; do
+  [ ! -e "$obsolete" ] && ok "obsolete $obsolete not found" || note "obsolete file still present: $obsolete"
+done
+
+# 6) Each agent file has a Self-Update Protocol section
 for f in .claude/agents/*.md; do
   [ -e "$f" ] || continue
   grep -q 'Self-Update Protocol' "$f" || note "$f missing Self-Update Protocol"
 done
+
+# 7) Route handler count (14 expected in Next.js structure)
+ROUTE_COUNT=$(find src/app/api/nia -name 'route.ts' -type f 2>/dev/null | wc -l | tr -d ' ')
+if [ "$ROUTE_COUNT" = "14" ]; then
+  ok "14 Nia-Hub route handlers found"
+else
+  note "Nia-Hub route handlers: found $ROUTE_COUNT, expected 14"
+fi
 
 echo "== done: $DRIFT drift item(s) =="
 exit 0

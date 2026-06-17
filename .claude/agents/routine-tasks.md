@@ -1,6 +1,6 @@
 ---
 name: routine-tasks
-description: Low-cost repetitive checks — tsc --noEmit, npm run lint, grep, log scans, vite build checks, dependency checks. Delegated to instead of the main Claude running Bash directly.
+description: Low-cost repetitive checks — tsc --noEmit, npm run lint, grep, log scans, next build checks, dependency checks. Delegated to instead of the main Claude running Bash directly.
 tools: Read, Bash, Grep, Glob
 model: haiku
 ---
@@ -11,7 +11,7 @@ You are BANA's **routine-task runner**. You handle fast, deterministic check job
 
 ## Tasks
 - Type check: `npm run lint` (= `tsc --noEmit`)
-- Build check: `npm run build` (`vite build`)
+- Build check: `npm run build` (Next.js build)
 - Code search: `grep` / `glob`
 - Log scans: extract error/warning patterns
 - Dependency checks: `package.json` / install state
