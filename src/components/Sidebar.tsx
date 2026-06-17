@@ -1,7 +1,10 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Screen, SystemSettings } from '../types';
+import { useApp } from '@/app/providers';
 import BanaLogo from './BanaLogo';
 import {
   Wallet,
@@ -12,7 +15,8 @@ import {
   Lock,
   Coins,
   LayoutDashboard,
-  X
+  X,
+  Building2,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -31,6 +35,8 @@ export default function Sidebar({
   mobileOpen = false,
   onCloseMobile
 }: SidebarProps) {
+  const { role } = useApp();
+  const pathname = usePathname();
 
   // Work out transition directions depending on navigation source and destination
   const navigateTo = (target: Screen) => {
@@ -198,6 +204,22 @@ export default function Sidebar({
             <SettingsIcon className={`h-5 w-5 ${isActive('SETTINGS_INTERFACE') ? 'text-indigo-400' : 'text-slate-400'}`} />
             Settings
           </a>
+
+          {/* Settlement — broker-only entry */}
+          {role === 'broker' && (
+            <Link
+              href="/admin/settlement"
+              onClick={onCloseMobile}
+              className={`flex items-center gap-4 px-4 py-3.5 rounded-xl font-sans text-[15px] font-semibold transition-all duration-300 ${
+                pathname === '/admin/settlement'
+                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)] font-bold'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 border border-transparent'
+              }`}
+            >
+              <Building2 className={`h-5 w-5 ${pathname === '/admin/settlement' ? 'text-amber-400' : 'text-slate-400'}`} />
+              Settlement
+            </Link>
+          )}
         </nav>
       </div>
 

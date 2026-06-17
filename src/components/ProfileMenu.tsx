@@ -3,13 +3,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Screen, SystemSettings } from '../types';
 import { copyToClipboard } from '../utils/clipboard';
+import { useApp } from '@/app/providers';
 import {
   Settings as SettingsIcon,
   Activity as ActivityIcon,
   Copy,
   Check,
   ShieldCheck,
-  Coins
+  Coins,
+  Building2,
+  User as UserIcon,
 } from 'lucide-react';
 
 interface ProfileMenuProps {
@@ -30,6 +33,7 @@ const Avatar = ({ className = '' }: { className?: string }) => (
 );
 
 export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) {
+  const { role, setRole } = useApp();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -67,9 +71,14 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
         onClick={() => setOpen((o) => !o)}
         aria-label="Profile menu"
         aria-expanded={open}
-        className="h-10 w-10 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+        className="relative h-10 w-10 cursor-pointer transition-transform hover:scale-105 active:scale-95"
       >
         <Avatar className="h-10 w-10" />
+        {role === 'broker' && (
+          <span className="absolute -bottom-1 -right-1 h-4 w-4 flex items-center justify-center rounded-full bg-amber-500 border-2 border-[#06132a]">
+            <Building2 className="h-2.5 w-2.5 text-white" />
+          </span>
+        )}
       </button>
 
       {open && (
@@ -95,6 +104,31 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
             }`}>
               {settings.walletConnected ? '● CONNECTED' : '● OFFLINE'}
             </span>
+          </div>
+
+          {/* Broker mode toggle */}
+          <div className="px-4 py-2.5 border-b border-slate-800 flex items-center justify-between gap-3">
+            <span className="flex items-center gap-2 text-sm text-slate-300">
+              {role === 'broker'
+                ? <Building2 className="h-4 w-4 text-amber-400" />
+                : <UserIcon className="h-4 w-4 text-slate-400" />}
+              {role === 'broker' ? 'Broker mode' : 'User mode'}
+            </span>
+            <button
+              onClick={() => setRole(role === 'broker' ? 'user' : 'broker')}
+              aria-label="Toggle broker mode"
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 transition-colors ${
+                role === 'broker'
+                  ? 'bg-amber-500 border-amber-400'
+                  : 'bg-slate-700 border-slate-600'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                  role === 'broker' ? 'translate-x-5' : 'translate-x-0.5'
+                }`}
+              />
+            </button>
           </div>
 
           {/* Menu items */}
