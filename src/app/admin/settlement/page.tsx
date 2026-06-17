@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Decimal from 'decimal.js';
+import { useSession } from 'next-auth/react';
 import {
   Building2,
   Coins,
@@ -16,7 +17,9 @@ import { useApp } from '@/app/providers';
 import { getNiaUnsettled, getNiaSettlementHistory } from '@/utils/niaApi';
 
 export default function AdminSettlementPage() {
-  const { role, settings } = useApp();
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === 'ADMIN';
+  const { settings } = useApp();
 
   // Settlement data state
   const [unsettled, setUnsettled] = useState<any>(null);
@@ -36,13 +39,13 @@ export default function AdminSettlementPage() {
   };
 
   useEffect(() => {
-    if (role === 'broker') {
+    if (isAdmin) {
       loadAdmin();
     }
-  }, [role]);
+  }, [isAdmin]);
 
-  // Role guard — non-broker users see a clear access-denied panel
-  if (role !== 'broker') {
+  // Role guard — non-admin users see a clear access-denied panel
+  if (!isAdmin) {
     return (
       <div className="flex-1 min-h-full bg-[#06132a] text-[#d8e2ff] p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center gap-6">
         <div className="max-w-md w-full p-8 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col items-center gap-5 text-center">
@@ -50,12 +53,11 @@ export default function AdminSettlementPage() {
             <Lock className="h-8 w-8 text-rose-400" />
           </div>
           <div>
-            <h2 className="text-xl font-extrabold text-white">Broker access only</h2>
+            <h2 className="text-xl font-extrabold text-white">Admin access only</h2>
             <p className="mt-2 text-sm text-[#8c90a0] leading-relaxed">
-              The Settlement panel is only available in{' '}
-              <span className="text-amber-400 font-bold">Broker mode</span>. Switch to Broker mode
-              from the profile menu in the top-right corner to access commission and settlement
-              data.
+              The Settlement panel is only available to{' '}
+              <span className="text-amber-400 font-bold">Admin accounts</span>. Sign in with an
+              admin account to access commission and settlement data.
             </p>
           </div>
           <Link
@@ -102,7 +104,7 @@ export default function AdminSettlementPage() {
         </div>
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <span className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/25 rounded-lg text-amber-400 font-semibold text-xs font-mono select-none">
-            <Building2 className="h-4 w-4" /> BROKER MODE
+            <Building2 className="h-4 w-4" /> ADMIN MODE
           </span>
           <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-lg text-emerald-400 font-semibold text-xs font-mono select-none">
             <ShieldCheck className="h-4 w-4" /> NIA SECURED

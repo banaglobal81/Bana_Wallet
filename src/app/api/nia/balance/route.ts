@@ -4,15 +4,16 @@ export const dynamic = 'force-dynamic';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { niaWalletRequest } from '@/lib/nia/client';
-import { resolveUserId } from '@/lib/nia/resolve';
+import { resolveSessionUserId } from '@/lib/nia/resolve';
 import { ok, fail } from '@/lib/nia/respond';
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const sp = req.nextUrl.searchParams;
   try {
+    const userId = await resolveSessionUserId();
     const data = await niaWalletRequest('GET', '/api/v1/wallets', {
       query: {
-        userId: resolveUserId(sp),
+        userId,
         walletType: sp.get('walletType') ?? undefined,
         currency: sp.get('currency') ?? undefined,
       },

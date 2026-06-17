@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useState } from 'react';
 import type { Asset, Activity, SystemSettings } from '@/types';
 import { INITIAL_ASSETS, INITIAL_ACTIVITIES, DEFAULT_SETTINGS } from '@/mockData';
 
@@ -14,15 +14,11 @@ export type PreparedSwap = {
   gasFee: string;
 } | null;
 
-export type Role = 'user' | 'broker';
-
 interface AppState {
   assets: Asset[];
   activities: Activity[];
   settings: SystemSettings;
   preparedSwap: PreparedSwap;
-  role: Role;
-  setRole: (r: Role) => void;
   updateSettings: (updater: Partial<SystemSettings>) => void;
   prepareSwap: (payload: PreparedSwap) => void;
   confirmSwapExec: () => void;
@@ -38,27 +34,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [activities, setActivities] = useState<Activity[]>(INITIAL_ACTIVITIES);
   const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
   const [preparedSwap, setPreparedSwap] = useState<PreparedSwap>(null);
-  // Always start as 'user' so the server render and the first client render match
-  // (avoids hydration mismatch). The saved value is loaded in a useEffect after mount.
-  const [role, setRoleState] = useState<Role>('user');
-
-  // After mount: restore persisted role from localStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('bana_role');
-      if (saved === 'broker' || saved === 'user') {
-        setRoleState(saved);
-      }
-    } catch { /* localStorage blocked (private browsing, etc.) — silently ignore */ }
-  }, []);
-
-  // Wrapper that both updates state and persists to localStorage
-  const setRole = useCallback((r: Role) => {
-    setRoleState(r);
-    try {
-      localStorage.setItem('bana_role', r);
-    } catch { /* ignore */ }
-  }, []);
 
   const updateSettings = useCallback((updater: Partial<SystemSettings>) => {
     setSettings((prev) => ({ ...prev, ...updater }));
@@ -126,8 +101,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
         activities,
         settings,
         preparedSwap,
-        role,
-        setRole,
         updateSettings,
         prepareSwap,
         confirmSwapExec,

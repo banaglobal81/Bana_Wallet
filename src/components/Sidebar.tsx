@@ -3,8 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Screen, SystemSettings } from '../types';
-import { useApp } from '@/app/providers';
 import BanaLogo from './BanaLogo';
 import {
   Wallet,
@@ -35,7 +35,8 @@ export default function Sidebar({
   mobileOpen = false,
   onCloseMobile
 }: SidebarProps) {
-  const { role } = useApp();
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === 'ADMIN';
   const pathname = usePathname();
 
   // Work out transition directions depending on navigation source and destination
@@ -205,8 +206,8 @@ export default function Sidebar({
             Settings
           </a>
 
-          {/* Settlement — broker-only entry */}
-          {role === 'broker' && (
+          {/* Settlement — admin-only entry */}
+          {isAdmin && (
             <Link
               href="/admin/settlement"
               onClick={onCloseMobile}

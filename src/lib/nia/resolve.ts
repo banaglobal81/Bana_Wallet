@@ -1,18 +1,15 @@
 import 'server-only';
 
+import { auth } from '@/auth';
 import { NIA_DEFAULT_USER_ID } from './config';
 
 /**
- * Resolve which user we are acting for (B2B = per end-user "userId").
- * Prefers searchParams, then body, then the server-configured default.
+ * Nia-Hub end-user id for the CURRENTLY LOGGED-IN user.
+ * Identity is derived exclusively from the server-side session.
+ * Never trusts client-supplied userId in query params or request body.
  */
-export function resolveUserId(
-  searchParams: URLSearchParams,
-  body?: Record<string, unknown> | null,
-): string {
-  return (
-    searchParams.get('userId') ||
-    (body?.userId as string | undefined) ||
-    NIA_DEFAULT_USER_ID
-  );
+export async function resolveSessionUserId(): Promise<string> {
+  const session = await auth();
+  if (!session?.user) throw Object.assign(new Error('Unauthorized'), { status: 401 });
+  return (session.user as { niaUserId?: string | null }).niaUserId ?? NIA_DEFAULT_USER_ID;
 }

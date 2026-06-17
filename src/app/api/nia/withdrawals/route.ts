@@ -5,16 +5,17 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import Decimal from 'decimal.js';
 import { niaWalletRequest } from '@/lib/nia/client';
-import { resolveUserId } from '@/lib/nia/resolve';
+import { resolveSessionUserId } from '@/lib/nia/resolve';
 import { niaState } from '@/lib/nia/state';
 import { ok, fail } from '@/lib/nia/respond';
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const sp = req.nextUrl.searchParams;
   try {
+    const userId = await resolveSessionUserId();
     const data = await niaWalletRequest('GET', '/api/v1/withdrawals', {
       query: {
-        userId: resolveUserId(sp),
+        userId,
         currency: sp.get('currency') ?? undefined,
         page: sp.get('page') ?? undefined,
         limit: sp.get('limit') ?? undefined,
@@ -27,17 +28,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const sp = req.nextUrl.searchParams;
   let body: Record<string, unknown> = {};
   try { body = await req.json(); } catch { body = {}; }
 
-  // -- 1. Explicit userId required — no NIA_DEFAULT_USER_ID fallback for withdrawals --
-  const userId = (sp.get('userId') || body?.userId) as string | undefined;
-  if (!userId) {
-    return NextResponse.json(
-      { ok: false, error: 'userId is required for withdrawals' },
-      { status: 400 },
-    );
+  // -- 1. Derive userId exclusively from session — never from client input --
+  let userId: string;
+  try {
+    userId = await resolveSessionUserId();
+  } catch (e) {
+    return fail(e as Error & { status?: number; data?: { code?: unknown } });
   }
 
   const { currency, network, toAddress, amount } = body as {

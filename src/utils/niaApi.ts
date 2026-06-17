@@ -27,17 +27,15 @@ export function getNiaStatus(): Promise<NiaStatus> {
   return getJson<NiaStatus>('/api/nia/status');
 }
 
-/** Trade & fee receipts for a user (history). */
-export async function getNiaTrades(userId?: string): Promise<any[]> {
-  const qs = userId ? `?userId=${encodeURIComponent(userId)}` : '';
-  const r = await getJson<{ ok: boolean; data: any[] }>(`/api/nia/trades${qs}`);
+/** Trade & fee receipts for the current session user (history). */
+export async function getNiaTrades(): Promise<any[]> {
+  const r = await getJson<{ ok: boolean; data: any[] }>('/api/nia/trades');
   return Array.isArray(r.data) ? r.data : [];
 }
 
-/** Open & filled orders for a user (history). */
-export async function getNiaOrders(userId?: string): Promise<any[]> {
-  const qs = userId ? `?userId=${encodeURIComponent(userId)}` : '';
-  const r = await getJson<{ ok: boolean; data: any[] }>(`/api/nia/orders${qs}`);
+/** Open & filled orders for the current session user (history). */
+export async function getNiaOrders(): Promise<any[]> {
+  const r = await getJson<{ ok: boolean; data: any[] }>('/api/nia/orders');
   return Array.isArray(r.data) ? r.data : [];
 }
 
@@ -64,24 +62,21 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
 
 export interface NiaWalletBalance { walletType: string; currency: string; balance: string; locked: string }
 
-/** Wallet balances for a user (SPOT / FUTURES / INSURANCE / BONUS). */
-export async function getNiaBalance(userId?: string): Promise<any> {
-  const qs = userId ? `?userId=${encodeURIComponent(userId)}` : '';
-  const r = await getJson<{ ok: boolean; data: any }>(`/api/nia/balance${qs}`);
+/** Wallet balances for the current session user (SPOT / FUTURES / INSURANCE / BONUS). */
+export async function getNiaBalance(): Promise<any> {
+  const r = await getJson<{ ok: boolean; data: any }>('/api/nia/balance');
   return r.data;
 }
 
-/** Deposit history (returns the items array). */
-export async function getNiaDeposits(userId?: string): Promise<any[]> {
-  const qs = userId ? `?userId=${encodeURIComponent(userId)}` : '';
-  const r = await getJson<{ ok: boolean; data: any }>(`/api/nia/deposits${qs}`);
+/** Deposit history for the current session user (returns the items array). */
+export async function getNiaDeposits(): Promise<any[]> {
+  const r = await getJson<{ ok: boolean; data: any }>('/api/nia/deposits');
   return r.data?.items ?? (Array.isArray(r.data) ? r.data : []);
 }
 
-/** Withdrawal history (returns the items array). */
-export async function getNiaWithdrawals(userId?: string): Promise<any[]> {
-  const qs = userId ? `?userId=${encodeURIComponent(userId)}` : '';
-  const r = await getJson<{ ok: boolean; data: any }>(`/api/nia/withdrawals${qs}`);
+/** Withdrawal history for the current session user (returns the items array). */
+export async function getNiaWithdrawals(): Promise<any[]> {
+  const r = await getJson<{ ok: boolean; data: any }>('/api/nia/withdrawals');
   return r.data?.items ?? (Array.isArray(r.data) ? r.data : []);
 }
 
@@ -90,7 +85,6 @@ export interface WithdrawalRequest {
   network: string;
   amount: string;
   toAddress: string;
-  userId?: string;
 }
 
 /** Submit a real withdrawal request. */

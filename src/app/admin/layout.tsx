@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Building2, ArrowLeft, Lock, Coins } from 'lucide-react';
 import { useApp } from '@/app/providers';
 import { useScreenNav } from '@/lib/useScreenNav';
@@ -16,11 +17,17 @@ const ADMIN_NAV = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { role, settings } = useApp();
+  const { data: session, status } = useSession();
+  const { settings } = useApp();
   const navigate = useScreenNav();
 
-  // Central role guard for the whole admin area — non-brokers never see admin chrome.
-  if (role !== 'broker') {
+  // While the session is loading, render nothing to avoid flash
+  if (status === 'loading') {
+    return null;
+  }
+
+  // Central role guard for the whole admin area — non-admins never see admin chrome.
+  if (session?.user?.role !== 'ADMIN') {
     return (
       <div className="w-screen h-screen bg-[#06132a] text-[#d8e2ff] flex items-center justify-center p-6 font-sans">
         <div className="max-w-md w-full p-8 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col items-center gap-5 text-center">
@@ -30,9 +37,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div>
             <h2 className="text-xl font-extrabold text-white">Broker access only</h2>
             <p className="mt-2 text-sm text-[#8c90a0] leading-relaxed">
-              The admin area is only available in{' '}
-              <span className="text-amber-400 font-bold">Broker mode</span>. Switch to Broker mode
-              from the profile menu to continue.
+              The admin area is only available to{' '}
+              <span className="text-amber-400 font-bold">Admin accounts</span>. Sign in with an
+              admin account to continue.
             </p>
           </div>
           <Link

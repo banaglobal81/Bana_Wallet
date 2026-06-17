@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Screen, SystemSettings } from '../types';
 import { copyToClipboard } from '../utils/clipboard';
-import { useApp } from '@/app/providers';
+import { useSession, signOut } from 'next-auth/react';
 import {
   Settings as SettingsIcon,
   Activity as ActivityIcon,
@@ -12,7 +12,7 @@ import {
   ShieldCheck,
   Coins,
   Building2,
-  User as UserIcon,
+  LogOut,
 } from 'lucide-react';
 
 interface ProfileMenuProps {
@@ -33,7 +33,8 @@ const Avatar = ({ className = '' }: { className?: string }) => (
 );
 
 export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) {
-  const { role, setRole } = useApp();
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === 'ADMIN';
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -74,7 +75,7 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
         className="relative h-10 w-10 cursor-pointer transition-transform hover:scale-105 active:scale-95"
       >
         <Avatar className="h-10 w-10" />
-        {role === 'broker' && (
+        {isAdmin && (
           <span className="absolute -bottom-1 -right-1 h-4 w-4 flex items-center justify-center rounded-full bg-amber-500 border-2 border-[#06132a]">
             <Building2 className="h-2.5 w-2.5 text-white" />
           </span>
@@ -88,6 +89,9 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
             <Avatar className="h-11 w-11 shrink-0" />
             <div className="min-w-0">
               <div className="text-sm font-bold text-white">My Account</div>
+              {session?.user?.email && (
+                <div className="text-[11px] text-slate-400 truncate">{session.user.email}</div>
+              )}
               <div className="text-[11px] font-mono text-slate-400 truncate">{truncate(settings.connectedWallet)}</div>
             </div>
           </div>
@@ -97,38 +101,20 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
             <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" /> {settings.activeChain}
             </span>
-            <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-              settings.walletConnected
-                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-            }`}>
-              {settings.walletConnected ? '● CONNECTED' : '● OFFLINE'}
-            </span>
-          </div>
-
-          {/* Broker mode toggle */}
-          <div className="px-4 py-2.5 border-b border-slate-800 flex items-center justify-between gap-3">
-            <span className="flex items-center gap-2 text-sm text-slate-300">
-              {role === 'broker'
-                ? <Building2 className="h-4 w-4 text-amber-400" />
-                : <UserIcon className="h-4 w-4 text-slate-400" />}
-              {role === 'broker' ? 'Broker mode' : 'User mode'}
-            </span>
-            <button
-              onClick={() => setRole(role === 'broker' ? 'user' : 'broker')}
-              aria-label="Toggle broker mode"
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 transition-colors ${
-                role === 'broker'
-                  ? 'bg-amber-500 border-amber-400'
-                  : 'bg-slate-700 border-slate-600'
-              }`}
-            >
-              <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                  role === 'broker' ? 'translate-x-5' : 'translate-x-0.5'
-                }`}
-              />
-            </button>
+            <div className="flex items-center gap-2">
+              {isAdmin && (
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-400 border-amber-500/20">
+                  ADMIN
+                </span>
+              )}
+              <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                settings.walletConnected
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+              }`}>
+                {settings.walletConnected ? '● CONNECTED' : '● OFFLINE'}
+              </span>
+            </div>
           </div>
 
           {/* Menu items */}
@@ -145,6 +131,15 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
             </button>
             <button onClick={() => go('SETTINGS_INTERFACE')} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
               <SettingsIcon className="h-4 w-4 text-slate-400" /> Settings
+            </button>
+
+            {/* Divider + Log out */}
+            <div className="my-1 border-t border-slate-800" />
+            <button
+              onClick={() => signOut({ redirectTo: '/login' })}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+            >
+              <LogOut className="h-4 w-4" /> Log out
             </button>
           </div>
 

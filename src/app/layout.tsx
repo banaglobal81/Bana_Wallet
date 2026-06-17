@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { SessionProvider } from 'next-auth/react';
+import { auth } from '@/auth';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
@@ -12,11 +14,14 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth();
   return (
     <html lang="en">
       <body className="antialiased">
-        <Providers>{children}</Providers>
+        <SessionProvider session={session}>
+          <Providers>{children}</Providers>
+        </SessionProvider>
       </body>
     </html>
   );

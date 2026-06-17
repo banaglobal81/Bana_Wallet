@@ -1,0 +1,30 @@
+// Prisma 7.x schema
+// generator: uses the default "prisma-client-js" provider.
+// In Prisma 7 the generator writes the client into node_modules/.prisma/client/,
+// which @prisma/client re-exports at its package root — so
+// `import { PrismaClient } from '@prisma/client'` works with no custom output path.
+//
+// PRISMA 7 BREAKING CHANGE: `url` is no longer valid in the datasource block.
+// The connection URL is declared in prisma.config.ts (datasource.url = env("DATABASE_URL")).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(USER)
+  niaUserId    String?
+  createdAt    DateTime @default(now())
+}
