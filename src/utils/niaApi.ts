@@ -103,13 +103,13 @@ export async function requestNiaWithdrawal(req: WithdrawalRequest): Promise<any>
 
 /** Unsettled commission for the broker (no userId — keyed by API key). */
 export async function getNiaUnsettled(): Promise<any> {
-  const r = await getJson<{ ok: boolean; data: any }>('/api/nia/settlement/unsettled');
+  const r = await getJson<{ ok: boolean; data: any }>('/api/admin/settlement/unsettled');
   return r.data;
 }
 
 /** Broker settlement history. */
 export async function getNiaSettlementHistory(): Promise<any[]> {
-  const r = await getJson<{ ok: boolean; data: any }>('/api/nia/settlement/history');
+  const r = await getJson<{ ok: boolean; data: any }>('/api/admin/settlement/history');
   return r.data?.history ?? r.data?.data ?? (Array.isArray(r.data) ? r.data : []);
 }
 
