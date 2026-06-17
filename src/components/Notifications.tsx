@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Bell,
   Check,
@@ -9,11 +9,29 @@ import {
   ShieldAlert,
   TrendingUp,
   Coins,
-  Fuel,
-  X
+  X,
+  RefreshCw,
 } from 'lucide-react';
+import {
+  getNiaNotifications,
+  getNiaDeposits,
+  getNiaWithdrawals,
+  getNiaTrades,
+} from '../utils/niaApi';
 
-type NotifType = 'swap' | 'deposit' | 'withdraw' | 'security' | 'price' | 'staking' | 'gas';
+// NotifType is the unified set used for icon/color mapping.
+// 'order_update' | 'position_update' | 'balance_update' | 'liquidation_warning'
+// come from webhook events; 'deposit' | 'withdraw' | 'trade' are derived from
+// their respective history endpoints.
+type NotifType =
+  | 'deposit'
+  | 'withdraw'
+  | 'trade'
+  | 'order_update'
+  | 'position_update'
+  | 'balance_update'
+  | 'liquidation_warning'
+  | 'event';
 
 interface NotifItem {
   id: string;
@@ -24,19 +42,43 @@ interface NotifItem {
   read: boolean;
 }
 
+// ---- Icon map ----------------------------------------------------------------
 const ICONS: Record<NotifType, React.ReactNode> = {
-  swap: <ArrowLeftRight className="h-4 w-4 text-indigo-400" />,
   deposit: <Download className="h-4 w-4 text-emerald-400" />,
   withdraw: <Upload className="h-4 w-4 text-sky-400" />,
-  security: <ShieldAlert className="h-4 w-4 text-amber-400" />,
-  price: <TrendingUp className="h-4 w-4 text-sky-400" />,
-  staking: <Coins className="h-4 w-4 text-purple-400" />,
-  gas: <Fuel className="h-4 w-4 text-teal-400" />,
+  trade: <ArrowLeftRight className="h-4 w-4 text-indigo-400" />,
+  order_update: <TrendingUp className="h-4 w-4 text-sky-400" />,
+  position_update: <Coins className="h-4 w-4 text-purple-400" />,
+  balance_update: <Coins className="h-4 w-4 text-teal-400" />,
+  liquidation_warning: <ShieldAlert className="h-4 w-4 text-amber-400" />,
+  event: <Bell className="h-4 w-4 text-slate-400" />,
 };
 
-const STORAGE_KEY = 'bana_notifications_v1';
+// ---- Storage keys ------------------------------------------------------------
+// We no longer persist full notification objects (they are re-derived from live
+// data on every load). We only persist the set of read ids.
+const READ_KEY = 'bana_notifications_read_v1';
+// Remove the old full-item store if present so it doesn't linger.
+try { localStorage.removeItem('bana_notifications_v1'); } catch { /* ignore */ }
 
-// Relative "time ago" — recomputed on each render / tick.
+function loadReadIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(READ_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return new Set<string>(parsed);
+    }
+  } catch { /* ignore */ }
+  return new Set<string>();
+}
+
+function saveReadIds(ids: Set<string>): void {
+  try {
+    localStorage.setItem(READ_KEY, JSON.stringify(Array.from(ids)));
+  } catch { /* ignore */ }
+}
+
+// ---- Relative-time helper ----------------------------------------------------
 function relTime(ts: number): string {
   const s = Math.floor((Date.now() - ts) / 1000);
   if (s < 10) return 'just now';
@@ -49,88 +91,229 @@ function relTime(ts: number): string {
   return `${d}d ago`;
 }
 
-const TOKENS = ['ETH', 'USDC', 'LINK', 'ARB', 'PAXG'];
-const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
-const amt = (max: number, dp = 2) => (Math.random() * max).toFixed(dp);
+// ---- Mappers -----------------------------------------------------------------
 
-// Pool of realistic events the feed can emit.
-const POOL: Array<() => Omit<NotifItem, 'id' | 'ts' | 'read'>> = [
-  () => {
-    const a = pick(TOKENS), b = pick(TOKENS.filter((t) => t !== a));
-    return { type: 'swap', title: 'Swap completed', body: `Swapped ${amt(3, 3)} ${a} → ${amt(2000)} ${b}.` };
-  },
-  () => ({ type: 'deposit', title: 'Deposit received', body: `Received ${amt(500)} ${pick(TOKENS)} into your vault.` }),
-  () => ({ type: 'withdraw', title: 'Withdrawal processed', body: `Sent ${amt(1)} ${pick(TOKENS)} to an external address.` }),
-  () => ({ type: 'price', title: 'Price alert', body: `${pick(TOKENS)} moved ${Math.random() > 0.5 ? '+' : '-'}${amt(8)}% in the last hour.` }),
-  () => ({ type: 'staking', title: 'Staking reward', body: `Earned ${amt(0.5, 4)} ${pick(['ETH', 'ARB', 'LINK'])} in rewards.` }),
-  () => ({ type: 'security', title: 'Security check', body: pick(['MEV shield blocked a sandwich attempt.', 'Firewall flagged a high-risk contract.', 'New device session verified.']) }),
-  () => ({ type: 'gas', title: 'Network gas is low', body: `Gas dropped to ~${Math.floor(12 + Math.random() * 18)} Gwei — good time to transact.` }),
-];
+function mapWebhookEvent(ev: any, readIds: Set<string>): NotifItem {
+  const id = `evt-${ev.id ?? ev.ts ?? String(Date.now())}`;
+  const ts: number = typeof ev.ts === 'number' ? ev.ts : Date.parse(ev.ts) || Date.now();
+  const rawType: string = ev.type ?? 'event';
+  const data: any = ev.data ?? {};
 
-const SEED = (): NotifItem[] => {
-  const now = Date.now();
-  return [
-    { id: 's1', type: 'security', title: 'Security check passed', body: 'Hardware wallet guard verified your session.', ts: now - 2 * 60_000, read: false },
-    { id: 's2', type: 'swap', title: 'Swap completed', body: 'Swapped 0.45 ETH → 1,085.40 USDC.', ts: now - 64 * 60_000, read: false },
-    { id: 's3', type: 'deposit', title: 'Deposit received', body: 'Received 122.50 ARB into your vault.', ts: now - 5 * 3_600_000, read: false },
-    { id: 's4', type: 'price', title: 'Price alert', body: 'ETH is up +4.2% in the last 24h.', ts: now - 26 * 3_600_000, read: true },
-    { id: 's5', type: 'staking', title: 'Staking reward', body: 'Earned 0.0184 ETH in staking rewards.', ts: now - 2 * 86_400_000, read: true },
+  // Resolve to a mapped NotifType, falling back to 'event'.
+  const knownTypes: NotifType[] = [
+    'deposit', 'withdraw', 'trade',
+    'order_update', 'position_update', 'balance_update', 'liquidation_warning',
   ];
-};
+  const type: NotifType = (knownTypes.includes(rawType as NotifType)
+    ? rawType as NotifType
+    : 'event');
 
-const loadInitial = (): NotifItem[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length) return parsed;
-    }
-  } catch { /* ignore */ }
-  return SEED();
-};
+  let title: string;
+  let body: string;
+
+  switch (type) {
+    case 'balance_update':
+      title = 'Balance updated';
+      body = data.currency
+        ? `${data.currency}${data.changeAmount != null ? ' · change: ' + String(data.changeAmount) : ''}`
+        : 'Wallet balance changed.';
+      break;
+    case 'order_update':
+      title = `Order ${data.status ?? 'updated'}`;
+      body = data.symbol
+        ? `${data.symbol}${data.side ? ' ' + data.side : ''}${data.price != null ? ' @ ' + String(data.price) : ''}`
+        : 'An order was updated.';
+      break;
+    case 'position_update':
+      title = 'Position updated';
+      body = data.symbol
+        ? `${data.symbol}${data.size != null ? ' · size: ' + String(data.size) : ''}`
+        : 'A position changed.';
+      break;
+    case 'liquidation_warning':
+      title = 'Liquidation risk';
+      body = data.symbol
+        ? `${data.symbol}${data.marginRatio != null ? ' · margin ratio: ' + String(data.marginRatio) : ''}`
+        : 'Your position is approaching liquidation.';
+      break;
+    case 'deposit':
+      title = 'Deposit event';
+      body = data.amount != null && data.currency
+        ? `+${String(data.amount)} ${data.currency}${data.network ? ' · ' + data.network : ''}`
+        : 'Deposit event received.';
+      break;
+    case 'withdraw':
+      title = 'Withdrawal event';
+      body = data.amount != null && data.currency
+        ? `-${String(data.amount)} ${data.currency}`
+        : 'Withdrawal event received.';
+      break;
+    default:
+      title = rawType.replace(/_/g, ' ');
+      body = data.message ?? data.description ?? JSON.stringify(data).slice(0, 80);
+      break;
+  }
+
+  return { id, type, title, body, ts, read: readIds.has(id) };
+}
+
+function mapDeposit(dep: any, readIds: Set<string>): NotifItem {
+  const rawId: string = dep.id ?? dep.txHash ?? String(dep.createdAt);
+  const id = `dep-${rawId}`;
+  const ts: number = dep.createdAt ? Date.parse(dep.createdAt) : Date.now();
+  const status: string = dep.status ?? '';
+  const title = `Deposit ${status}`.trim();
+  const currency: string = dep.currency ?? '';
+  const network: string = dep.network ?? '';
+  const amount: string = dep.amount != null ? String(dep.amount) : '';
+  const body = amount
+    ? `+${amount} ${currency}${network ? ' · ' + network : ''}`.trim()
+    : currency || 'Deposit record.';
+  return { id, type: 'deposit', title, body, ts, read: readIds.has(id) };
+}
+
+function mapWithdrawal(wd: any, readIds: Set<string>): NotifItem {
+  const rawId: string = wd.id ?? wd.withdrawalId ?? wd.txHash ?? String(wd.createdAt);
+  const id = `wd-${rawId}`;
+  const ts: number = wd.createdAt ? Date.parse(wd.createdAt) : Date.now();
+  const status: string = wd.status ?? '';
+  const title = `Withdrawal ${status}`.trim();
+  const currency: string = wd.currency ?? '';
+  const amount: string = wd.amount != null ? String(wd.amount) : '';
+  const toAddress: string = wd.toAddress ?? wd.address ?? '';
+  const addrShort = toAddress.length > 10
+    ? `${toAddress.slice(0, 6)}…${toAddress.slice(-4)}`
+    : toAddress;
+  const body = amount
+    ? `-${amount} ${currency}${addrShort ? ' · to ' + addrShort : ''}`.trim()
+    : currency || 'Withdrawal record.';
+  return { id, type: 'withdraw', title, body, ts, read: readIds.has(id) };
+}
+
+function mapTrade(trade: any, readIds: Set<string>): NotifItem {
+  const rawId: string = trade.id ?? trade.orderId ?? trade.tradeId ?? String(trade.createdAt ?? trade.ts);
+  const id = `trade-${rawId}`;
+  // Timestamps: prefer ISO createdAt, fall back to numeric ts, then Date.now() only if truly absent.
+  let ts: number;
+  if (trade.createdAt) {
+    ts = Date.parse(trade.createdAt);
+  } else if (typeof trade.ts === 'number') {
+    ts = trade.ts;
+  } else if (typeof trade.ts === 'string') {
+    ts = Date.parse(trade.ts);
+  } else {
+    ts = Date.now();
+  }
+  const symbol: string = trade.symbol ?? '';
+  const side: string = trade.side ?? '';
+  const price: string = trade.price != null ? String(trade.price) : '';
+  const qty: string = trade.quantity != null
+    ? String(trade.quantity)
+    : trade.qty != null
+      ? String(trade.qty)
+      : '';
+  const parts: string[] = [];
+  if (symbol) parts.push(symbol);
+  if (side) parts.push(side.toUpperCase());
+  if (qty) parts.push(qty);
+  if (price) parts.push('@ ' + price);
+  const body = parts.length ? parts.join(' · ') : 'Trade executed.';
+  return { id, type: 'trade', title: 'Trade executed', body, ts, read: readIds.has(id) };
+}
+
+// ---- Merge & dedup -----------------------------------------------------------
+function mergeItems(
+  events: any[],
+  deposits: any[],
+  withdrawals: any[],
+  trades: any[],
+  readIds: Set<string>,
+): NotifItem[] {
+  const seen = new Set<string>();
+  const all: NotifItem[] = [];
+
+  for (const ev of events) {
+    const item = mapWebhookEvent(ev, readIds);
+    if (!seen.has(item.id)) { seen.add(item.id); all.push(item); }
+  }
+  for (const dep of deposits) {
+    const item = mapDeposit(dep, readIds);
+    if (!seen.has(item.id)) { seen.add(item.id); all.push(item); }
+  }
+  for (const wd of withdrawals) {
+    const item = mapWithdrawal(wd, readIds);
+    if (!seen.has(item.id)) { seen.add(item.id); all.push(item); }
+  }
+  for (const trade of trades) {
+    const item = mapTrade(trade, readIds);
+    if (!seen.has(item.id)) { seen.add(item.id); all.push(item); }
+  }
+
+  // Sort newest first, cap at 50.
+  all.sort((a, b) => b.ts - a.ts);
+  return all.slice(0, 50);
+}
+
+// ---- Component ---------------------------------------------------------------
+const POLL_MS = 25_000;
 
 export default function Notifications() {
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<NotifItem[]>(loadInitial);
-  const [toast, setToast] = useState<NotifItem | null>(null);
+  const [items, setItems] = useState<NotifItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [readIds, setReadIds] = useState<Set<string>>(loadReadIds);
   const [, setTick] = useState(0); // forces relative-time refresh
   const wrapRef = useRef<HTMLDivElement>(null);
   const openRef = useRef(open);
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { openRef.current = open; }, [open]);
 
-  const unread = items.filter((n) => !n.read).length;
+  // Persist read ids whenever they change.
+  useEffect(() => { saveReadIds(readIds); }, [readIds]);
 
-  // Persist to localStorage.
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, 30))); } catch { /* ignore */ }
-  }, [items]);
-
-  // Refresh relative timestamps periodically.
+  // Refresh relative timestamps every 20s.
   useEffect(() => {
     const t = setInterval(() => setTick((x) => x + 1), 20_000);
     return () => clearInterval(t);
   }, []);
 
-  // Live feed — a new alert arrives at randomized intervals.
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    const emit = () => {
-      const ev = pick(POOL)();
-      const item: NotifItem = { ...ev, id: `live-${Date.now()}-${Math.floor(Math.random() * 1e4)}`, ts: Date.now(), read: false };
-      setItems((prev) => [item, ...prev].slice(0, 30));
-      // Toast only when the panel is closed (don't cover an open list).
-      if (!openRef.current) {
-        setToast(item);
-        if (toastTimer.current) clearTimeout(toastTimer.current);
-        toastTimer.current = setTimeout(() => setToast(null), 5500);
-      }
-    };
-    const schedule = () => { timer = setTimeout(() => { emit(); schedule(); }, 14_000 + Math.random() * 14_000); };
-    schedule();
-    return () => clearTimeout(timer);
+  // Fetch all four data sources and merge into unified NotifItem list.
+  const fetchAll = useCallback(async () => {
+    try {
+      const [events, deposits, withdrawals, trades] = await Promise.all([
+        getNiaNotifications(undefined, 50),
+        getNiaDeposits(),
+        getNiaWithdrawals(),
+        getNiaTrades(),
+      ]);
+      // Read the latest persisted read ids from state (captured by closure) to
+      // correctly mark items; use a functional update so we always see latest.
+      setReadIds((currentReadIds) => {
+        setItems(mergeItems(events, deposits, withdrawals, trades, currentReadIds));
+        return currentReadIds; // unchanged
+      });
+    } catch {
+      // On error: leave existing items intact; don't clear them.
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  // Mount fetch + poll every 25s.
+  useEffect(() => {
+    fetchAll();
+    const interval = setInterval(fetchAll, POLL_MS);
+    return () => clearInterval(interval);
+  }, [fetchAll]);
+
+  // Keep items in sync when readIds changes (mark read across the board).
+  useEffect(() => {
+    setItems((prev) =>
+      prev.map((n) => ({ ...n, read: readIds.has(n.id) })),
+    );
+  }, [readIds]);
+
+  const unread = items.filter((n) => !n.read).length;
 
   // Close panel on outside click / Escape.
   useEffect(() => {
@@ -147,14 +330,22 @@ export default function Notifications() {
     };
   }, [open]);
 
-  const markAllRead = () => setItems((prev) => prev.map((n) => ({ ...n, read: true })));
-  const markRead = (id: string) => setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-  const dismiss = (id: string) => setItems((prev) => prev.filter((n) => n.id !== id));
+  const markAllRead = () =>
+    setReadIds((prev) => {
+      const next = new Set(prev);
+      items.forEach((n) => next.add(n.id));
+      return next;
+    });
 
-  const openFromToast = () => {
-    setToast(null);
-    setOpen(true);
-  };
+  const markRead = (id: string) =>
+    setReadIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+
+  const dismiss = (id: string) =>
+    setItems((prev) => prev.filter((n) => n.id !== id));
 
   return (
     <div className="relative" ref={wrapRef}>
@@ -185,21 +376,38 @@ export default function Notifications() {
                 </span>
               )}
             </div>
-            {unread > 0 && (
-              <button onClick={markAllRead} className="flex items-center gap-1 text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 cursor-pointer">
-                <CheckCheck className="h-3.5 w-3.5" /> Mark all read
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {loading && (
+                <RefreshCw className="h-3.5 w-3.5 text-slate-500 animate-spin" />
+              )}
+              {unread > 0 && (
+                <button
+                  onClick={markAllRead}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 cursor-pointer"
+                >
+                  <CheckCheck className="h-3.5 w-3.5" /> Mark all read
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-800/60">
-            {items.length === 0 ? (
-              <div className="px-4 py-10 text-center text-xs font-mono text-slate-500">You're all caught up.</div>
+            {loading && items.length === 0 ? (
+              <div className="px-4 py-10 text-center text-xs font-mono text-slate-500">
+                Loading…
+              </div>
+            ) : items.length === 0 ? (
+              <div className="px-4 py-10 text-center text-xs font-mono text-slate-500">
+                No notifications yet.
+              </div>
             ) : (
               items.map((n) => (
-                <div key={n.id} className={`group flex items-start gap-3 px-4 py-3 transition-colors ${n.read ? 'bg-transparent' : 'bg-indigo-500/5'} hover:bg-slate-800/40`}>
+                <div
+                  key={n.id}
+                  className={`group flex items-start gap-3 px-4 py-3 transition-colors ${n.read ? 'bg-transparent' : 'bg-indigo-500/5'} hover:bg-slate-800/40`}
+                >
                   <div className="mt-0.5 w-8 h-8 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
-                    {ICONS[n.type]}
+                    {ICONS[n.type] ?? ICONS.event}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
@@ -211,11 +419,21 @@ export default function Notifications() {
                   </div>
                   <div className="flex flex-col items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {!n.read && (
-                      <button onClick={() => markRead(n.id)} aria-label="Mark read" title="Mark read" className="p-1 text-slate-400 hover:text-emerald-400 cursor-pointer">
+                      <button
+                        onClick={() => markRead(n.id)}
+                        aria-label="Mark read"
+                        title="Mark read"
+                        className="p-1 text-slate-400 hover:text-emerald-400 cursor-pointer"
+                      >
                         <Check className="h-3.5 w-3.5" />
                       </button>
                     )}
-                    <button onClick={() => dismiss(n.id)} aria-label="Dismiss" title="Dismiss" className="p-1 text-slate-400 hover:text-rose-400 cursor-pointer">
+                    <button
+                      onClick={() => dismiss(n.id)}
+                      aria-label="Dismiss"
+                      title="Dismiss"
+                      className="p-1 text-slate-400 hover:text-rose-400 cursor-pointer"
+                    >
                       <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
@@ -225,34 +443,10 @@ export default function Notifications() {
           </div>
 
           <div className="px-4 py-2.5 border-t border-slate-800 text-center">
-            <span className="text-[11px] font-mono text-slate-500">Live alerts will sync from Nia-Hub events</span>
+            <span className="text-[11px] font-mono text-slate-500">
+              Live from Nia-Hub activity &amp; events
+            </span>
           </div>
-        </div>
-      )}
-
-      {/* Toast pop-up on new arrival (when panel closed) */}
-      {toast && (
-        <div
-          onClick={openFromToast}
-          className="fixed bottom-4 right-4 left-4 sm:left-auto sm:w-80 z-[60] bg-slate-900 border border-indigo-500/30 rounded-xl shadow-2xl shadow-black/50 p-3.5 flex items-start gap-3 cursor-pointer animate-[fadeInUp_0.25s_ease-out]"
-          style={{ animation: 'niaToastIn 0.25s ease-out' }}
-          role="status"
-        >
-          <div className="mt-0.5 w-8 h-8 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
-            {ICONS[toast.type]}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-[13px] font-semibold text-white">{toast.title}</div>
-            <p className="text-[11px] text-slate-400 mt-0.5 leading-snug truncate">{toast.body}</p>
-          </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); setToast(null); }}
-            aria-label="Dismiss toast"
-            className="p-1 text-slate-500 hover:text-white cursor-pointer shrink-0"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-          <style>{`@keyframes niaToastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}`}</style>
         </div>
       )}
     </div>

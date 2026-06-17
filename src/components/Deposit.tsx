@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Screen, Asset, SystemSettings } from '../types';
-import { copyToClipboard } from '../utils/clipboard';
 import { getNiaDeposits } from '../utils/niaApi';
 import {
   ArrowLeft,
-  Copy,
-  Check,
   QrCode,
   ShieldCheck,
   AlertTriangle,
-  Download
+  Download,
+  Info
 } from 'lucide-react';
 
 interface DepositProps {
@@ -20,7 +18,6 @@ interface DepositProps {
 
 export default function Deposit({ assets, settings, onNavigate }: DepositProps) {
   const [selectedAsset, setSelectedAsset] = useState<string>('ETH');
-  const [copied, setCopied] = useState(false);
 
   // Live deposit history from Nia-Hub.
   const [deposits, setDeposits] = useState<any[]>([]);
@@ -40,15 +37,6 @@ export default function Deposit({ assets, settings, onNavigate }: DepositProps) 
     })();
     return () => { cancelled = true; };
   }, []);
-
-  // In the real integration this address comes from Nia: GET /api/nia/deposit-address
-  const depositAddress = settings.connectedWallet;
-
-  const handleCopy = async () => {
-    await copyToClipboard(depositAddress);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   return (
     <div className="flex-1 min-h-full bg-[#06132a] text-[#d8e2ff] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
@@ -105,20 +93,18 @@ export default function Deposit({ assets, settings, onNavigate }: DepositProps) 
               ))}
             </div>
 
-            {/* Deposit address card */}
+            {/* Deposit address unavailable */}
             <div className="mt-1 p-4 rounded-xl bg-[#020d24]/80 border border-[#1E3559] flex flex-col gap-3">
-              <span className="text-xs font-mono text-[#8c90a0]">YOUR {selectedAsset} DEPOSIT ADDRESS</span>
-              <div className="flex items-center justify-between gap-3">
-                <span className="font-mono text-xs sm:text-sm text-[#afc6ff] break-all font-semibold">
-                  {depositAddress}
-                </span>
-                <button
-                  onClick={handleCopy}
-                  className="shrink-0 p-2 bg-[#112643] hover:bg-[#1e3459] text-[#d8e2ff] rounded-lg border border-[#1E3559] transition-all flex items-center gap-1.5 cursor-pointer text-xs font-bold"
-                >
-                  {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
-                  {copied ? 'Copied' : 'Copy'}
-                </button>
+              <span className="text-xs font-mono text-[#8c90a0] uppercase tracking-wider">
+                {selectedAsset} Deposit Address
+              </span>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-[#0d1f3c]/60 border border-[#1E3559]">
+                <Info className="h-4 w-4 text-[#528dff] shrink-0 mt-0.5" />
+                <p className="text-xs text-[#8c90a0] leading-relaxed">
+                  On-chain deposit address generation is <span className="text-[#d8e2ff] font-semibold">not yet available</span> for
+                  this account. To obtain your {selectedAsset} deposit address, please contact your account manager or{' '}
+                  <span className="text-[#528dff] font-semibold">reach out to BANA support</span>.
+                </p>
               </div>
             </div>
 
@@ -126,8 +112,9 @@ export default function Deposit({ assets, settings, onNavigate }: DepositProps) 
             <div className="p-3.5 rounded-xl bg-amber-500/5 border border-amber-500/20 flex items-start gap-2.5">
               <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
               <p className="text-xs text-[#8c90a0] leading-relaxed">
-                Only send <span className="text-amber-300 font-bold">{selectedAsset}</span> on the {settings.activeChain} network
-                to this address. Sending any other asset or network may result in permanent loss.
+                Only send <span className="text-amber-300 font-bold">{selectedAsset}</span> on the{' '}
+                <span className="text-amber-300 font-bold">{settings.activeChain}</span> network to the address
+                provided by your account manager. Sending to an incorrect address or network may result in permanent loss.
               </p>
             </div>
           </div>
@@ -139,12 +126,12 @@ export default function Deposit({ assets, settings, onNavigate }: DepositProps) 
             <h3 className="font-sans font-extrabold text-[#d8e2ff] text-sm uppercase tracking-wider self-start">
               Scan to Deposit
             </h3>
-            {/* QR placeholder — a real QR is generated once Nia returns the address */}
-            <div className="w-44 h-44 rounded-2xl bg-[#020d24] border border-[#1E3559] flex items-center justify-center">
-              <QrCode className="h-24 w-24 text-[#528dff]/70" />
+            {/* QR placeholder — shown once a deposit address is provisioned */}
+            <div className="w-44 h-44 rounded-2xl bg-[#020d24] border border-[#1E3559]/50 flex items-center justify-center opacity-40">
+              <QrCode className="h-24 w-24 text-[#528dff]/50" />
             </div>
             <p className="text-[11px] font-mono text-[#8c90a0] text-center">
-              QR code renders from your live Nia deposit address.
+              QR code unavailable — deposit address not yet provisioned for this account.
             </p>
           </div>
 
