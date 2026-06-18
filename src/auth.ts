@@ -1,8 +1,13 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
+import Google from 'next-auth/providers/google';
 import bcrypt from 'bcryptjs';
 import { authConfig } from './auth.config';
 import { prisma } from '@/lib/db';
+
+// A valid bcrypt hash used only to equalize response time when no user exists,
+// so login timing can't be used to enumerate which emails have accounts.
+const DUMMY_HASH = '$2b$12$5VKD3CVrMoBLIAnNfv7KcOro7AwNR3BPrMrj.ADevQHws895P4qEK';
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -14,11 +19,71 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         const password = String(creds?.password ?? '');
         if (!email || !password) return null;
         const user = await prisma.user.findUnique({ where: { email } });
-        if (!user) return null;
+        if (!user) {
+          // Spend the same time as a real compare so the response can't reveal
+          // whether the email exists.
+          await bcrypt.compare(password, DUMMY_HASH);
+          return null;
+        }
+        // Google-only accounts have no passwordHash; they must sign in with Google.
+        if (!user.passwordHash) return null;
         const ok = await bcrypt.compare(password, user.passwordHash);
         if (!ok) return null;
         return { id: user.id, email: user.email, role: user.role, niaUserId: user.niaUserId };
       },
     }),
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      allowDangerousEmailAccountLinking: true,
+    }),
   ],
+  callbacks: {
+    // Spread the Edge-safe callbacks from authConfig, then override signIn and jwt
+    // with Node-only (Prisma) logic. The middleware keeps using authConfig directly
+    // and never sees these overrides.
+    ...authConfig.callbacks,
+
+    async signIn({ user, account }) {
+      if (account?.provider === 'google') {
+        const email = user.email?.toLowerCase();
+        if (!email) return false;
+        // Upsert: create a USER-role record if this Google email is new,
+        // otherwise leave the existing record untouched (update:{}).
+        await prisma.user.upsert({
+          where: { email },
+          update: {},
+          create: { email, role: 'USER' },
+        });
+        return true;
+      }
+      // Credentials path — authorize() already validated, just allow through.
+      return true;
+    },
+
+    async jwt({ token, user, account }) {
+      if (account?.provider === 'google' && user?.email) {
+        // After Google sign-in the `user` object only has name/email/image from
+        // the OIDC profile; fetch our DB record to get id/role/niaUserId.
+        const dbUser = await prisma.user.findUnique({
+          where: { email: user.email.toLowerCase() },
+        });
+        if (dbUser) {
+          token.id = dbUser.id;
+          token.role = dbUser.role;
+          token.niaUserId = dbUser.niaUserId ?? null;
+        }
+      } else if (user) {
+        // Credentials path: authorize() already returned the full shape.
+        token.id = (user as any).id;
+        token.role = (user as any).role;
+        token.niaUserId = (user as any).niaUserId ?? null;
+      }
+      // On subsequent requests neither block runs; token is returned as-is
+      // (already populated from a prior sign-in).
+      return token;
+    },
+
+    // session callback is inherited unchanged from authConfig.callbacks via the spread.
+  },
 });

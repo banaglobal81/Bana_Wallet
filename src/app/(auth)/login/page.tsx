@@ -14,9 +14,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState('');
 
-  // UI-only for now — OAuth wiring (Google provider) comes later.
-  const handleGoogle = () => {
-    setNotice('Google sign-in is coming soon.');
+  // Redirects to Google, then back to "/" which routes by role.
+  const handleGoogle = async () => {
+    setNotice('');
+    try {
+      await signIn('google', { callbackUrl: '/' });
+    } catch {
+      setNotice('Could not start Google sign-in. Please try again.');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
