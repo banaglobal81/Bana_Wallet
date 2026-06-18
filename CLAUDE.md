@@ -7,8 +7,11 @@
 
 - **Description:** BANA — a Nia-Hub B2B crypto wallet platform. Multi-market deposits/withdrawals, balance lookup, orders, trade history, settlement.
 - **Actual tech stack:**
-  - Framework: **Next.js 15 App Router + React 19** (`src/app/`, `src/components/`, `src/lib/nia/`)
-  - Server: **Single Node process** — 14 Next.js route handlers (`src/app/api/nia/**/route.ts`). HMAC signing lives in `src/lib/nia/client.ts` (server-only).
+  - Framework: **Next.js 15 App Router + React 19** (`src/app/`, `src/components/`, `src/lib/`)
+  - Server: **Single Node process** — Next.js route handlers (`src/app/api/**/route.ts`). HMAC signing lives in `src/lib/nia/client.ts` (server-only).
+  - Auth: **Auth.js v5 (next-auth beta)** — credentials provider, `bcryptjs` password hashing, role-based access (`USER` / `ADMIN`). Config in `src/auth.ts` + `src/auth.config.ts`; route protection in `src/middleware.ts`; server-side guards in `src/lib/auth/session.ts` (`requireUser` / `requireAdmin`).
+  - Database: **PostgreSQL via Prisma 7** (`@prisma/client` + `@prisma/adapter-pg` + `pg`). Schema in `prisma/schema.prisma`; connection URL in `prisma.config.ts` (`env("DATABASE_URL")` — Prisma 7 no longer allows `url` in the datasource block). Migrations in `prisma/migrations/`, seed in `prisma/seed.ts`.
+  - AI: **`@google/genai`** (Gemini) — `GEMINI_API_KEY`.
   - Styling: TailwindCSS v4, lucide-react, motion
   - Deploy: Railway (one server, can scale horizontally but in-memory state requires single replica or Redis)
 - **Nia-Hub integration:** two HMAC signing schemes (plain concatenation, no newlines).
@@ -19,15 +22,26 @@
 ## Code Tree
 
 ```
-src/app/              — Next.js 15 App Router. layout.tsx (root), providers.tsx (Context), page.tsx (redirect → /portfolio), globals.css
-src/app/api/nia/      — 14 route handlers (balances, deposits, withdrawals, orders, settlement, etc.)
-src/app/(app)/        — authenticated shell. layout.tsx (Sidebar, Notifications, ProfileMenu), template.tsx, {portfolio,swap,staking,wallet,deposit,withdraw,settings,activity}/page.tsx
-src/components/       — React 19 components ('use client' where needed). Wallet, Dashboard, Deposit, Withdraw, Swap, Staking, ActivityHistory, Notifications, etc.
+src/app/              — Next.js 15 App Router. layout.tsx (root), page.tsx, globals.css
+src/app/(auth)/       — public auth shell. layout.tsx, login/page.tsx, signup/page.tsx
+src/app/(site)/       — authenticated user shell. layout.tsx (Sidebar, Notifications, ProfileMenu), {portfolio,swap,staking,wallet,deposit,withdraw,settings,activity}/page.tsx
+src/app/admin/        — ADMIN-only area. layout.tsx (role guard), settlement/page.tsx
+src/app/api/nia/      — Nia-Hub route handlers (balance, deposits, withdrawals, transfer, orders, trades, markets, klines, wallet-history, notifications, status, webhook)
+src/app/api/admin/    — settlement/{unsettled,history}/route.ts (ADMIN-only)
+src/app/api/auth/     — register/route.ts (sign-up), [...nextauth]/route.ts (Auth.js login/session)
+src/auth.ts           — Auth.js v5 instance (handlers, auth, signIn, signOut)
+src/auth.config.ts    — Auth.js config (providers, callbacks, pages)
+src/middleware.ts     — route protection (redirects unauthenticated → /login, gates /admin)
+src/lib/auth/session.ts — server-only guards: requireUser() (401), requireAdmin() (403)
 src/lib/nia/          — server-only Nia-Hub API layer. config.ts, state.ts (globalThis singleton), client.ts (niaRequest/niaWalletRequest), resolve.ts, respond.ts. All marked `import 'server-only'`.
+src/components/       — React 19 components ('use client' where needed). Wallet, Dashboard, Deposit, Withdraw, Swap, Staking, ActivityHistory, Notifications, Sidebar, ProfileMenu, etc.
+src/types/            — next-auth.d.ts (session/role type augmentation)
 src/utils/            — frontend client (niaApi.ts fetches /api/nia/*, relative URLs), clipboard.ts
+prisma/               — schema.prisma (User, Role enum), migrations/, seed.ts
+prisma.config.ts      — Prisma 7 config; datasource.url = env("DATABASE_URL")
 server/core/nia-signing.js   — pure HMAC signing logic (reusable, harness-tested)
 tests/harness/        — vitest harness tests (nia-signing/*)
-package.json          — scripts: npm run dev (next dev -p 3000), npm run build, npm start, npm run lint (tsc --noEmit)
+package.json          — scripts: dev (next dev -p 3000), build, start, lint (tsc --noEmit), db:migrate (prisma migrate dev), db:deploy (prisma migrate deploy), db:seed (tsx prisma/seed.ts), postinstall (prisma generate)
 ```
 
 ## Absolute Rules
@@ -39,8 +53,9 @@ package.json          — scripts: npm run dev (next dev -p 3000), npm run build
 4. **The HMAC secret (`NIA_API_SECRET`) lives only in `src/lib/nia/*` (server-only).** Never leak the secret into the client bundle, logs, or error responses. The two signing schemes (implemented in `src/lib/nia/client.ts` + `server/core/nia-signing.js`) are **owned by `web-shared-expert`**.
 5. **Git commits are `deploy-manager` only.** No history rewrites (`git rebase` / `reset --hard`).
 6. **`git push` is user-only — every agent (including `deploy-manager`) is forbidden from pushing.** Agents stop after `git add` + `git commit` and hand push off to the user.
-7. **No direct edits to production secrets (.env).** Read-only checks (whether config is set) only. Never commit `.env`.
-8. **If/when a DB + Prisma is introduced, `db push` is absolutely forbidden** (all agents). Schema changes go through migrations only.
+7. **No direct edits to production secrets (.env).** Read-only checks (whether config is set) only. Never commit `.env`. Secrets now also include `DATABASE_URL`, `AUTH_SECRET`, and `GEMINI_API_KEY`.
+8. **`prisma db push` is absolutely forbidden** (all agents). The DB + Prisma is now live — all schema changes go through migrations only (`prisma migrate dev` / `prisma migrate deploy`). Never run `prisma migrate reset` or drop tables on a shared/production DB.
+9. **Authentication is mandatory on protected routes.** API route handlers serving user/admin data must call `requireUser()` / `requireAdmin()` from `src/lib/auth/session.ts`. Never trust a client-supplied user id for authorization — derive it from the session. Passwords are hashed with `bcryptjs`; never store or log plaintext passwords.
 
 ## Model Tier Strategy
 
@@ -59,7 +74,7 @@ package.json          — scripts: npm run dev (next dev -p 3000), npm run build
 | 3 | web-shared-expert | sonnet | shared layer + owns HMAC client | active |
 | 4 | mobile-expert | sonnet | Flutter mobile | **dormant** |
 | 5 | wallet-security-expert | opus | security review only (no code edits) | active |
-| 6 | prisma-db-expert | sonnet | DB & migrations | **dormant** |
+| 6 | prisma-db-expert | sonnet | DB & migrations (User/auth schema, Postgres) | active |
 | 7 | ui-ux-designer | sonnet | Tailwind & design tokens | active |
 | 8 | pm | sonnet | product planning & PRD | active |
 | 9 | product-planner | sonnet | FRD & screen specs | active |

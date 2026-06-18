@@ -110,17 +110,18 @@ export async function getNiaSettlementHistory(): Promise<any[]> {
 // ---- Notifications (in-memory webhook event ring buffer) ----
 
 /**
- * Fetch stored webhook events from the ring buffer (newest first).
+ * Fetch stored webhook events for the logged-in user (newest first).
  *
- * @param userId  Optional — if provided, returns only broadcast events (userId null)
- *                plus events belonging to that user. Omit to return all events.
+ * The server derives identity from the session and returns broadcast events
+ * (userId null) plus events owned by the current user. A client-supplied userId
+ * is never honored, so it is not accepted here.
+ *
  * @param limit   Max events to return (default 50). Server caps at WEBHOOK_EVENTS_MAX.
  * @returns       Array of event objects, or [] on unexpected shape / error.
  */
-export async function getNiaNotifications(userId?: string, limit?: number): Promise<any[]> {
+export async function getNiaNotifications(limit?: number): Promise<any[]> {
   try {
     const params = new URLSearchParams();
-    if (userId !== undefined) params.set('userId', userId);
     if (limit !== undefined) params.set('limit', String(limit));
     const qs = params.toString();
     const r = await getJson<{ ok: boolean; data: any[] }>(

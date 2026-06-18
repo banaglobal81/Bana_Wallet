@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Decimal from 'decimal.js';
 import { Screen, Asset, SystemSettings } from '../types';
 import { requestNiaWithdrawal } from '../utils/niaApi';
 import {
@@ -35,7 +36,7 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
       const r = await requestNiaWithdrawal({
         currency: selectedAsset,
         network: 'EVM',
-        amount: String(amountNum),
+        amount: amountDec.toFixed(), // canonical decimal string, no float drift
         toAddress: destination.trim(),
       });
       setResult(r || {});
@@ -49,13 +50,22 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
 
   const asset = assets.find((a) => a.symbol === selectedAsset) || assets[0];
   const balance = asset?.holdings ?? 0;
-  const amountNum = parseFloat(amount) || 0;
 
-  const addressLooksValid = /^0x[a-fA-F0-9]{40}$/.test(destination.trim());
-  const overBalance = amountNum > balance;
-  const canReview = amountNum > 0 && !overBalance && addressLooksValid;
+  // Parse the amount once with decimal.js (rule #2). Decimal throws on non-numeric
+  // input, so fall back to 0 when the field is empty/invalid.
+  let amountDec: Decimal;
+  try {
+    amountDec = new Decimal(amount || 0);
+  } catch {
+    amountDec = new Decimal(0);
+  }
 
   const networkFee = 0.0008; // mock; comes from Nia in the real call
+  const addressLooksValid = /^0x[a-fA-F0-9]{40}$/.test(destination.trim());
+  const overBalance = amountDec.gt(balance);
+  const canReview = amountDec.gt(0) && !overBalance && addressLooksValid;
+  // Total debited = amount + network fee.
+  const totalSend = amountDec.plus(networkFee);
 
   const handleMax = () => setAmount(balance.toString());
 
@@ -102,7 +112,7 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
                 </div>
                 <h3 className="text-xl font-bold text-white">Withdrawal Requested</h3>
                 <p className="text-sm text-[#8c90a0] max-w-sm">
-                  Your request to withdraw <span className="text-white font-bold">{amountNum} {selectedAsset}</span> has
+                  Your request to withdraw <span className="text-white font-bold">{amountDec.toNumber()} {selectedAsset}</span> has
                   been submitted to Nia-Hub for processing.
                 </p>
                 {(result?.withdrawalId || result?.status) && (
@@ -249,7 +259,7 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
             </div>
             <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
               <span className="text-[#8c90a0]">Amount</span>
-              <span className="text-white font-bold">{amountNum || 0} {selectedAsset}</span>
+              <span className="text-white font-bold">{amountDec.toNumber()} {selectedAsset}</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
               <span className="text-[#8c90a0]">Network Fee</span>
@@ -258,7 +268,7 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
             <div className="flex justify-between items-center py-2">
               <span className="text-[#8c90a0]">You will send</span>
               <span className="text-emerald-400 font-bold">
-                {(amountNum + networkFee).toLocaleString('en-US', { maximumFractionDigits: 6 })} {selectedAsset}
+                {totalSend.toNumber().toLocaleString('en-US', { maximumFractionDigits: 6 })} {selectedAsset}
               </span>
             </div>
           </div>

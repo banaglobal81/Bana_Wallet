@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Decimal from 'decimal.js';
 import { Screen, Asset, SystemSettings } from '../types';
 import { 
   ArrowUpDown, 
@@ -56,9 +57,16 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
     setPayAmount(val);
   };
 
-  // Convert rate
+  // Convert rate — use decimal.js for the conversion math (rule #2). Guard invalid input.
   const currentRate = rates[fromAsset]?.[toAsset] || 1;
-  const receiveAmount = (parseFloat(payAmount) || 0) * currentRate;
+  let payDec: Decimal;
+  try {
+    payDec = new Decimal(payAmount || 0);
+  } catch {
+    payDec = new Decimal(0);
+  }
+  const payIsPositive = payDec.gt(0);
+  const receiveAmount = payDec.times(currentRate);
 
   const handleMaxClick = () => {
     const bal = getBalance(fromAsset);
@@ -73,14 +81,14 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
 
   // Execute swap initiation
   const handleReviewSwapClick = () => {
-    if (!payAmount || parseFloat(payAmount) <= 0) return;
+    if (!payAmount || !payIsPositive) return;
 
     // Package the transaction details
     onPrepareSwap({
       fromSymbol: fromAsset,
       toSymbol: toAsset,
       fromAmount: payAmount,
-      toAmount: receiveAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      toAmount: receiveAmount.toNumber().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
       isHighRisk: isHighRiskScenario,
       rate: currentRate,
       gasFee: '$12.42'
@@ -193,7 +201,7 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
               </div>
               <div className="flex items-center justify-between gap-3 mt-1">
                 <div className="text-xl font-bold font-mono text-emerald-400">
-                  {receiveAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                  {receiveAmount.toNumber().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
                 </div>
 
                 {/* Token Selection output */}
@@ -253,9 +261,9 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
             {/* PRIMARY CALL TO ACTION */}
             <button
               onClick={handleReviewSwapClick}
-              disabled={!payAmount || parseFloat(payAmount) <= 0}
+              disabled={!payAmount || !payIsPositive}
               className={`w-full mt-2 py-4 rounded-xl font-sans font-bold text-base text-center transition-all duration-300 border flex items-center justify-center gap-2 cursor-pointer ${
-                (!payAmount || parseFloat(payAmount) <= 0)
+                (!payAmount || !payIsPositive)
                   ? 'bg-[#112643]/30 border-[#1E3559] text-[#8c90a0]/60 cursor-not-allowed'
                   : 'bg-gradient-to-r from-[#0059c7] to-[#2E7DFF] hover:from-[#2e7dff] hover:to-[#528dff] text-white border-[#528dff]/50 shadow-[0_0_20px_rgba(46,125,255,0.3)] hover:scale-[1.01] active:scale-100'
               }`}

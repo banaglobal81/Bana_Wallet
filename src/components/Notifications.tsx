@@ -292,7 +292,7 @@ export default function Notifications() {
   const fetchAll = useCallback(async () => {
     try {
       const [events, deposits, withdrawals, trades] = await Promise.all([
-        getNiaNotifications(undefined, 50),
+        getNiaNotifications(50),
         getNiaDeposits(),
         getNiaWithdrawals(),
         getNiaTrades(),

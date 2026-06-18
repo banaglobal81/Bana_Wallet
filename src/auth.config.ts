@@ -31,7 +31,14 @@ export const authConfig = {
         }
         return true;
       }
-      return isLoggedIn;
+      if (!isLoggedIn) {
+        // API clients expect JSON, not a 302 redirect to the HTML login page.
+        if (pathname.startsWith('/api/')) {
+          return Response.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
+        }
+        return false; // page route → Auth.js redirects to signIn
+      }
+      return true;
     },
     jwt({ token, user }) {
       if (user) {

@@ -11,6 +11,9 @@ export async function POST(req: Request) {
   const password = String(body.password ?? '');
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return NextResponse.json({ ok: false, error: 'Invalid email' }, { status: 400 });
   if (password.length < 8) return NextResponse.json({ ok: false, error: 'Password must be at least 8 characters' }, { status: 400 });
+  // bcrypt silently truncates input beyond 72 bytes — reject longer passwords so the
+  // user's full input is what actually protects the account (no surprise truncation).
+  if (Buffer.byteLength(password, 'utf8') > 72) return NextResponse.json({ ok: false, error: 'Password must be at most 72 bytes' }, { status: 400 });
   try {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return NextResponse.json({ ok: false, error: 'Email already registered' }, { status: 409 });

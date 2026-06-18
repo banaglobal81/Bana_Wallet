@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Decimal from 'decimal.js';
 import { Screen, SystemSettings } from '../types';
 import {
   Coins,
@@ -61,9 +62,16 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
 
   const pool = STAKING_POOLS.find((p) => p.symbol === selectedPool) || STAKING_POOLS[0];
 
-  const amount = parseFloat(stakeAmount) || 0;
+  // Use decimal.js for the stake amount & reward projection (rule #2). Guard invalid input.
+  let amount: Decimal;
+  try {
+    amount = new Decimal(stakeAmount || 0);
+  } catch {
+    amount = new Decimal(0);
+  }
+  const amountIsPositive = amount.gt(0);
   // Simple projected yearly reward estimate = amount * APY%
-  const projectedYearly = amount * (pool.apy / 100);
+  const projectedYearly = amount.times(new Decimal(pool.apy).div(100));
 
   const totalStakedValue = STAKING_POOLS.reduce((sum, p) => sum + p.staked, 0);
   const totalRewards = STAKING_POOLS.reduce((sum, p) => sum + p.rewards, 0);
@@ -208,7 +216,7 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
               <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
                 <span className="text-[#8c90a0] flex items-center gap-1">Est. yearly reward <Info className="h-3 w-3" /></span>
                 <span className="text-emerald-400 font-bold">
-                  +{projectedYearly.toLocaleString('en-US', { maximumFractionDigits: 4 })} {pool.symbol}
+                  +{projectedYearly.toNumber().toLocaleString('en-US', { maximumFractionDigits: 4 })} {pool.symbol}
                 </span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
@@ -225,9 +233,9 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
 
             {/* CTA (demo only) */}
             <button
-              disabled={amount <= 0}
+              disabled={!amountIsPositive}
               className={`w-full mt-1 py-4 rounded-xl font-sans font-bold text-base text-center transition-all duration-300 border flex items-center justify-center gap-2 cursor-pointer ${
-                amount <= 0
+                !amountIsPositive
                   ? 'bg-[#112643]/30 border-[#1E3559] text-[#8c90a0]/60 cursor-not-allowed'
                   : 'bg-gradient-to-r from-[#0059c7] to-[#2E7DFF] hover:from-[#2e7dff] hover:to-[#528dff] text-white border-[#528dff]/50 shadow-[0_0_20px_rgba(46,125,255,0.3)] hover:scale-[1.01] active:scale-100'
               }`}
