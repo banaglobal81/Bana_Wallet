@@ -3,6 +3,7 @@ export const runtime = 'nodejs';
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/db';
+import { newNiaUserId } from '@/lib/nia/identity';
 
 export async function POST(req: Request) {
   let body: any = {};
@@ -18,7 +19,9 @@ export async function POST(req: Request) {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return NextResponse.json({ ok: false, error: 'Email already registered' }, { status: 409 });
     const passwordHash = await bcrypt.hash(password, 12);
-    await prisma.user.create({ data: { email, passwordHash, role: 'USER' } });
+    // Mint a dedicated Nia-Hub end-user id so this account maps to its own
+    // Nia sub-account rather than sharing NIA_DEFAULT_USER_ID.
+    await prisma.user.create({ data: { email, passwordHash, role: 'USER', niaUserId: newNiaUserId() } });
     return NextResponse.json({ ok: true });
   } catch (e) {
     // P2002 = unique constraint race (two signups, same email)

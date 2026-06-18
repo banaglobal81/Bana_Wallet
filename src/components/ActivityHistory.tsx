@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Decimal from 'decimal.js';
 import { Screen, Activity, SystemSettings } from '../types';
 import { copyToClipboard } from '../utils/clipboard';
-import { getNiaDeposits, getNiaWithdrawals } from '../utils/niaApi';
+import { getNiaDeposits, getNiaWithdrawals, getNiaTrades } from '../utils/niaApi';
 import { 
   ArrowUpRight, 
   ArrowDownLeft, 
@@ -28,7 +29,10 @@ export default function ActivityHistory({ activities, settings, onNavigate }: Ac
   const [filter, setFilter] = useState<'All' | 'Completed' | 'Pending'>('All');
   const [copiedTx, setCopiedTx] = useState<string | null>(null);
 
-  // Live deposits/withdrawals from Nia-Hub (falls back to demo data when empty).
+  // Live activity from Nia-Hub — deposits (Receive), withdrawals (Send) and trades
+  // (Swap), merged and sorted newest-first. A SUCCESSFUL fetch is treated as live
+  // even when empty (shows a real "no activity" state); demo data is only the
+  // offline/error fallback so the UI is never blank in dev/preview.
   const [liveActs, setLiveActs] = useState<Activity[] | null>(null);
   const [source, setSource] = useState<'loading' | 'live' | 'demo'>('loading');
 
@@ -36,32 +40,80 @@ export default function ActivityHistory({ activities, settings, onNavigate }: Ac
     let cancelled = false;
     const mapStatus = (s: string): Activity['status'] =>
       s === 'COMPLETED' ? 'Completed' : s === 'PENDING' ? 'Pending' : s === 'FAILED' ? 'Failed' : 'Completed';
-    const fmt = (iso: string) => {
-      try { return new Date(iso).toISOString().replace('T', ' ').slice(0, 16) + ' UTC'; } catch { return iso || ''; }
+    const fmt = (v: unknown) => {
+      try { return new Date(v as any).toISOString().replace('T', ' ').slice(0, 16) + ' UTC'; } catch { return ''; }
+    };
+    const parseTs = (v: unknown): number => {
+      if (typeof v === 'number') return v;
+      const n = Date.parse(String(v ?? ''));
+      return Number.isNaN(n) ? 0 : n;
+    };
+    // Split a market symbol like "ETH_USDT" / "ETH/USDT" into [base, quote].
+    const splitSymbol = (sym: unknown): [string, string] => {
+      const parts = String(sym ?? '').split(/[_/-]/);
+      return [parts[0] || String(sym ?? ''), parts[1] || ''];
     };
 
     (async () => {
       try {
-        const [deps, wds] = await Promise.all([getNiaDeposits(), getNiaWithdrawals()]);
+        const [deps, wds, trades] = await Promise.all([
+          getNiaDeposits(), getNiaWithdrawals(), getNiaTrades(),
+        ]);
         if (cancelled) return;
-        const mapped: Activity[] = [
-          ...deps.map((d: any): Activity => ({
-            id: d.id || `dep-${d.txHash || Math.random()}`,
-            type: 'Receive', title: `Deposited ${d.amount} ${d.currency}`,
-            description: `${d.network || ''} network deposit`,
-            fromAmount: '0', fromSymbol: '', toAmount: String(d.amount ?? ''), toSymbol: d.currency || '',
-            timestamp: fmt(d.createdAt), status: mapStatus(d.status), txHash: d.txHash || d.id || '', gasFee: '—',
+
+        type Row = { ts: number; act: Activity };
+        const rows: Row[] = [
+          ...deps.map((d: any): Row => ({
+            ts: parseTs(d.createdAt ?? d.ts),
+            act: {
+              id: d.id || `dep-${d.txHash || d.createdAt || ''}`,
+              type: 'Receive', title: `Deposited ${d.amount} ${d.currency}`,
+              description: `${d.network || ''} network deposit`,
+              fromAmount: '0', fromSymbol: '', toAmount: String(d.amount ?? ''), toSymbol: d.currency || '',
+              timestamp: fmt(d.createdAt ?? d.ts), status: mapStatus(d.status), txHash: d.txHash || d.id || '', gasFee: '—',
+            },
           })),
-          ...wds.map((w: any): Activity => ({
-            id: w.id || w.withdrawalId || `wd-${Math.random()}`,
-            type: 'Send', title: `Withdrew ${w.amount} ${w.currency}`,
-            description: `${w.network || ''} network withdrawal`,
-            fromAmount: String(w.amount ?? ''), fromSymbol: w.currency || '', toAmount: '0', toSymbol: '',
-            timestamp: fmt(w.createdAt), status: mapStatus(w.status), txHash: w.txHash || w.withdrawalId || w.id || '', gasFee: '—',
+          ...wds.map((w: any): Row => ({
+            ts: parseTs(w.createdAt ?? w.ts),
+            act: {
+              id: w.id || w.withdrawalId || `wd-${w.createdAt || ''}`,
+              type: 'Send', title: `Withdrew ${w.amount} ${w.currency}`,
+              description: `${w.network || ''} network withdrawal`,
+              fromAmount: String(w.amount ?? ''), fromSymbol: w.currency || '', toAmount: '0', toSymbol: '',
+              timestamp: fmt(w.createdAt ?? w.ts), status: mapStatus(w.status), txHash: w.txHash || w.withdrawalId || w.id || '', gasFee: '—',
+            },
           })),
+          ...trades.map((t: any): Row => {
+            const [base, quote] = splitSymbol(t.symbol);
+            const isBuy = String(t.side ?? '').toUpperCase() === 'BUY';
+            const qty = String(t.quantity ?? t.qty ?? '0');
+            // Notional = qty * price (in the quote currency). decimal.js for the money math (rule #2).
+            let notional = '0';
+            try { notional = new Decimal(qty || 0).mul(t.price ?? 0).toFixed(); } catch { notional = '0'; }
+            // BUY: pay quote, receive base. SELL: pay base, receive quote.
+            const fromSymbol = isBuy ? quote : base;
+            const fromAmount = isBuy ? notional : qty;
+            const toSymbol = isBuy ? base : quote;
+            const toAmount = isBuy ? qty : notional;
+            return {
+              ts: parseTs(t.createdAt ?? t.ts),
+              act: {
+                id: `trade-${t.id ?? t.tradeId ?? t.orderId ?? t.createdAt ?? ''}`,
+                type: 'Swap',
+                title: fromSymbol && toSymbol ? `Swapped ${fromSymbol} for ${toSymbol}` : 'Trade executed',
+                description: `${t.symbol || ''}${t.side ? ' ' + String(t.side).toUpperCase() : ''}`.trim(),
+                fromAmount, fromSymbol, toAmount, toSymbol,
+                timestamp: fmt(t.createdAt ?? t.ts), status: mapStatus(t.status),
+                txHash: t.txHash || t.tradeId || t.orderId || t.id || '', gasFee: '—',
+              },
+            };
+          }),
         ];
-        if (mapped.length > 0) { setLiveActs(mapped); setSource('live'); }
-        else { setLiveActs(null); setSource('demo'); }
+
+        rows.sort((a, b) => b.ts - a.ts); // newest first
+        if (cancelled) return;
+        setLiveActs(rows.map((r) => r.act));
+        setSource('live'); // successful fetch → live, even when empty
       } catch {
         if (!cancelled) { setLiveActs(null); setSource('demo'); }
       }
@@ -75,8 +127,9 @@ export default function ActivityHistory({ activities, settings, onNavigate }: Ac
     setTimeout(() => setCopiedTx(null), 1500);
   };
 
-  // Use live records when available; otherwise the demo list.
-  const sourceActs = liveActs && liveActs.length > 0 ? liveActs : activities;
+  // On a successful fetch use the live records (even if empty); fall back to the
+  // demo list only while loading or when the fetch failed (offline/not configured).
+  const sourceActs = source === 'live' ? (liveActs ?? []) : activities;
   const filteredActivities = sourceActs.filter((act) => {
     if (filter === 'All') return true;
     return act.status === filter;

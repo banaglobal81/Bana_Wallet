@@ -20,6 +20,12 @@ import {
   getNiaWithdrawals,
   getNiaTrades,
 } from '../utils/niaApi';
+import {
+  getNotifPrefs,
+  onNotifPrefsChange,
+  categoryOf,
+  type NotifPrefs,
+} from '../utils/notifPrefs';
 
 // NotifType is the unified set used for icon/color mapping.
 // 'order_update' | 'position_update' | 'balance_update' | 'liquidation_warning'
@@ -267,6 +273,9 @@ export default function Notifications() {
   const [readIds, setReadIds] = useState<Set<string>>(() => new Set<string>());
   const [hydrated, setHydrated] = useState(false);
   const [, setTick] = useState(0); // forces relative-time refresh
+  // Display preferences (which categories to show). Start with all-enabled
+  // defaults so SSR and first client render match; sync from storage after mount.
+  const [prefs, setPrefs] = useState<NotifPrefs>({ deposit: true, withdraw: true, trade: true, events: true });
   const wrapRef = useRef<HTMLDivElement>(null);
   const openRef = useRef(open);
 
@@ -324,7 +333,15 @@ export default function Notifications() {
     );
   }, [readIds]);
 
-  const unread = items.filter((n) => !n.read).length;
+  // Sync display preferences from storage after mount, and live on change.
+  useEffect(() => {
+    setPrefs(getNotifPrefs());
+    return onNotifPrefsChange(() => setPrefs(getNotifPrefs()));
+  }, []);
+
+  // Only show categories the user has enabled.
+  const visibleItems = items.filter((n) => prefs[categoryOf(n.type)]);
+  const unread = visibleItems.filter((n) => !n.read).length;
 
   // Close panel on outside click / Escape.
   useEffect(() => {
@@ -403,16 +420,16 @@ export default function Notifications() {
           </div>
 
           <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-800/60">
-            {loading && items.length === 0 ? (
+            {loading && visibleItems.length === 0 ? (
               <div className="px-4 py-10 text-center text-xs font-mono text-slate-500">
                 Loading…
               </div>
-            ) : items.length === 0 ? (
+            ) : visibleItems.length === 0 ? (
               <div className="px-4 py-10 text-center text-xs font-mono text-slate-500">
-                No notifications yet.
+                {items.length === 0 ? 'No notifications yet.' : 'No notifications match your preferences.'}
               </div>
             ) : (
-              items.map((n) => (
+              visibleItems.map((n) => (
                 <div
                   key={n.id}
                   className={`group flex items-start gap-3 px-4 py-3 transition-colors ${n.read ? 'bg-transparent' : 'bg-indigo-500/5'} hover:bg-slate-800/40`}

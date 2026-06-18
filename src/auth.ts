@@ -4,6 +4,7 @@ import Google from 'next-auth/providers/google';
 import bcrypt from 'bcryptjs';
 import { authConfig } from './auth.config';
 import { prisma } from '@/lib/db';
+import { newNiaUserId } from '@/lib/nia/identity';
 
 // A valid bcrypt hash used only to equalize response time when no user exists,
 // so login timing can't be used to enumerate which emails have accounts.
@@ -52,8 +53,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         // otherwise leave the existing record untouched (update:{}).
         await prisma.user.upsert({
           where: { email },
+          // Mint a Nia-Hub end-user id for brand-new Google accounts. `update: {}`
+          // leaves existing accounts (and their existing niaUserId) untouched.
           update: {},
-          create: { email, role: 'USER' },
+          create: { email, role: 'USER', niaUserId: newNiaUserId() },
         });
         return true;
       }

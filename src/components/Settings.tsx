@@ -1,24 +1,26 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Decimal from 'decimal.js';
 import { Screen, SystemSettings } from '../types';
 import { copyToClipboard } from '../utils/clipboard';
 import { getNiaStatus, getNiaBalance, NiaStatus } from '../utils/niaApi';
-import { 
-  ShieldCheck, 
-  Copy, 
-  Check, 
-  Globe, 
-  Cpu, 
-  Zap, 
+import { getAccount, changePassword, AccountInfo } from '../utils/accountApi';
+import { getNotifPrefs, setNotifPref, onNotifPrefsChange, NOTIF_CATEGORIES, type NotifPrefs } from '../utils/notifPrefs';
+import {
+  ShieldCheck,
+  Copy,
+  Check,
+  Zap,
   RefreshCw,
-  Wallet,
   Sparkles,
   Lock,
-  ArrowRight,
   KeyRound,
   Link2,
-  Link2Off
+  Link2Off,
+  User,
+  Mail,
+  Bell
 } from 'lucide-react';
 
 interface SettingsProps {
@@ -63,17 +65,66 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
         ...(Array.isArray(data?.tradingBalances) ? data.tradingBalances : []),
         ...(Array.isArray(data) ? data : []),
       ];
-      const hasFunds = rows.some((r: any) => parseFloat(r?.balance ?? '0') > 0);
+      const hasFunds = rows.some((r: any) => {
+        try { return new Decimal(r?.balance ?? '0').gt(0); } catch { return false; }
+      });
       setFunded(hasFunds ? 'funded' : 'empty');
     } catch {
       setFunded('error');
     }
   };
 
+  // ---- Account info (email / role / auth method) ----
+  const [account, setAccount] = useState<AccountInfo | null>(null);
+  const [accountError, setAccountError] = useState<string | null>(null);
+
+  // ---- Change password form ----
+  const [curPw, setCurPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [pwSubmitting, setPwSubmitting] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwSuccess, setPwSuccess] = useState(false);
+
+  // ---- Notification display preferences ----
+  const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>(getNotifPrefs());
+
+  const handleChangePassword = async () => {
+    setPwError(null);
+    setPwSuccess(false);
+    if (newPw.length < 8) { setPwError('New password must be at least 8 characters'); return; }
+    if (newPw !== confirmPw) { setPwError('New password and confirmation do not match'); return; }
+    setPwSubmitting(true);
+    try {
+      await changePassword(curPw, newPw);
+      setPwSuccess(true);
+      setCurPw(''); setNewPw(''); setConfirmPw('');
+      setTimeout(() => setPwSuccess(false), 4000);
+    } catch (e: any) {
+      setPwError(e?.message || 'Could not change password');
+    } finally {
+      setPwSubmitting(false);
+    }
+  };
+
+  const toggleNotifPref = (key: keyof NotifPrefs) => {
+    const next = !notifPrefs[key];
+    setNotifPref(key, next);
+    setNotifPrefs((prev) => ({ ...prev, [key]: next }));
+  };
+
   useEffect(() => {
     (async () => {
       await checkNiaStatus();
     })();
+    // Load account info.
+    (async () => {
+      try { setAccount(await getAccount()); }
+      catch (e: any) { setAccountError(e?.message || 'Could not load account'); }
+    })();
+    // Sync notification prefs (in case another tab changed them).
+    setNotifPrefs(getNotifPrefs());
+    return onNotifPrefsChange(() => setNotifPrefs(getNotifPrefs()));
   }, []);
 
   const niaConnected = Boolean(niaStatus?.configured);
@@ -151,6 +202,103 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
         
         {/* Left Column Fields - Width 3/5 */}
         <div className="lg:col-span-3 min-w-0 flex flex-col gap-5">
+
+          {/* Section: Account */}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 bento-hover shadow-lg">
+            <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider flex items-center gap-2">
+              <User className="h-4 w-4 text-indigo-400" />
+              Account
+            </h3>
+            {accountError ? (
+              <div className="p-3.5 bg-rose-500/5 border border-rose-500/20 rounded-xl text-xs font-mono text-rose-300">
+                {accountError}
+              </div>
+            ) : !account ? (
+              <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-400">
+                Loading account…
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3 mt-1">
+                <div className="flex items-center justify-between gap-3 p-3.5 bg-slate-950 border border-slate-800 rounded-xl">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Mail className="h-4 w-4 text-slate-400 shrink-0" />
+                    <span className="font-mono text-xs text-slate-200 truncate">{account.email}</span>
+                  </div>
+                  <span className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold font-mono border ${
+                    account.role === 'ADMIN'
+                      ? 'bg-purple-500/10 text-purple-300 border-purple-500/25'
+                      : 'bg-slate-800 text-slate-300 border-slate-700'
+                  }`}>
+                    {account.role}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] font-mono text-slate-500">
+                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                  Signed in with {account.authMethod === 'google' ? 'Google' : 'email & password'}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Section: Security — change password */}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 bento-hover shadow-lg">
+            <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider flex items-center gap-2">
+              <Lock className="h-4 w-4 text-indigo-400" />
+              Security
+            </h3>
+            {account && account.authMethod === 'google' ? (
+              <p className="text-xs text-slate-400 leading-relaxed">
+                This account signs in with Google, so there{"'"}s no password to change here.
+                Manage it from your Google account.
+              </p>
+            ) : (
+              <>
+                <p className="text-xs text-slate-400 leading-relaxed">Change your login password.</p>
+                <div className="flex flex-col gap-2.5 mt-1">
+                  <input
+                    type="password"
+                    autoComplete="current-password"
+                    value={curPw}
+                    onChange={(e) => setCurPw(e.target.value)}
+                    placeholder="Current password"
+                    className="p-3.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs font-mono focus:outline-none text-slate-200 placeholder-slate-600 transition-colors"
+                  />
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    value={newPw}
+                    onChange={(e) => setNewPw(e.target.value)}
+                    placeholder="New password (min 8 characters)"
+                    className="p-3.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs font-mono focus:outline-none text-slate-200 placeholder-slate-600 transition-colors"
+                  />
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    value={confirmPw}
+                    onChange={(e) => setConfirmPw(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="p-3.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs font-mono focus:outline-none text-slate-200 placeholder-slate-600 transition-colors"
+                  />
+                  {pwError && (
+                    <div className="text-xs font-mono text-rose-300">{pwError}</div>
+                  )}
+                  {pwSuccess && (
+                    <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-mono font-bold">
+                      <Check className="h-4 w-4 shrink-0" /> Password updated successfully.
+                    </div>
+                  )}
+                  <button
+                    onClick={handleChangePassword}
+                    disabled={pwSubmitting || !curPw || !newPw || !confirmPw}
+                    className="self-start px-5 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl border border-indigo-500/20 font-bold text-xs transition-all cursor-pointer shadow-md select-none flex items-center gap-2"
+                  >
+                    {pwSubmitting && <RefreshCw className="h-3.5 w-3.5 animate-spin" />}
+                    {pwSubmitting ? 'Updating…' : 'Update password'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Section: Connect Nia Asset API */}
           <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 bento-hover shadow-lg">
@@ -425,6 +573,71 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
               >
                 Custom
               </button>
+            </div>
+
+            {settings.selectedSlippage === 'custom' && (
+              <div className="mt-2 flex flex-col gap-1.5 font-sans">
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={settings.customSlippage}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === '' || /^\d*\.?\d*$/.test(v)) onUpdateSettings({ customSlippage: v });
+                    }}
+                    placeholder="Custom %"
+                    className="w-full p-2.5 pr-8 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-lg text-xs font-mono focus:outline-none text-slate-200 placeholder-slate-600 transition-colors"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-mono">%</span>
+                </div>
+                {(() => {
+                  // Validate the custom slippage with decimal.js (rule #2).
+                  let warn: string | null = null;
+                  try {
+                    const d = new Decimal(settings.customSlippage || 0);
+                    if (d.lte(0)) warn = 'Enter a slippage greater than 0%.';
+                    else if (d.gt(50)) warn = 'Very high slippage — trades may lose significant value.';
+                  } catch { warn = 'Enter a valid number.'; }
+                  return warn ? <span className="text-[10px] font-mono text-amber-400">{warn}</span> : null;
+                })()}
+              </div>
+            )}
+          </div>
+
+          {/* Section F: Notification preferences */}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 font-mono text-xs bento-hover shadow-lg">
+            <h3 className="font-sans font-bold text-slate-100 text-[14px] uppercase tracking-wider mb-1 flex items-center gap-2">
+              <Bell className="h-4 w-4 text-indigo-400" />
+              Notifications
+            </h3>
+            <p className="text-xs font-sans text-slate-400 leading-relaxed">
+              Choose which activity appears in your notification feed.
+            </p>
+
+            <div className="flex flex-col gap-2 mt-1 font-sans">
+              {NOTIF_CATEGORIES.map((cat) => (
+                <div key={cat.key} className="flex items-center justify-between gap-3 p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-semibold text-slate-200">{cat.label}</div>
+                    <div className="text-[10px] text-slate-500">{cat.desc}</div>
+                  </div>
+                  <button
+                    onClick={() => toggleNotifPref(cat.key)}
+                    aria-label={`Toggle ${cat.label}`}
+                    aria-pressed={notifPrefs[cat.key]}
+                    className={`w-12 h-7 rounded-full p-1 transition-colors duration-300 relative cursor-pointer outline-none border shrink-0 ${
+                      notifPrefs[cat.key]
+                        ? 'bg-emerald-500/10 border-emerald-500/30'
+                        : 'bg-slate-800 border-slate-700'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full transition-all duration-300 absolute top-1 ${
+                      notifPrefs[cat.key] ? 'right-1 bg-emerald-400' : 'left-1 bg-slate-500'
+                    }`} />
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
 
