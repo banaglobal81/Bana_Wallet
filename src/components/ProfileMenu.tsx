@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Screen, SystemSettings } from '../types';
 import { copyToClipboard } from '../utils/clipboard';
 import { useSession, signOut } from 'next-auth/react';
+import { useLocale } from 'next-intl';
 import {
   Settings as SettingsIcon,
   Activity as ActivityIcon,
@@ -35,6 +36,7 @@ const Avatar = ({ className = '' }: { className?: string }) => (
 export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === 'ADMIN';
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -136,7 +138,7 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
             {/* Divider + Log out */}
             <div className="my-1 border-t border-slate-800" />
             <button
-              onClick={() => signOut({ redirectTo: '/login' })}
+              onClick={() => signOut({ redirectTo: `/${locale}/login` })}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
             >
               <LogOut className="h-4 w-4" /> Log out

@@ -1,7 +1,19 @@
+import createMiddleware from 'next-intl/middleware';
 import NextAuth from 'next-auth';
+import { NextResponse } from 'next/server';
 import { authConfig } from './auth.config';
+import { routing } from './i18n/routing';
 
-export const { auth: middleware } = NextAuth(authConfig);
+const intlMiddleware = createMiddleware(routing);
+const { auth } = NextAuth(authConfig);
+
+export default auth((req) => {
+  // API routes bypass both auth-redirect and intl rewriting — they are handled
+  // directly by Next.js route handlers. Auth protection for API routes is
+  // enforced in the `authorized` callback inside auth.config.ts.
+  if (req.nextUrl.pathname.startsWith('/api/')) return NextResponse.next();
+  return intlMiddleware(req);
+});
 
 export const config = {
   // `api/auth` (Auth.js) and `api/nia/webhook` (server-to-server, verified by its own

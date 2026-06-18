@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { useApp } from '@/app/providers';
 import { useScreenNav } from '@/lib/useScreenNav';
 import Swap from '@/components/Swap';

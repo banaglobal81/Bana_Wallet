@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n/navigation';
 import { Menu } from 'lucide-react';
 import { useApp } from '@/app/providers';
 import { useScreenNav, SCREEN_TO_PATH } from '@/lib/useScreenNav';

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import type { Screen } from '@/types';
 
 // Map every routable Screen value to its Next.js App Router path.

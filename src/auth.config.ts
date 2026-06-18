@@ -1,4 +1,16 @@
 import type { NextAuthConfig } from 'next-auth';
+import { routing } from './i18n/routing';
+
+const LOCALES = routing.locales;
+
+/** Strip the locale prefix from a pathname and return both parts. */
+function splitLocale(pathname: string): { locale: string; rest: string } {
+  const seg = pathname.split('/')[1];
+  if ((LOCALES as readonly string[]).includes(seg)) {
+    return { locale: seg, rest: pathname.slice(seg.length + 1) || '/' };
+  }
+  return { locale: routing.defaultLocale, rest: pathname };
+}
 
 export const authConfig = {
   trustHost: true,
@@ -13,30 +25,46 @@ export const authConfig = {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const role = (auth?.user as { role?: string } | undefined)?.role;
-      const { pathname } = nextUrl;
-      const isAuthPage = pathname === '/login' || pathname === '/signup';
+
+      const { locale, rest } = splitLocale(nextUrl.pathname);
+      // Helper: build an absolute URL under the current locale.
+      const p = (path: string) => new URL(`/${locale}${path}`, nextUrl);
+
+      // Auth pages (/login, /signup) — redirect logged-in users away.
+      const isAuthPage = rest === '/login' || rest === '/signup';
       if (isAuthPage) {
         if (isLoggedIn) {
           const dest = role === 'ADMIN' ? '/admin/settlement' : '/portfolio';
-          return Response.redirect(new URL(dest, nextUrl));
+          return Response.redirect(p(dest));
         }
         return true;
       }
-      const isAdminArea = pathname.startsWith('/admin') || pathname.startsWith('/api/admin');
+
+      // Admin area — requires ADMIN role.
+      const isAdminArea = rest.startsWith('/admin') || rest.startsWith('/api/admin');
       if (isAdminArea) {
-        if (!isLoggedIn) return false;
+        if (!isLoggedIn) {
+          if (rest.startsWith('/api/')) {
+            return Response.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
+          }
+          return false; // Auth.js redirects to signIn
+        }
         if (role !== 'ADMIN') {
-          if (pathname.startsWith('/api/')) return Response.json({ ok: false, error: 'Forbidden' }, { status: 403 });
-          return Response.redirect(new URL('/portfolio', nextUrl));
+          if (rest.startsWith('/api/')) {
+            return Response.json({ ok: false, error: 'Forbidden' }, { status: 403 });
+          }
+          return Response.redirect(p('/portfolio'));
         }
         return true;
       }
+
+      // All other protected routes.
       if (!isLoggedIn) {
         // API clients expect JSON, not a 302 redirect to the HTML login page.
-        if (pathname.startsWith('/api/')) {
+        if (rest.startsWith('/api/')) {
           return Response.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
         }
-        return false; // page route → Auth.js redirects to signIn
+        return Response.redirect(p('/login'));
       }
       return true;
     },

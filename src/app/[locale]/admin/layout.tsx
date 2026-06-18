@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link, usePathname } from '@/i18n/navigation';
 import { useSession } from 'next-auth/react';
 import { Building2, ArrowLeft, Lock, Coins } from 'lucide-react';
 import { useApp } from '@/app/providers';
