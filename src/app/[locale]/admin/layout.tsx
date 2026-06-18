@@ -2,6 +2,7 @@
 
 import { Link, usePathname } from '@/i18n/navigation';
 import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import { Building2, ArrowLeft, Lock, Coins } from 'lucide-react';
 import { useApp } from '@/app/providers';
 import { useScreenNav } from '@/lib/useScreenNav';
@@ -9,16 +10,19 @@ import BanaLogo from '@/components/BanaLogo';
 import Notifications from '@/components/Notifications';
 import ProfileMenu from '@/components/ProfileMenu';
 
-// Admin navigation entries (extend as the admin area grows).
-const ADMIN_NAV = [
-  { href: '/admin/settlement', label: 'Settlement', icon: Coins },
-];
-
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const { settings } = useApp();
   const navigate = useScreenNav();
+  const t = useTranslations('admin');
+  const nav = useTranslations('nav');
+  const common = useTranslations('common');
+
+  // Admin navigation entries (extend as the admin area grows).
+  const ADMIN_NAV = [
+    { href: '/admin/settlement', label: nav('settlement'), icon: Coins },
+  ];
 
   // While the session is loading, render nothing to avoid flash
   if (status === 'loading') {
@@ -34,11 +38,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Lock className="h-8 w-8 text-rose-400" />
           </div>
           <div>
-            <h2 className="text-xl font-extrabold text-white">Broker access only</h2>
+            <h2 className="text-xl font-extrabold text-white">{t('brokerAccessOnly')}</h2>
             <p className="mt-2 text-sm text-[#8c90a0] leading-relaxed">
-              The admin area is only available to{' '}
-              <span className="text-amber-400 font-bold">Admin accounts</span>. Sign in with an
-              admin account to continue.
+              {t.rich('brokerAccessBody', {
+                highlight: (chunks) => (
+                  <span className="text-amber-400 font-bold">{chunks}</span>
+                ),
+              })}
             </p>
           </div>
           <Link
@@ -46,7 +52,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#2E7DFF] text-white text-sm font-bold hover:bg-[#1a6aff] transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Wallet
+            {common('backToWallet')}
           </Link>
         </div>
       </div>
@@ -60,7 +66,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex items-center gap-3">
           <BanaLogo size="sm" />
           <span className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 font-bold text-[11px] font-mono tracking-wider select-none">
-            <Building2 className="h-3.5 w-3.5" /> ADMIN
+            <Building2 className="h-3.5 w-3.5" /> {t('badge')}
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -91,7 +97,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           href="/portfolio"
           className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold font-mono text-[#8c90a0] hover:text-white hover:bg-[#112643]/60 border border-transparent transition-colors"
         >
-          <ArrowLeft className="h-3.5 w-3.5" /> Back to Wallet
+          <ArrowLeft className="h-3.5 w-3.5" /> {common('backToWallet')}
         </Link>
       </nav>
 

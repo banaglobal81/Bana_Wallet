@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Screen, SystemSettings } from '../types';
 import { copyToClipboard } from '../utils/clipboard';
 import { useSession, signOut } from 'next-auth/react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   Settings as SettingsIcon,
   Activity as ActivityIcon,
@@ -37,6 +37,9 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === 'ADMIN';
   const locale = useLocale();
+  const t = useTranslations('profileMenu');
+  const nav = useTranslations('nav');
+  const common = useTranslations('common');
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -72,7 +75,7 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
     <div className="relative" ref={wrapRef}>
       <button
         onClick={() => setOpen((o) => !o)}
-        aria-label="Profile menu"
+        aria-label={t('profileButton')}
         aria-expanded={open}
         className="relative h-10 w-10 cursor-pointer transition-transform hover:scale-105 active:scale-95"
       >
@@ -90,7 +93,7 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
           <div className="p-4 flex items-center gap-3 border-b border-slate-800">
             <Avatar className="h-11 w-11 shrink-0" />
             <div className="min-w-0">
-              <div className="text-sm font-bold text-white">My Account</div>
+              <div className="text-sm font-bold text-white">{t('myAccount')}</div>
               {session?.user?.email && (
                 <div className="text-[11px] text-slate-400 truncate">{session.user.email}</div>
               )}
@@ -106,7 +109,7 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
             <div className="flex items-center gap-2">
               {isAdmin && (
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-400 border-amber-500/20">
-                  ADMIN
+                  {t('admin')}
                 </span>
               )}
               <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
@@ -114,7 +117,7 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                   : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
               }`}>
-                {settings.walletConnected ? '● CONNECTED' : '● OFFLINE'}
+                {settings.walletConnected ? t('connected') : t('offline')}
               </span>
             </div>
           </div>
@@ -123,16 +126,16 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
           <div className="py-1.5">
             <button onClick={handleCopy} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
               {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4 text-slate-400" />}
-              {copied ? 'Address copied' : 'Copy address'}
+              {copied ? t('addressCopied') : t('copyAddress')}
             </button>
             <button onClick={() => go('ACTIVITY_HISTORY')} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
-              <ActivityIcon className="h-4 w-4 text-slate-400" /> Activity
+              <ActivityIcon className="h-4 w-4 text-slate-400" /> {nav('activity')}
             </button>
             <button onClick={() => go('STAKING_INTERFACE')} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
-              <Coins className="h-4 w-4 text-slate-400" /> Staking
+              <Coins className="h-4 w-4 text-slate-400" /> {nav('staking')}
             </button>
             <button onClick={() => go('SETTINGS_INTERFACE')} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
-              <SettingsIcon className="h-4 w-4 text-slate-400" /> Settings
+              <SettingsIcon className="h-4 w-4 text-slate-400" /> {nav('settings')}
             </button>
 
             {/* Divider + Log out */}
@@ -141,7 +144,7 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
               onClick={() => signOut({ redirectTo: `/${locale}/login` })}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
             >
-              <LogOut className="h-4 w-4" /> Log out
+              <LogOut className="h-4 w-4" /> {common('logOut')}
             </button>
           </div>
 

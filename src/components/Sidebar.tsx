@@ -3,6 +3,7 @@
 import React from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
 import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import { Screen, SystemSettings } from '../types';
 import BanaLogo from './BanaLogo';
 import {
@@ -37,6 +38,8 @@ export default function Sidebar({
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === 'ADMIN';
   const pathname = usePathname();
+  const nav = useTranslations('nav');
+  const sb = useTranslations('sidebar');
 
   // Work out transition directions depending on navigation source and destination
   const navigateTo = (target: Screen) => {
@@ -91,7 +94,7 @@ export default function Sidebar({
         {/* Mobile-only close button */}
         <button
           onClick={onCloseMobile}
-          aria-label="Close navigation menu"
+          aria-label={sb('closeMenu')}
           className="lg:hidden absolute top-5 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
         >
           <X className="h-5 w-5" />
@@ -117,7 +120,7 @@ export default function Sidebar({
             }`}
           >
             <LayoutDashboard className={`h-5 w-5 ${isActive('PORTFOLIO_DASHBOARD') ? 'text-indigo-400' : 'text-slate-400'}`} />
-            Portfolio
+            {nav('portfolio')}
           </a>
 
           {/* Wallet */}
@@ -134,7 +137,7 @@ export default function Sidebar({
             }`}
           >
             <Wallet className={`h-5 w-5 ${isActive('WALLET_INTERFACE') ? 'text-indigo-400' : 'text-slate-400'}`} />
-            Wallet
+            {nav('wallet')}
           </a>
 
           {/* Swap Assets */}
@@ -151,7 +154,7 @@ export default function Sidebar({
             }`}
           >
             <ArrowLeftRight className={`h-5 w-5 ${isActive('SWAP_INTERFACE') ? 'text-indigo-400' : 'text-slate-400'}`} />
-            Swap
+            {nav('swap')}
           </a>
 
           {/* Staking */}
@@ -168,7 +171,7 @@ export default function Sidebar({
             }`}
           >
             <Coins className={`h-5 w-5 ${isActive('STAKING_INTERFACE') ? 'text-indigo-400' : 'text-slate-400'}`} />
-            Staking
+            {nav('staking')}
           </a>
 
           {/* Activity Log */}
@@ -185,7 +188,7 @@ export default function Sidebar({
             }`}
           >
             <Activity className={`h-5 w-5 ${isActive('ACTIVITY_HISTORY') ? 'text-indigo-400' : 'text-slate-400'}`} />
-            Activity
+            {nav('activity')}
           </a>
 
           {/* Settings Section */}
@@ -202,7 +205,7 @@ export default function Sidebar({
             }`}
           >
             <SettingsIcon className={`h-5 w-5 ${isActive('SETTINGS_INTERFACE') ? 'text-indigo-400' : 'text-slate-400'}`} />
-            Settings
+            {nav('settings')}
           </a>
 
           {/* Settlement — admin-only entry */}
@@ -217,7 +220,7 @@ export default function Sidebar({
               }`}
             >
               <Building2 className={`h-5 w-5 ${pathname === '/admin/settlement' ? 'text-amber-400' : 'text-slate-400'}`} />
-              Settlement
+              {nav('settlement')}
             </Link>
           )}
         </nav>
@@ -230,26 +233,26 @@ export default function Sidebar({
           <div className="flex items-center justify-between">
             <span className="text-xs font-mono text-slate-400 flex items-center gap-1.5 font-bold uppercase tracking-widest">
               <Radio className="h-3.5 w-3.5 text-indigo-400 animate-pulse" />
-              {settings.activeChain} Node
+              {settings.activeChain} {sb('nodeLabel')}
             </span>
             <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              ● ONLINE
+              {sb('online')}
             </span>
           </div>
 
           <div className="flex items-center justify-between text-xs font-medium">
             <span className="text-slate-400 flex items-center gap-1 font-semibold">
-              <Lock className="h-3 w-3" /> Secure MEV
+              <Lock className="h-3 w-3" /> {sb('secureMev')}
             </span>
             <span className={`font-bold font-mono ${settings.mevProtection ? 'text-indigo-400' : 'text-rose-400'}`}>
-              {settings.mevProtection ? 'ACTIVE' : 'INACTIVE'}
+              {settings.mevProtection ? sb('mevActive') : sb('mevInactive')}
             </span>
           </div>
         </div>
 
         {/* Vault address (static, informational) */}
         <div className="w-full py-3 rounded-xl bg-slate-800/40 border border-slate-700/50 flex flex-col items-center select-none">
-          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Vault Address</span>
+          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{sb('vaultAddress')}</span>
           <span className="font-mono text-sm text-slate-200 tracking-wide mt-0.5">{truncateAddress(settings.connectedWallet)}</span>
         </div>
       </div>

@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { signIn } from 'next-auth/react';
 import { Mail, Lock, LogIn, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
+  const t = useTranslations('login');
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,7 +22,7 @@ export default function LoginPage() {
     try {
       await signIn('google', { callbackUrl: '/' });
     } catch {
-      setNotice('Could not start Google sign-in. Please try again.');
+      setNotice(t('googleError'));
     }
   };
 
@@ -32,7 +34,7 @@ export default function LoginPage() {
     try {
       const res = await signIn('credentials', { email, password, redirect: false });
       if (res?.error) {
-        setError('Invalid email or password');
+        setError(t('errorInvalidCredentials'));
       } else {
         router.push('/');
         router.refresh();
@@ -45,14 +47,14 @@ export default function LoginPage() {
   return (
     <div className="w-full max-w-md">
       <div className="bana-glass rounded-2xl p-8 shadow-2xl shadow-black/40">
-        <h1 className="text-2xl font-extrabold text-white mb-1">Sign in</h1>
-        <p className="text-sm text-slate-400 mb-7">Welcome back to BANA Wallet</p>
+        <h1 className="text-2xl font-extrabold text-white mb-1">{t('title')}</h1>
+        <p className="text-sm text-slate-400 mb-7">{t('subtitle')}</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           {/* Email */}
           <div className="flex flex-col gap-1.5">
             <label htmlFor="email" className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
-              Email
+              {t('emailLabel')}
             </label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
@@ -63,7 +65,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
+                placeholder={t('emailPlaceholder')}
                 className="w-full pl-10 pr-4 py-3 bg-slate-950/60 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-colors"
               />
             </div>
@@ -72,7 +74,7 @@ export default function LoginPage() {
           {/* Password */}
           <div className="flex flex-col gap-1.5">
             <label htmlFor="password" className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
-              Password
+              {t('passwordLabel')}
             </label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
@@ -83,7 +85,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder={t('passwordPlaceholder')}
                 className="w-full pl-10 pr-4 py-3 bg-slate-950/60 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-colors"
               />
             </div>
@@ -108,14 +110,14 @@ export default function LoginPage() {
             ) : (
               <LogIn className="h-4 w-4" />
             )}
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? t('submitting') : t('submit')}
           </button>
         </form>
 
         {/* Divider */}
         <div className="flex items-center gap-3 my-5">
           <span className="h-px flex-1 bg-slate-700/60" />
-          <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">or</span>
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">{t('divider')}</span>
           <span className="h-px flex-1 bg-slate-700/60" />
         </div>
 
@@ -131,7 +133,7 @@ export default function LoginPage() {
             <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" />
             <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571.001-.001 6.19 5.238 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" />
           </svg>
-          Continue with Google
+          {t('continueWithGoogle')}
         </button>
 
         {/* Coming-soon notice */}
@@ -140,9 +142,9 @@ export default function LoginPage() {
         )}
 
         <p className="mt-6 text-center text-sm text-slate-500">
-          No account?{' '}
+          {t('noAccount')}{' '}
           <Link href="/signup" className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
-            Create one
+            {t('createOne')}
           </Link>
         </p>
       </div>
