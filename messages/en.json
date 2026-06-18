@@ -1,0 +1,15 @@
+{
+  "common": {
+    "backToWallet": "Back to Wallet",
+    "logOut": "Log out"
+  },
+  "nav": {
+    "portfolio": "Portfolio",
+    "wallet": "Wallet",
+    "swap": "Swap",
+    "staking": "Staking",
+    "activity": "Activity",
+    "settings": "Settings",
+    "settlement": "Settlement"
+  }
+}

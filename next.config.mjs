@@ -1,9 +1,12 @@
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Phase 3 complete: /api/nia/* route handlers are now live.
-  // The temporary rewrites() block that proxied to the legacy Express backend
-  // has been removed — Next.js App Router handles all /api/nia/* traffic directly.
+  // /api/nia/* and /api/admin/* are handled by Next.js Route Handlers.
+  // i18n locale routing (/<locale>/...) is provided by next-intl (src/i18n/*).
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);
