@@ -48,6 +48,16 @@ body {
   border-color: rgba(99, 102, 241, 0.3);
 }
 
+/* Keep browser-autofilled inputs on-theme (Chrome paints a light box by default) */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff;
+  -webkit-box-shadow: 0 0 0 1000px #020617 inset;
+  caret-color: #ffffff;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 /* Webkit scrollbar for premium modular looks */
 ::-webkit-scrollbar {
   width: 6px;

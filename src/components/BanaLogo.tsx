@@ -33,7 +33,7 @@ export default function BanaLogo({ className = '', size = 'md' }: BanaLogoProps)
         <div className={`font-sans font-bold tracking-wider leading-none text-white ${current.textTitle}`}>
           BANA
         </div>
-        <div className={`font-mono text-[#8c90a0] font-bold tracking-widest uppercase mt-0.5 ${current.textSub}`}>
+        <div className={`font-mono text-[#8c90a0] font-bold tracking-wide uppercase mt-0.5 ${current.textSub}`}>
           RWA &amp; Healthcare
         </div>
       </div>
