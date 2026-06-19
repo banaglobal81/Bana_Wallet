@@ -1,0 +1,95 @@
+{
+  "common": {
+    "backToWallet": "返回钱包",
+    "logOut": "退出登录"
+  },
+  "nav": {
+    "portfolio": "投资组合",
+    "wallet": "钱包",
+    "swap": "兑换",
+    "staking": "质押",
+    "activity": "活动",
+    "settings": "设置",
+    "settlement": "结算"
+  },
+  "login": {
+    "title": "登录",
+    "subtitle": "欢迎回到 BANA 钱包",
+    "emailLabel": "电子邮箱",
+    "emailPlaceholder": "请输入邮箱",
+    "passwordLabel": "密码",
+    "passwordPlaceholder": "请输入密码",
+    "submit": "登录",
+    "submitting": "登录中…",
+    "divider": "或",
+    "continueWithGoogle": "使用 Google 继续",
+    "errorInvalidCredentials": "邮箱或密码错误",
+    "googleError": "无法启动 Google 登录，请重试。",
+    "noAccount": "还没有账户？",
+    "createOne": "创建账户"
+  },
+  "signup": {
+    "title": "创建账户",
+    "subtitle": "开始使用 BANA 钱包",
+    "emailLabel": "电子邮箱",
+    "emailPlaceholder": "you@example.com",
+    "passwordLabel": "密码",
+    "passwordPlaceholder": "········",
+    "confirmPasswordLabel": "确认密码",
+    "confirmPasswordPlaceholder": "········",
+    "submit": "创建账户",
+    "submitting": "正在创建账户…",
+    "errorPasswordMismatch": "两次输入的密码不一致",
+    "errorEmailTaken": "该邮箱已被注册",
+    "errorPasswordTooShort": "密码至少需要 8 个字符",
+    "errorGeneric": "出错了",
+    "haveAccount": "已有账户？",
+    "signIn": "登录"
+  },
+  "sidebar": {
+    "closeMenu": "关闭导航菜单",
+    "nodeLabel": "节点",
+    "online": "● 在线",
+    "secureMev": "安全 MEV",
+    "mevActive": "已启用",
+    "mevInactive": "已禁用",
+    "vaultAddress": "金库地址"
+  },
+  "profileMenu": {
+    "profileButton": "个人菜单",
+    "myAccount": "我的账户",
+    "copyAddress": "复制地址",
+    "addressCopied": "地址已复制",
+    "admin": "管理员",
+    "connected": "● 已连接",
+    "offline": "● 离线"
+  },
+  "admin": {
+    "badge": "管理员",
+    "brokerAccessOnly": "仅限经纪商访问",
+    "brokerAccessBody": "管理区域仅向<highlight>管理员账户</highlight>开放。请使用管理员账户登录。",
+    "backToWallet": "返回钱包",
+    "settlementNavLabel": "结算"
+  },
+  "settlement": {
+    "pageTitle": "结算",
+    "pageSubtitle": "经纪商 / 管理员 — 佣金、结算与租户概览。",
+    "adminModeBadge": "管理员模式",
+    "niaBadge": "NIA 安全",
+    "brokerTenantTitle": "经纪商 / 租户",
+    "tenantIdLabel": "租户 ID",
+    "unsettledCommission": "未结算佣金",
+    "tradeCount": "交易数",
+    "settlementHistory": "结算记录",
+    "loading": "加载中…",
+    "failedToLoad": "加载失败",
+    "historyError": "无法加载结算记录，请确认后端是否正在运行。",
+    "noSettlementsYet": "暂无结算记录",
+    "noSettlementsBody": "中心与您的经纪商账户之间的佣金结算将显示在此处。",
+    "settled": "已结算",
+    "adminNoteBody": "作为<highlight>管理员 / 经纪商</highlight>，您负责管理用户并收取佣金。最终用户的钱包和入金在 Nia-Hub 端创建，此面板通过 API 密钥反映您租户的真实结算数据。",
+    "accessDeniedTitle": "仅限管理员访问",
+    "accessDeniedBody": "结算面板仅向<highlight>管理员账户</highlight>开放。请使用管理员账户登录以访问佣金和结算数据。",
+    "backToPortfolio": "返回投资组合"
+  }
+}

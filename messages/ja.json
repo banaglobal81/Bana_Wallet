@@ -1,0 +1,95 @@
+{
+  "common": {
+    "backToWallet": "ウォレットに戻る",
+    "logOut": "ログアウト"
+  },
+  "nav": {
+    "portfolio": "ポートフォリオ",
+    "wallet": "ウォレット",
+    "swap": "スワップ",
+    "staking": "ステーキング",
+    "activity": "アクティビティ",
+    "settings": "設定",
+    "settlement": "精算"
+  },
+  "login": {
+    "title": "ログイン",
+    "subtitle": "BANA ウォレットへおかえりなさい",
+    "emailLabel": "メールアドレス",
+    "emailPlaceholder": "メールアドレスを入力",
+    "passwordLabel": "パスワード",
+    "passwordPlaceholder": "パスワードを入力",
+    "submit": "ログイン",
+    "submitting": "ログイン中…",
+    "divider": "または",
+    "continueWithGoogle": "Google で続行",
+    "errorInvalidCredentials": "メールアドレスまたはパスワードが正しくありません",
+    "googleError": "Google ログインを開始できませんでした。もう一度お試しください。",
+    "noAccount": "アカウントをお持ちでないですか？",
+    "createOne": "アカウントを作成"
+  },
+  "signup": {
+    "title": "アカウント作成",
+    "subtitle": "BANA ウォレットを始めましょう",
+    "emailLabel": "メールアドレス",
+    "emailPlaceholder": "you@example.com",
+    "passwordLabel": "パスワード",
+    "passwordPlaceholder": "········",
+    "confirmPasswordLabel": "パスワード（確認）",
+    "confirmPasswordPlaceholder": "········",
+    "submit": "アカウント作成",
+    "submitting": "アカウント作成中…",
+    "errorPasswordMismatch": "パスワードが一致しません",
+    "errorEmailTaken": "このメールアドレスは既に登録されています",
+    "errorPasswordTooShort": "パスワードは8文字以上で入力してください",
+    "errorGeneric": "問題が発生しました",
+    "haveAccount": "すでにアカウントをお持ちですか？",
+    "signIn": "ログイン"
+  },
+  "sidebar": {
+    "closeMenu": "ナビゲーションメニューを閉じる",
+    "nodeLabel": "ノード",
+    "online": "● オンライン",
+    "secureMev": "セキュア MEV",
+    "mevActive": "有効",
+    "mevInactive": "無効",
+    "vaultAddress": "ボルトアドレス"
+  },
+  "profileMenu": {
+    "profileButton": "プロフィールメニュー",
+    "myAccount": "マイアカウント",
+    "copyAddress": "アドレスをコピー",
+    "addressCopied": "アドレスをコピーしました",
+    "admin": "管理者",
+    "connected": "● 接続済み",
+    "offline": "● オフライン"
+  },
+  "admin": {
+    "badge": "管理者",
+    "brokerAccessOnly": "ブローカー専用アクセス",
+    "brokerAccessBody": "管理者エリアは<highlight>管理者アカウント</highlight>のみ利用できます。管理者アカウントでログインしてください。",
+    "backToWallet": "ウォレットに戻る",
+    "settlementNavLabel": "精算"
+  },
+  "settlement": {
+    "pageTitle": "精算",
+    "pageSubtitle": "ブローカー / 管理者 — 手数料、精算、テナント概要。",
+    "adminModeBadge": "管理者モード",
+    "niaBadge": "NIA セキュア",
+    "brokerTenantTitle": "ブローカー / テナント",
+    "tenantIdLabel": "テナント ID",
+    "unsettledCommission": "未精算手数料",
+    "tradeCount": "取引数",
+    "settlementHistory": "精算履歴",
+    "loading": "読み込み中…",
+    "failedToLoad": "読み込みに失敗しました",
+    "historyError": "精算履歴を読み込めませんでした。バックエンドが稼働しているか確認してください。",
+    "noSettlementsYet": "精算履歴はまだありません",
+    "noSettlementsBody": "ハブとブローカーアカウント間の手数料精算がここに表示されます。",
+    "settled": "精算済み",
+    "adminNoteBody": "<highlight>管理者 / ブローカー</highlight>として、ユーザーを管理し手数料を回収します。エンドユーザーのウォレットと入金は Nia-Hub 側で作成され、このパネルは API キーを通じてテナントの実際の精算データを反映します。",
+    "accessDeniedTitle": "管理者専用アクセス",
+    "accessDeniedBody": "精算パネルは<highlight>管理者アカウント</highlight>のみ利用できます。管理者アカウントでログインして手数料および精算データにアクセスしてください。",
+    "backToPortfolio": "ポートフォリオに戻る"
+  }
+}

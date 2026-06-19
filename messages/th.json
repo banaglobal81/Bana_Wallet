@@ -1,0 +1,95 @@
+{
+  "common": {
+    "backToWallet": "กลับไปที่กระเป๋าเงิน",
+    "logOut": "ออกจากระบบ"
+  },
+  "nav": {
+    "portfolio": "พอร์ตโฟลิโอ",
+    "wallet": "กระเป๋าเงิน",
+    "swap": "สวอป",
+    "staking": "สเตกกิ้ง",
+    "activity": "กิจกรรม",
+    "settings": "การตั้งค่า",
+    "settlement": "การชำระบัญชี"
+  },
+  "login": {
+    "title": "เข้าสู่ระบบ",
+    "subtitle": "ยินดีต้อนรับกลับสู่ BANA Wallet",
+    "emailLabel": "อีเมล",
+    "emailPlaceholder": "กรอกอีเมลของคุณ",
+    "passwordLabel": "รหัสผ่าน",
+    "passwordPlaceholder": "กรอกรหัสผ่านของคุณ",
+    "submit": "เข้าสู่ระบบ",
+    "submitting": "กำลังเข้าสู่ระบบ…",
+    "divider": "หรือ",
+    "continueWithGoogle": "ดำเนินการต่อด้วย Google",
+    "errorInvalidCredentials": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+    "googleError": "ไม่สามารถเริ่มการเข้าสู่ระบบด้วย Google ได้ กรุณาลองใหม่อีกครั้ง",
+    "noAccount": "ยังไม่มีบัญชี?",
+    "createOne": "สร้างบัญชี"
+  },
+  "signup": {
+    "title": "สร้างบัญชี",
+    "subtitle": "เริ่มต้นใช้งาน BANA Wallet",
+    "emailLabel": "อีเมล",
+    "emailPlaceholder": "you@example.com",
+    "passwordLabel": "รหัสผ่าน",
+    "passwordPlaceholder": "········",
+    "confirmPasswordLabel": "ยืนยันรหัสผ่าน",
+    "confirmPasswordPlaceholder": "········",
+    "submit": "สร้างบัญชี",
+    "submitting": "กำลังสร้างบัญชี…",
+    "errorPasswordMismatch": "รหัสผ่านไม่ตรงกัน",
+    "errorEmailTaken": "อีเมลนี้ถูกลงทะเบียนแล้ว",
+    "errorPasswordTooShort": "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร",
+    "errorGeneric": "เกิดข้อผิดพลาด",
+    "haveAccount": "มีบัญชีอยู่แล้ว?",
+    "signIn": "เข้าสู่ระบบ"
+  },
+  "sidebar": {
+    "closeMenu": "ปิดเมนูนำทาง",
+    "nodeLabel": "โหนด",
+    "online": "● ออนไลน์",
+    "secureMev": "MEV ปลอดภัย",
+    "mevActive": "เปิดใช้งาน",
+    "mevInactive": "ปิดใช้งาน",
+    "vaultAddress": "ที่อยู่วอลต์"
+  },
+  "profileMenu": {
+    "profileButton": "เมนูโปรไฟล์",
+    "myAccount": "บัญชีของฉัน",
+    "copyAddress": "คัดลอกที่อยู่",
+    "addressCopied": "คัดลอกที่อยู่แล้ว",
+    "admin": "ผู้ดูแลระบบ",
+    "connected": "● เชื่อมต่อแล้ว",
+    "offline": "● ออฟไลน์"
+  },
+  "admin": {
+    "badge": "ผู้ดูแลระบบ",
+    "brokerAccessOnly": "เฉพาะโบรกเกอร์เท่านั้น",
+    "brokerAccessBody": "พื้นที่ผู้ดูแลระบบใช้ได้เฉพาะ<highlight>บัญชีผู้ดูแลระบบ</highlight>เท่านั้น กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบเพื่อดำเนินการต่อ",
+    "backToWallet": "กลับไปที่กระเป๋าเงิน",
+    "settlementNavLabel": "การชำระบัญชี"
+  },
+  "settlement": {
+    "pageTitle": "การชำระบัญชี",
+    "pageSubtitle": "โบรกเกอร์ / ผู้ดูแลระบบ — ค่าคอมมิชชัน การชำระบัญชี และภาพรวมเทแนนต์",
+    "adminModeBadge": "โหมดผู้ดูแลระบบ",
+    "niaBadge": "NIA ปลอดภัย",
+    "brokerTenantTitle": "โบรกเกอร์ / เทแนนต์",
+    "tenantIdLabel": "รหัสเทแนนต์",
+    "unsettledCommission": "ค่าคอมมิชชันที่ยังไม่ชำระ",
+    "tradeCount": "จำนวนการเทรด",
+    "settlementHistory": "ประวัติการชำระบัญชี",
+    "loading": "กำลังโหลด…",
+    "failedToLoad": "โหลดไม่สำเร็จ",
+    "historyError": "ไม่สามารถโหลดประวัติการชำระบัญชีได้ กรุณาตรวจสอบว่าแบ็กเอนด์กำลังทำงานอยู่",
+    "noSettlementsYet": "ยังไม่มีการชำระบัญชี",
+    "noSettlementsBody": "การชำระค่าคอมมิชชันระหว่างฮับกับบัญชีโบรกเกอร์ของคุณจะแสดงที่นี่",
+    "settled": "ชำระแล้ว",
+    "adminNoteBody": "ในฐานะ<highlight>ผู้ดูแลระบบ / โบรกเกอร์</highlight> คุณจัดการผู้ใช้และเก็บค่าคอมมิชชัน กระเป๋าเงินและการฝากเงินของผู้ใช้ปลายทางถูกสร้างขึ้นที่ฝั่ง Nia-Hub แผงนี้แสดงข้อมูลการชำระบัญชีจริงของเทแนนต์ผ่านคีย์ API",
+    "accessDeniedTitle": "เฉพาะผู้ดูแลระบบเท่านั้น",
+    "accessDeniedBody": "แผงการชำระบัญชีใช้ได้เฉพาะ<highlight>บัญชีผู้ดูแลระบบ</highlight>เท่านั้น กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบเพื่อเข้าถึงข้อมูลค่าคอมมิชชันและการชำระบัญชี",
+    "backToPortfolio": "กลับไปที่พอร์ตโฟลิโอ"
+  }
+}

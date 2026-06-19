@@ -1,0 +1,95 @@
+{
+  "common": {
+    "backToWallet": "Quay lại ví",
+    "logOut": "Đăng xuất"
+  },
+  "nav": {
+    "portfolio": "Danh mục",
+    "wallet": "Ví",
+    "swap": "Hoán đổi",
+    "staking": "Staking",
+    "activity": "Hoạt động",
+    "settings": "Cài đặt",
+    "settlement": "Thanh toán bù trừ"
+  },
+  "login": {
+    "title": "Đăng nhập",
+    "subtitle": "Chào mừng trở lại BANA Wallet",
+    "emailLabel": "Email",
+    "emailPlaceholder": "Nhập email của bạn",
+    "passwordLabel": "Mật khẩu",
+    "passwordPlaceholder": "Nhập mật khẩu của bạn",
+    "submit": "Đăng nhập",
+    "submitting": "Đang đăng nhập…",
+    "divider": "hoặc",
+    "continueWithGoogle": "Tiếp tục với Google",
+    "errorInvalidCredentials": "Email hoặc mật khẩu không đúng",
+    "googleError": "Không thể bắt đầu đăng nhập bằng Google. Vui lòng thử lại.",
+    "noAccount": "Chưa có tài khoản?",
+    "createOne": "Tạo tài khoản"
+  },
+  "signup": {
+    "title": "Tạo tài khoản",
+    "subtitle": "Bắt đầu với BANA Wallet",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@example.com",
+    "passwordLabel": "Mật khẩu",
+    "passwordPlaceholder": "········",
+    "confirmPasswordLabel": "Xác nhận mật khẩu",
+    "confirmPasswordPlaceholder": "········",
+    "submit": "Tạo tài khoản",
+    "submitting": "Đang tạo tài khoản…",
+    "errorPasswordMismatch": "Mật khẩu không khớp",
+    "errorEmailTaken": "Email đã được đăng ký",
+    "errorPasswordTooShort": "Mật khẩu phải có ít nhất 8 ký tự",
+    "errorGeneric": "Đã xảy ra lỗi",
+    "haveAccount": "Đã có tài khoản?",
+    "signIn": "Đăng nhập"
+  },
+  "sidebar": {
+    "closeMenu": "Đóng menu điều hướng",
+    "nodeLabel": "Nút",
+    "online": "● TRỰC TUYẾN",
+    "secureMev": "MEV bảo mật",
+    "mevActive": "BẬT",
+    "mevInactive": "TẮT",
+    "vaultAddress": "Địa chỉ kho"
+  },
+  "profileMenu": {
+    "profileButton": "Menu hồ sơ",
+    "myAccount": "Tài khoản của tôi",
+    "copyAddress": "Sao chép địa chỉ",
+    "addressCopied": "Đã sao chép địa chỉ",
+    "admin": "QUẢN TRỊ",
+    "connected": "● ĐÃ KẾT NỐI",
+    "offline": "● NGOẠI TUYẾN"
+  },
+  "admin": {
+    "badge": "QUẢN TRỊ",
+    "brokerAccessOnly": "Chỉ dành cho nhà môi giới",
+    "brokerAccessBody": "Khu vực quản trị chỉ dành cho <highlight>tài khoản quản trị</highlight>. Vui lòng đăng nhập bằng tài khoản quản trị để tiếp tục.",
+    "backToWallet": "Quay lại ví",
+    "settlementNavLabel": "Thanh toán bù trừ"
+  },
+  "settlement": {
+    "pageTitle": "Thanh toán bù trừ",
+    "pageSubtitle": "Nhà môi giới / Quản trị — hoa hồng, thanh toán và tổng quan tenant.",
+    "adminModeBadge": "CHẾ ĐỘ QUẢN TRỊ",
+    "niaBadge": "NIA BẢO MẬT",
+    "brokerTenantTitle": "Nhà môi giới / Tenant",
+    "tenantIdLabel": "ID Tenant",
+    "unsettledCommission": "Hoa hồng chưa thanh toán",
+    "tradeCount": "Số giao dịch",
+    "settlementHistory": "Lịch sử thanh toán",
+    "loading": "Đang tải…",
+    "failedToLoad": "Tải thất bại",
+    "historyError": "Không thể tải lịch sử thanh toán. Hãy đảm bảo backend đang chạy.",
+    "noSettlementsYet": "Chưa có thanh toán nào",
+    "noSettlementsBody": "Các khoản thanh toán hoa hồng giữa hub và tài khoản nhà môi giới của bạn sẽ hiển thị ở đây.",
+    "settled": "ĐÃ THANH TOÁN",
+    "adminNoteBody": "Với vai trò <highlight>quản trị / nhà môi giới</highlight>, bạn quản lý người dùng và thu hoa hồng. Ví và nạp tiền của người dùng cuối được tạo ở phía Nia-Hub; bảng này phản ánh dữ liệu thanh toán thực của tenant qua khóa API.",
+    "accessDeniedTitle": "Chỉ dành cho quản trị",
+    "accessDeniedBody": "Bảng thanh toán chỉ dành cho <highlight>tài khoản quản trị</highlight>. Vui lòng đăng nhập bằng tài khoản quản trị để truy cập dữ liệu hoa hồng và thanh toán.",
+    "backToPortfolio": "Quay lại danh mục"
+  }
+}

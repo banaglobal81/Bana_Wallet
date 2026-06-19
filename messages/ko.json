@@ -1,0 +1,95 @@
+{
+  "common": {
+    "backToWallet": "지갑으로 돌아가기",
+    "logOut": "로그아웃"
+  },
+  "nav": {
+    "portfolio": "포트폴리오",
+    "wallet": "지갑",
+    "swap": "스왑",
+    "staking": "스테이킹",
+    "activity": "활동",
+    "settings": "설정",
+    "settlement": "정산"
+  },
+  "login": {
+    "title": "로그인",
+    "subtitle": "BANA 월렛에 다시 오신 것을 환영합니다",
+    "emailLabel": "이메일",
+    "emailPlaceholder": "이메일을 입력하세요",
+    "passwordLabel": "비밀번호",
+    "passwordPlaceholder": "비밀번호를 입력하세요",
+    "submit": "로그인",
+    "submitting": "로그인 중…",
+    "divider": "또는",
+    "continueWithGoogle": "Google로 계속하기",
+    "errorInvalidCredentials": "이메일 또는 비밀번호가 올바르지 않습니다",
+    "googleError": "Google 로그인을 시작할 수 없습니다. 다시 시도해 주세요.",
+    "noAccount": "계정이 없으신가요?",
+    "createOne": "계정 만들기"
+  },
+  "signup": {
+    "title": "계정 만들기",
+    "subtitle": "BANA 월렛 시작하기",
+    "emailLabel": "이메일",
+    "emailPlaceholder": "you@example.com",
+    "passwordLabel": "비밀번호",
+    "passwordPlaceholder": "········",
+    "confirmPasswordLabel": "비밀번호 확인",
+    "confirmPasswordPlaceholder": "········",
+    "submit": "계정 만들기",
+    "submitting": "계정 생성 중…",
+    "errorPasswordMismatch": "비밀번호가 일치하지 않습니다",
+    "errorEmailTaken": "이미 등록된 이메일입니다",
+    "errorPasswordTooShort": "비밀번호는 8자 이상이어야 합니다",
+    "errorGeneric": "문제가 발생했습니다",
+    "haveAccount": "이미 계정이 있으신가요?",
+    "signIn": "로그인"
+  },
+  "sidebar": {
+    "closeMenu": "탐색 메뉴 닫기",
+    "nodeLabel": "노드",
+    "online": "● 온라인",
+    "secureMev": "보안 MEV",
+    "mevActive": "활성",
+    "mevInactive": "비활성",
+    "vaultAddress": "볼트 주소"
+  },
+  "profileMenu": {
+    "profileButton": "프로필 메뉴",
+    "myAccount": "내 계정",
+    "copyAddress": "주소 복사",
+    "addressCopied": "주소가 복사되었습니다",
+    "admin": "관리자",
+    "connected": "● 연결됨",
+    "offline": "● 오프라인"
+  },
+  "admin": {
+    "badge": "관리자",
+    "brokerAccessOnly": "브로커 전용 접근",
+    "brokerAccessBody": "관리자 영역은 <highlight>관리자 계정</highlight>만 이용할 수 있습니다. 관리자 계정으로 로그인하세요.",
+    "backToWallet": "지갑으로 돌아가기",
+    "settlementNavLabel": "정산"
+  },
+  "settlement": {
+    "pageTitle": "정산",
+    "pageSubtitle": "브로커 / 관리자 — 수수료, 정산 및 테넌트 개요.",
+    "adminModeBadge": "관리자 모드",
+    "niaBadge": "NIA 보안",
+    "brokerTenantTitle": "브로커 / 테넌트",
+    "tenantIdLabel": "테넌트 ID",
+    "unsettledCommission": "미정산 수수료",
+    "tradeCount": "거래 수",
+    "settlementHistory": "정산 내역",
+    "loading": "로딩 중…",
+    "failedToLoad": "불러오기 실패",
+    "historyError": "정산 내역을 불러올 수 없습니다. 백엔드가 실행 중인지 확인하세요.",
+    "noSettlementsYet": "아직 정산 내역이 없습니다",
+    "noSettlementsBody": "허브와 브로커 계정 간의 수수료 정산이 여기에 표시됩니다.",
+    "settled": "정산 완료",
+    "adminNoteBody": "<highlight>관리자 / 브로커</highlight>로서 사용자를 관리하고 수수료를 수취합니다. 최종 사용자 지갑과 입금은 Nia-Hub 측에서 생성되며, 이 패널은 API 키를 통해 테넌트의 실제 정산 데이터를 반영합니다.",
+    "accessDeniedTitle": "관리자 전용 접근",
+    "accessDeniedBody": "정산 패널은 <highlight>관리자 계정</highlight>만 이용할 수 있습니다. 관리자 계정으로 로그인하여 수수료 및 정산 데이터에 접근하세요.",
+    "backToPortfolio": "포트폴리오로 돌아가기"
+  }
+}

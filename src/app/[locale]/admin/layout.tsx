@@ -9,6 +9,7 @@ import { useScreenNav } from '@/lib/useScreenNav';
 import BanaLogo from '@/components/BanaLogo';
 import Notifications from '@/components/Notifications';
 import ProfileMenu from '@/components/ProfileMenu';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -70,6 +71,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </span>
         </div>
         <div className="flex items-center gap-3">
+          <LanguageSwitcher />
           <Notifications />
           <ProfileMenu settings={settings} onNavigate={navigate} />
         </div>

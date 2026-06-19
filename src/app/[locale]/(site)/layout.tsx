@@ -9,6 +9,7 @@ import Sidebar from '@/components/Sidebar';
 import BanaLogo from '@/components/BanaLogo';
 import Notifications from '@/components/Notifications';
 import ProfileMenu from '@/components/ProfileMenu';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import type { Screen } from '@/types';
 
 // Reverse-map path → Screen for sidebar highlighting.
@@ -51,6 +52,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="lg:hidden flex items-center justify-between gap-3 h-16 px-4 shrink-0 border-b border-slate-800 bg-[#06132a]/95 backdrop-blur z-20">
           <BanaLogo size="sm" />
           <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             <Notifications />
             <ProfileMenu settings={settings} onNavigate={navigateAndClose} />
             <button
@@ -66,6 +68,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Desktop-only top bar: persistent chrome (Notifications + ProfileMenu),
             right-aligned in its own row so it never overlaps page headers. */}
         <header className="hidden lg:flex items-center justify-end gap-3 h-14 px-6 shrink-0 border-b border-slate-800/60 bg-[#06132a]/80 backdrop-blur z-20">
+          <LanguageSwitcher />
           <Notifications />
           <ProfileMenu settings={settings} onNavigate={navigateAndClose} />
         </header>
