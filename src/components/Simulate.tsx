@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { Screen, SystemSettings } from '../types';
 import { 
   ShieldCheck, 
@@ -36,6 +37,7 @@ export default function Simulate({
   preparedSwap,
   onConfirmSwap
 }: SimulateProps) {
+  const t = useTranslations('simulate');
   const [step1, setStep1] = useState(0); // 0: idle, 1: loading, 2: completed
   const [step2, setStep2] = useState(0); 
   const [step3, setStep3] = useState(0);
@@ -87,11 +89,11 @@ export default function Simulate({
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 block animate-pulse" />
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-              Transaction Simulation
+              {t('pageTitle')}
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-[#8c90a0] mt-1 font-mono">
-            Stateful EVM Execution Trace before chain dispatching • Block 20128919
+            {t('pageSubtitle')}
           </p>
         </div>
 
@@ -100,7 +102,7 @@ export default function Simulate({
           onClick={handleReject}
           className="self-start sm:self-auto p-1 px-3 border border-[#1E3559] bg-[#112643]/50 hover:bg-[#1e3459] rounded-lg transition-colors cursor-pointer text-[#8c90a0] hover:text-white flex items-center justify-center gap-1 font-mono text-xs"
         >
-          <span>close</span>
+          <span>{t('close')}</span>
         </button>
       </header>
 
@@ -113,18 +115,18 @@ export default function Simulate({
           {/* Visual Asset flow transfer diagram */}
           <div className="p-6 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-5">
             <h3 className="font-sans font-extrabold text-[#d8e2ff] text-sm uppercase tracking-wider">
-              Asset Transfer Preview
+              {t('assetTransferPreview')}
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center justify-center py-4 bg-[#020d24]/80 border border-[#1e3559]/50 rounded-xl p-4">
               
               {/* Asset leaving */}
               <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-red-500/10 bg-red-500/5">
-                <span className="text-[10px] uppercase font-mono font-bold text-red-400">LEAVING WALLET</span>
+                <span className="text-[10px] uppercase font-mono font-bold text-red-400">{t('leavingWallet')}</span>
                 <span className="text-xl font-bold font-mono text-white text-center">
                   -{details.fromAmount} {details.fromSymbol}
                 </span>
-                <span className="text-xs text-[#8c90a0] font-mono">My Account (0x71C...)</span>
+                <span className="text-xs text-[#8c90a0] font-mono">{t('myAccount')}</span>
               </div>
 
               {/* Connected Arrow */}
@@ -132,16 +134,16 @@ export default function Simulate({
                 <div className="w-10 h-10 rounded-full bg-[#112643] border border-[#1E3559] flex items-center justify-center">
                   <ArrowRight className="h-5 w-5 animate-pulse" />
                 </div>
-                <span className="text-[9px] font-mono text-[#8c90a0] tracking-widest uppercase mt-2">PRIVATE RPC</span>
+                <span className="text-[9px] font-mono text-[#8c90a0] tracking-widest uppercase mt-2">{t('privateRpc')}</span>
               </div>
 
               {/* Asset entering */}
               <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-emerald-500/10 bg-emerald-500/5">
-                <span className="text-[10px] uppercase font-mono font-bold text-emerald-400">ENTERING WALLET</span>
+                <span className="text-[10px] uppercase font-mono font-bold text-emerald-400">{t('enteringWallet')}</span>
                 <span className="text-xl font-bold font-mono text-emerald-400 text-center">
                   +{details.toAmount} {details.toSymbol}
                 </span>
-                <span className="text-xs text-[#8c90a0] font-mono">My Account (0x71C...)</span>
+                <span className="text-xs text-[#8c90a0] font-mono">{t('myAccount')}</span>
               </div>
 
             </div>
@@ -150,7 +152,7 @@ export default function Simulate({
           {/* Interactive EVM Security Checkpoints List */}
           <div className="p-6 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-4">
             <h3 className="font-sans font-extrabold text-[#d8e2ff] text-sm uppercase tracking-wider">
-              EVM Sandbox Audit Reports
+              {t('auditReports')}
             </h3>
 
             <div className="flex flex-col gap-3 font-mono text-xs">
@@ -165,11 +167,11 @@ export default function Simulate({
                     <span className="w-4.5 h-4.5 rounded-full border-2 border-dashed border-[#528dff]/80 animate-spin shrink-0" />
                   )}
                   <div>
-                    <div className="font-bold text-white text-[13px]">Target Contract Security Check</div>
-                    <div className="text-[10px] text-[#8c90a0] mt-0.5">Analysing bytecode for honey-pot indicators</div>
+                    <div className="font-bold text-white text-[13px]">{t('check1Title')}</div>
+                    <div className="text-[10px] text-[#8c90a0] mt-0.5">{t('check1Desc')}</div>
                   </div>
                 </div>
-                <span className="text-emerald-400 font-bold">{step1 === 2 ? 'PASSED' : 'AUDITING...'}</span>
+                <span className="text-emerald-400 font-bold">{step1 === 2 ? t('check1Pass') : t('check1Pending')}</span>
               </div>
 
               {/* Check 2: Balance checklist */}
@@ -183,11 +185,11 @@ export default function Simulate({
                     <span className="w-4.5 h-4.5 rounded-full border-2 border-dashed border-[#528dff]/80 animate-spin shrink-0" />
                   )}
                   <div>
-                    <div className="font-bold text-white text-[13px]">Wallet Gas Reserve Sufficiency</div>
-                    <div className="text-[10px] text-[#8c90a0] mt-0.5">Estimated gas cost: 110,000 gas units (~$12.42)</div>
+                    <div className="font-bold text-white text-[13px]">{t('check2Title')}</div>
+                    <div className="text-[10px] text-[#8c90a0] mt-0.5">{t('check2Desc')}</div>
                   </div>
                 </div>
-                <span className="text-emerald-400 font-bold">{step2 === 2 ? 'SAFE' : 'CALCULATING...'}</span>
+                <span className="text-emerald-400 font-bold">{step2 === 2 ? t('check2Pass') : t('check2Pending')}</span>
               </div>
 
               {/* Check 3: Slippage calculation */}
@@ -201,11 +203,11 @@ export default function Simulate({
                     <span className="w-4.5 h-4.5 rounded-full border-2 border-dashed border-[#528dff]/80 animate-spin shrink-0" />
                   )}
                   <div>
-                    <div className="font-bold text-white text-[13px]">Slippage Tolerance Protection Map</div>
-                    <div className="text-[10px] text-[#8c90a0] mt-0.5">Preset: {settings.selectedSlippage}%. Maximum potential slip: 0.04%</div>
+                    <div className="font-bold text-white text-[13px]">{t('check3Title')}</div>
+                    <div className="text-[10px] text-[#8c90a0] mt-0.5">{t('check3Desc', { slippage: settings.selectedSlippage })}</div>
                   </div>
                 </div>
-                <span className="text-emerald-400 font-bold">{step3 === 2 ? 'EXCELLENT' : 'SOLVING...'}</span>
+                <span className="text-emerald-400 font-bold">{step3 === 2 ? t('check3Pass') : t('check3Pending')}</span>
               </div>
 
               {/* Check 4: MEV Sandwich resistance */}
@@ -219,11 +221,11 @@ export default function Simulate({
                     <span className="w-4.5 h-4.5 rounded-full border-2 border-dashed border-[#528dff]/80 animate-spin shrink-0" />
                   )}
                   <div>
-                    <div className="font-bold text-white text-[13px]">MEMPOOL Pre-emptive Protection</div>
-                    <div className="text-[10px] text-[#8c90a0] mt-0.5">Private relayer validated via BANA Shield</div>
+                    <div className="font-bold text-white text-[13px]">{t('check4Title')}</div>
+                    <div className="text-[10px] text-[#8c90a0] mt-0.5">{t('check4Desc')}</div>
                   </div>
                 </div>
-                <span className="text-emerald-400 font-bold">{step4 === 2 ? 'PROTECTED' : 'SHIELDING...'}</span>
+                <span className="text-emerald-400 font-bold">{step4 === 2 ? t('check4Pass') : t('check4Pending')}</span>
               </div>
             </div>
           </div>
@@ -240,25 +242,25 @@ export default function Simulate({
           <div 
             onClick={() => onNavigate('SCAM_WARNING_MODAL', 'none')}
             className="p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 hover:border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.1)] cursor-pointer select-none transition-all duration-300 group hover:scale-[1.01]"
-            title="Warning Advisory Panel"
+            title={t('advisoryPanelTitle')}
           >
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-500/15 rounded-xl text-amber-400 group-hover:rotate-12 transition-transform">
                 <AlertTriangle className="h-5.5 w-5.5" />
               </div>
               <h4 className="text-white font-bold text-[15px] group-hover:text-amber-300 transition-colors">
-                Audit Advisory Detected
+                {t('advisoryTitle')}
               </h4>
             </div>
-            
+
             <p className="text-xs text-[#8c90a0] mt-3 leading-relaxed">
-              Our sandbox flagged <span className="text-amber-400 font-bold">1 warning alert</span> on the contract bytecode representation. Click this panel immediately to audit the potential rug-pull / slippage vulnerability index before executing.
+              {t.rich('advisoryBody', { highlight: (chunks) => <span className="text-amber-400 font-bold">{chunks}</span> })}
             </p>
 
             <div className="mt-4 pt-3 border-t border-amber-500/20 flex justify-between items-center text-[10px] font-mono text-amber-400 font-bold">
-              <span>SECURITY VULNERABILITY AUDIT</span>
+              <span>{t('vulnerabilityAudit')}</span>
               <span className="flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                EXAMINE VULNERABILITY &rarr;
+                {t('examineVulnerability')} &rarr;
               </span>
             </div>
           </div>
@@ -266,28 +268,28 @@ export default function Simulate({
           {/* Execution details panel */}
           <div className="p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-4 font-mono text-xs">
             <h3 className="font-sans font-extrabold text-[#d8e2ff] text-xs uppercase tracking-wider mb-1">
-              Simulation Parameters
+              {t('simulationParameters')}
             </h3>
 
             <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
-              <span className="text-[#8c90a0]">EVM Executor</span>
-              <span className="text-white font-semibold">Tenderly Arch</span>
+              <span className="text-[#8c90a0]">{t('evmExecutor')}</span>
+              <span className="text-white font-semibold">{t('evmExecutorValue')}</span>
             </div>
 
             <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
-              <span className="text-[#8c90a0]">Consensus Simulation</span>
-              <span className="text-emerald-400 font-bold">Consensus Met</span>
+              <span className="text-[#8c90a0]">{t('consensusSimulation')}</span>
+              <span className="text-emerald-400 font-bold">{t('consensusMet')}</span>
             </div>
 
             <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
-              <span className="text-[#8c90a0]">Gas Price Guess</span>
-              <span className="text-white">35 Gwei</span>
+              <span className="text-[#8c90a0]">{t('gasPriceGuess')}</span>
+              <span className="text-white">{t('gasPriceValue')}</span>
             </div>
 
             <div className="flex justify-between items-center py-2">
-              <span className="text-[#8c90a0]">Execution Route</span>
+              <span className="text-[#8c90a0]">{t('executionRoute')}</span>
               <span className="text-white font-bold text-[10px] bg-[#020d24] px-1.5 py-0.5 rounded border border-[#1e3459]">
-                Uniswap V3 Relayer
+                {t('executionRouteValue')}
               </span>
             </div>
           </div>
@@ -295,10 +297,10 @@ export default function Simulate({
           {/* Main Simulation controls */}
           <div className="p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-3">
             <h4 className="text-sm font-bold text-white tracking-wide">
-              Proceed with Transaction?
+              {t('proceedTitle')}
             </h4>
             <p className="text-xs text-[#8c90a0] mb-2 leading-relaxed">
-              Confirming will execute the transaction in full. The assets will be updated immediately. Rejecting will clear the memory and exit.
+              {t('proceedBody')}
             </p>
 
             <div className="flex flex-col gap-2.5">
@@ -307,7 +309,7 @@ export default function Simulate({
                 onClick={handleConfirm}
                 className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold font-sans text-sm rounded-xl transition-all duration-300 border border-emerald-400/40 cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.25)] select-none"
               >
-                Confirm
+                {t('confirm')}
               </button>
 
               {/* Reject trigger */}
@@ -315,7 +317,7 @@ export default function Simulate({
                 onClick={handleReject}
                 className="w-full py-3.5 bg-[#020d24]/60 hover:bg-[#112643] text-[#ffb4ab] hover:text-white font-bold font-sans text-sm rounded-xl transition-all duration-300 border border-[#1E3559]/80 cursor-pointer shadow-sm select-none"
               >
-                Reject
+                {t('reject')}
               </button>
             </div>
           </div>

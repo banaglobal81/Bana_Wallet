@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Decimal from 'decimal.js';
+import { useTranslations } from 'next-intl';
 import { Screen, SystemSettings } from '../types';
 import {
   Coins,
@@ -57,6 +58,7 @@ const STAKING_POOLS = [
 ];
 
 export default function Staking({ settings, onNavigate }: StakingProps) {
+  const t = useTranslations('staking');
   const [selectedPool, setSelectedPool] = useState<string>('ETH');
   const [stakeAmount, setStakeAmount] = useState<string>('1.00');
 
@@ -84,33 +86,33 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
             <Coins className="h-7 w-7 text-[#528dff]" />
-            Staking
+            {t('pageTitle')}
           </h1>
           <p className="text-xs sm:text-sm text-[#8c90a0] mt-1 font-mono">
-            Lock assets to help secure the network and earn passive yield rewards.
+            {t('pageSubtitle')}
           </p>
         </div>
 
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-lg text-emerald-400 font-semibold text-xs font-mono select-none self-start sm:self-auto">
-          <ShieldCheck className="h-4 w-4" /> NON-CUSTODIAL
+          <ShieldCheck className="h-4 w-4" /> {t('nonCustodial')}
         </div>
       </header>
 
       {/* Summary stats */}
       <section className="shrink-0 grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-1">
-          <span className="text-[11px] font-mono uppercase tracking-widest text-[#8c90a0] font-bold">Total Staked</span>
-          <span className="text-2xl font-bold font-sans text-white">{totalStakedValue.toLocaleString('en-US')} <span className="text-sm text-[#8c90a0]">tokens</span></span>
+          <span className="text-[11px] font-mono uppercase tracking-widest text-[#8c90a0] font-bold">{t('totalStaked')}</span>
+          <span className="text-2xl font-bold font-sans text-white">{totalStakedValue.toLocaleString('en-US')} <span className="text-sm text-[#8c90a0]">{t('tokens')}</span></span>
         </div>
         <div className="p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-1">
-          <span className="text-[11px] font-mono uppercase tracking-widest text-[#8c90a0] font-bold">Claimable Rewards</span>
+          <span className="text-[11px] font-mono uppercase tracking-widest text-[#8c90a0] font-bold">{t('claimableRewards')}</span>
           <span className="text-2xl font-bold font-sans text-emerald-400 flex items-center gap-2">
             +{totalRewards.toLocaleString('en-US', { maximumFractionDigits: 3 })}
             <Sparkles className="h-4 w-4 animate-pulse" />
           </span>
         </div>
         <div className="p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-1">
-          <span className="text-[11px] font-mono uppercase tracking-widest text-[#8c90a0] font-bold">Active Pools</span>
+          <span className="text-[11px] font-mono uppercase tracking-widest text-[#8c90a0] font-bold">{t('activePools')}</span>
           <span className="text-2xl font-bold font-sans text-white">{STAKING_POOLS.length}</span>
         </div>
       </section>
@@ -122,7 +124,7 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
         <div className="lg:col-span-3 min-w-0 flex flex-col gap-4">
           <div className="p-6 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-4">
             <h3 className="font-sans font-extrabold text-[#d8e2ff] text-sm uppercase tracking-wider">
-              Available Staking Pools
+              {t('availablePools')}
             </h3>
 
             <div className="flex flex-col gap-3">
@@ -145,10 +147,10 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
                       <div className="min-w-0">
                         <div className="font-bold text-white text-[15px] truncate">{p.name}</div>
                         <span className="font-mono text-xs text-[#8c90a0]">
-                          {p.staked.toLocaleString('en-US')} {p.symbol} staked
+                          {t('stakedLabel', { amount: p.staked.toLocaleString('en-US'), symbol: p.symbol })}
                           {p.lockDays > 0 && (
                             <span className="ml-2 inline-flex items-center gap-1 text-[10px]">
-                              <Lock className="h-3 w-3" /> {p.lockDays}d lock
+                              <Lock className="h-3 w-3" /> {t('lockBadge', { days: p.lockDays })}
                             </span>
                           )}
                         </span>
@@ -160,7 +162,7 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
                         <TrendingUp className="h-3.5 w-3.5" />
                         {p.apy}%
                       </div>
-                      <div className="text-[10px] font-mono text-[#8c90a0] uppercase tracking-wide">APY</div>
+                      <div className="text-[10px] font-mono text-[#8c90a0] uppercase tracking-wide">{t('apy')}</div>
                     </div>
                   </button>
                 );
@@ -174,11 +176,9 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
               <Info className="h-5 w-5" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-white">What is staking?</h4>
+              <h4 className="text-sm font-bold text-white">{t('whatIsStakingTitle')}</h4>
               <p className="text-xs text-[#8c90a0] mt-1 leading-relaxed">
-                Staking locks your tokens to help validate and secure the blockchain. In return you earn
-                rewards (shown as APY — annual percentage yield). Your keys stay self-custodial; assets in a
-                lock period can't be moved until the timer ends.
+                {t('whatIsStakingBody')}
               </p>
             </div>
           </div>
@@ -189,16 +189,16 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
           <div className="p-6 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h3 className="font-sans font-extrabold text-[#d8e2ff] text-sm uppercase tracking-wider">
-                Stake {pool.symbol}
+                {t('stakeSymbol', { symbol: pool.symbol })}
               </h3>
               <span className="inline-flex items-center gap-1 text-emerald-400 font-bold font-mono text-xs">
-                <TrendingUp className="h-3.5 w-3.5" /> {pool.apy}% APY
+                <TrendingUp className="h-3.5 w-3.5" /> {t('apyValue', { apy: pool.apy })}
               </span>
             </div>
 
             {/* Amount input */}
             <div className="p-4 rounded-xl bg-[#020d24]/80 border border-[#1E3559] flex flex-col gap-2">
-              <span className="text-xs font-mono text-[#8c90a0]">AMOUNT TO STAKE</span>
+              <span className="text-xs font-mono text-[#8c90a0]">{t('amountToStake')}</span>
               <div className="flex items-center justify-between gap-3">
                 <input
                   type="text"
@@ -214,19 +214,19 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
             {/* Projected reward */}
             <div className="flex flex-col gap-2 font-mono text-xs">
               <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
-                <span className="text-[#8c90a0] flex items-center gap-1">Est. yearly reward <Info className="h-3 w-3" /></span>
+                <span className="text-[#8c90a0] flex items-center gap-1">{t('estYearlyReward')} <Info className="h-3 w-3" /></span>
                 <span className="text-emerald-400 font-bold">
                   +{projectedYearly.toNumber().toLocaleString('en-US', { maximumFractionDigits: 4 })} {pool.symbol}
                 </span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
-                <span className="text-[#8c90a0] flex items-center gap-1">Lock period</span>
+                <span className="text-[#8c90a0] flex items-center gap-1">{t('lockPeriod')}</span>
                 <span className="text-white font-bold flex items-center gap-1">
-                  <Clock className="h-3 w-3" /> {pool.lockDays === 0 ? 'Flexible' : `${pool.lockDays} days`}
+                  <Clock className="h-3 w-3" /> {pool.lockDays === 0 ? t('flexible') : t('lockDays', { days: pool.lockDays })}
                 </span>
               </div>
               <div className="flex justify-between items-center py-2">
-                <span className="text-[#8c90a0]">Network</span>
+                <span className="text-[#8c90a0]">{t('network')}</span>
                 <span className="text-white font-bold">{settings.activeChain}</span>
               </div>
             </div>
@@ -241,7 +241,7 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
               }`}
             >
               <Lock className="h-4 w-4" />
-              Stake {pool.symbol}
+              {t('stakeSymbol', { symbol: pool.symbol })}
             </button>
           </div>
 
@@ -255,8 +255,8 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
                 <Coins className="h-5 w-5" />
               </div>
               <div className="text-left">
-                <div className="text-sm font-bold text-white">Need more {pool.symbol}?</div>
-                <div className="text-xs text-[#8c90a0]">Swap assets to stake more</div>
+                <div className="text-sm font-bold text-white">{t('needMore', { symbol: pool.symbol })}</div>
+                <div className="text-xs text-[#8c90a0]">{t('swapToStakeMore')}</div>
               </div>
             </div>
             <ChevronRight className="h-4 w-4 text-[#8c90a0] group-hover:translate-x-0.5 transition-transform" />

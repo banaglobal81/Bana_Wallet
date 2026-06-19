@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Decimal from 'decimal.js';
+import { useTranslations } from 'next-intl';
 import { Screen, Asset, SystemSettings } from '../types';
 import { 
   ArrowUpDown, 
@@ -31,6 +32,7 @@ interface SwapProps {
 }
 
 export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: SwapProps) {
+  const t = useTranslations('swap');
   const [fromAsset, setFromAsset] = useState<string>('ETH');
   const [toAsset, setToAsset] = useState<string>('USDC');
   const [payAmount, setPayAmount] = useState<string>('1.00');
@@ -109,16 +111,16 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
       <header className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center pb-2 border-b border-[#1E3559]/40">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-            Swap Assets
+            {t('pageTitle')}
           </h1>
           <p className="text-xs sm:text-sm text-[#8c90a0] mt-1 font-mono">
-            Direct liquidity routing with private MEV Shielding. No sandboxing.
+            {t('pageSubtitle')}
           </p>
         </div>
 
         {/* Security level badge */}
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-lg text-emerald-400 font-semibold text-xs font-mono select-none self-start sm:self-auto">
-          <ShieldCheck className="h-4 w-4" /> MEV GUARD ON
+          <ShieldCheck className="h-4 w-4" /> {t('mevGuardOn')}
         </div>
       </header>
 
@@ -132,7 +134,7 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
             {/* Inner Title bar */}
             <div className="flex justify-between items-center mb-1">
               <span className="text-sm font-sans font-extrabold uppercase text-[#afc6ff] tracking-wider">
-                Swap
+                {t('cardTitle')}
               </span>
               <button 
                 onClick={() => onNavigate('SETTINGS_INTERFACE', 'push')}
@@ -145,9 +147,9 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
             {/* YOU PAY FIELD */}
             <div className="p-4 rounded-xl bg-[#020d24]/80 border border-[#1E3559] flex flex-col gap-2">
               <div className="flex justify-between text-xs font-mono text-[#8c90a0]">
-                <span>YOU PAY</span>
+                <span>{t('youPay')}</span>
                 <span className="flex items-center gap-1">
-                  Balance: {getBalance(fromAsset).toLocaleString('en-US')} {fromAsset}
+                  {t('balance', { amount: getBalance(fromAsset).toLocaleString('en-US'), asset: fromAsset })}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-3 mt-1">
@@ -165,7 +167,7 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
                     onClick={handleMaxClick}
                     className="px-2 py-1 bg-[#112643] hover:bg-[#1e3459] border border-[#1E3559] hover:border-[#528dff]/40 text-[#528dff] hover:text-white rounded text-[10px] font-bold transition-all cursor-pointer"
                   >
-                    MAX
+                    {t('max')}
                   </button>
                   <select 
                     value={fromAsset}
@@ -194,9 +196,9 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
             {/* YOU RECEIVE FIELD */}
             <div className="p-4 rounded-xl bg-[#020d24]/80 border border-[#1E3559] flex flex-col gap-2">
               <div className="flex justify-between text-xs font-mono text-[#8c90a0]">
-                <span>YOU RECEIVE</span>
+                <span>{t('youReceive')}</span>
                 <span className="flex items-center gap-1">
-                  Balance: {getBalance(toAsset).toLocaleString('en-US')} {toAsset}
+                  {t('balance', { amount: getBalance(toAsset).toLocaleString('en-US'), asset: toAsset })}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-3 mt-1">
@@ -222,16 +224,16 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
             <div className="p-4 rounded-xl bg-[#1e2a42]/30 border border-[#528dff]/20 flex flex-col gap-2.5 mt-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#afc6ff] flex items-center gap-1.5 uppercase font-sans tracking-wide">
-                  <ShieldAlert className="h-4 w-4 text-[#f59e0b]" /> Security Simulation Parameters
+                  <ShieldAlert className="h-4 w-4 text-[#f59e0b]" /> {t('securityParams')}
                 </span>
                 <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold font-mono ${
                   isHighRiskScenario ? 'bg-rose-500/15 text-rose-300' : 'bg-emerald-500/15 text-emerald-300'
                 }`}>
-                  {isHighRiskScenario ? 'RISKY / HONEYPOT' : 'STANDARD CONTRACT'}
+                  {isHighRiskScenario ? t('scenarioRisky') : t('scenarioStandard')}
                 </span>
               </div>
               <p className="text-xs text-[#8c90a0]">
-                Swap can route through dynamic assets. Toggle this to audit our system's reaction inside the simulator!
+                {t('scenarioBody')}
               </p>
               
               <div className="flex flex-col sm:flex-row gap-2.5 mt-1 select-none">
@@ -243,7 +245,7 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
                       : 'bg-[#020d24]/50 border-transparent text-[#8c90a0] hover:text-white'
                   }`}
                 >
-                  Standard Approved Asset
+                  {t('standardApprovedAsset')}
                 </button>
                 <button
                   onClick={() => setIsHighRiskScenario(true)}
@@ -253,7 +255,7 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
                       : 'bg-[#020d24]/50 border-transparent text-[#8c90a0] hover:text-white'
                   }`}
                 >
-                  Unverified High-Risk Asset
+                  {t('unverifiedHighRiskAsset')}
                 </button>
               </div>
             </div>
@@ -268,7 +270,7 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
                   : 'bg-gradient-to-r from-[#0059c7] to-[#2E7DFF] hover:from-[#2e7dff] hover:to-[#528dff] text-white border-[#528dff]/50 shadow-[0_0_20px_rgba(46,125,255,0.3)] hover:scale-[1.01] active:scale-100'
               }`}
             >
-              Review Swap
+              {t('reviewSwap')}
             </button>
           </div>
         </div>
@@ -283,13 +285,13 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h4 className="text-white font-bold text-[15px]">MEV Protected</h4>
+                <h4 className="text-white font-bold text-[15px]">{t('mevProtected')}</h4>
                 <span className="px-1.5 py-0.5 rounded text-[10px] bg-sky-500/15 text-sky-400 font-mono font-bold uppercase tracking-wider border border-sky-500/20">
-                  ACTIVE
+                  {t('mevActive')}
                 </span>
               </div>
               <p className="text-xs text-[#8c90a0] mt-1 line-clamp-2">
-                Your transaction is routed through a private RPC to skip sandwich attacks, frontrunning, and slippage leakages.
+                {t('mevProtectedBody')}
               </p>
             </div>
           </div>
@@ -297,35 +299,35 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
           {/* Core Transaction Parameters */}
           <div className="p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-4 font-mono text-xs">
             <h3 className="font-sans font-extrabold text-[#d8e2ff] text-xs uppercase tracking-wider mb-1">
-              Transaction Route Parameters
+              {t('routeParams')}
             </h3>
 
             <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
-              <span className="text-[#8c90a0]">Exchange Rate</span>
-              <span className="text-white font-bold">1 {fromAsset} = {currentRate.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} {toAsset}</span>
+              <span className="text-[#8c90a0]">{t('exchangeRate')}</span>
+              <span className="text-white font-bold">{t('exchangeRateValue', { fromAsset, rate: currentRate.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }), toAsset })}</span>
             </div>
 
             <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
               <span className="text-[#8c90a0] flex items-center gap-1">
-                Price Impact <Info className="h-3 w-3" />
+                {t('priceImpact')} <Info className="h-3 w-3" />
               </span>
               <span className="text-emerald-400 font-bold">0.12%</span>
             </div>
 
             <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
-              <span className="text-[#8c90a0]">Swap Fee</span>
+              <span className="text-[#8c90a0]">{t('swapFee')}</span>
               <span className="text-white font-bold">0.25%</span>
             </div>
 
             <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
-              <span className="text-[#8c90a0]">Network Gas Estimate</span>
+              <span className="text-[#8c90a0]">{t('networkGasEstimate')}</span>
               <span className="text-white font-bold">$12.42</span>
             </div>
 
             {/* Slippage tolerance list */}
             <div className="pt-2 flex flex-col gap-2 font-sans">
               <span className="text-xs font-mono text-[#8c90a0] flex items-center gap-1.5 uppercase font-bold">
-                Slippage Tolerance: <span className="text-white font-bold">{slippage}%</span>
+                {t('slippageTolerance')} <span className="text-white font-bold">{t('slippageValue', { slippage })}</span>
               </span>
               
               <div className="grid grid-cols-4 gap-2 text-xs select-none">
@@ -350,7 +352,7 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
                       : 'bg-[#020d24]/60 text-[#8c90a0] border-[#1E3559] hover:text-white'
                   }`}
                 >
-                  Custom
+                  {t('custom')}
                 </button>
               </div>
             </div>
@@ -359,23 +361,23 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
           {/* Interactive Routing Flowchart representation */}
           <div className="p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-3 font-mono text-xs">
             <h3 className="font-sans font-extrabold text-[#d8e2ff] text-xs uppercase tracking-wider">
-              Transaction Route
+              {t('transactionRoute')}
             </h3>
-            
+
             <div className="flex items-center justify-between p-3 bg-[#020d24]/60 border border-[#1E3559] rounded-xl text-[10px]">
               <div className="flex flex-col items-center gap-1">
-                <span className="text-[#528dff] font-bold">Vault</span>
-                <span className="text-white">BANA Port</span>
+                <span className="text-[#528dff] font-bold">{t('routeVault')}</span>
+                <span className="text-white">{t('routeBanaPort')}</span>
               </div>
               <div className="text-[#8c90a0] select-none">&rarr;</div>
               <div className="flex flex-col items-center gap-1 px-2.5 py-1 bg-[#112643] border border-[#528dff]/20 rounded-md">
                 <span className="text-purple-300 font-bold">UNISWAP V3</span>
-                <span className="text-white text-[9px]">Optimal Pool</span>
+                <span className="text-white text-[9px]">{t('routeOptimalPool')}</span>
               </div>
               <div className="text-[#8c90a0] select-none">&rarr;</div>
               <div className="flex flex-col items-center gap-1">
-                <span className="text-emerald-400 font-bold">Safe Guard</span>
-                <span className="text-white">Routed</span>
+                <span className="text-emerald-400 font-bold">{t('routeSafeGuard')}</span>
+                <span className="text-white">{t('routeRouted')}</span>
               </div>
             </div>
           </div>

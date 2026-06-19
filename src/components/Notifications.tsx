@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Bell,
   Check,
@@ -85,22 +86,25 @@ function saveReadIds(ids: Set<string>): void {
   } catch { /* ignore */ }
 }
 
+// Translation function type (next-intl scoped translator for the 'notifications' namespace).
+type T = ReturnType<typeof useTranslations>;
+
 // ---- Relative-time helper ----------------------------------------------------
-function relTime(ts: number): string {
+function relTime(ts: number, t: T): string {
   const s = Math.floor((Date.now() - ts) / 1000);
-  if (s < 10) return 'just now';
-  if (s < 60) return `${s}s ago`;
+  if (s < 10) return t('justNow');
+  if (s < 60) return t('secondsAgo', { count: s });
   const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
+  if (m < 60) return t('minutesAgo', { count: m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
+  if (h < 24) return t('hoursAgo', { count: h });
   const d = Math.floor(h / 24);
-  return `${d}d ago`;
+  return t('daysAgo', { count: d });
 }
 
 // ---- Mappers -----------------------------------------------------------------
 
-function mapWebhookEvent(ev: any, readIds: Set<string>): NotifItem {
+function mapWebhookEvent(ev: any, readIds: Set<string>, t: T): NotifItem {
   const id = `evt-${ev.id ?? ev.ts ?? String(Date.now())}`;
   const ts: number = typeof ev.ts === 'number' ? ev.ts : Date.parse(ev.ts) || Date.now();
   const rawType: string = ev.type ?? 'event';
@@ -120,40 +124,40 @@ function mapWebhookEvent(ev: any, readIds: Set<string>): NotifItem {
 
   switch (type) {
     case 'balance_update':
-      title = 'Balance updated';
+      title = t('balanceUpdated');
       body = data.currency
         ? `${data.currency}${data.changeAmount != null ? ' · change: ' + String(data.changeAmount) : ''}`
-        : 'Wallet balance changed.';
+        : t('walletBalanceChanged');
       break;
     case 'order_update':
-      title = `Order ${data.status ?? 'updated'}`;
+      title = t('orderTitle', { status: data.status ?? t('orderUpdated') });
       body = data.symbol
         ? `${data.symbol}${data.side ? ' ' + data.side : ''}${data.price != null ? ' @ ' + String(data.price) : ''}`
-        : 'An order was updated.';
+        : t('orderUpdatedBody');
       break;
     case 'position_update':
-      title = 'Position updated';
+      title = t('positionUpdated');
       body = data.symbol
         ? `${data.symbol}${data.size != null ? ' · size: ' + String(data.size) : ''}`
-        : 'A position changed.';
+        : t('positionChanged');
       break;
     case 'liquidation_warning':
-      title = 'Liquidation risk';
+      title = t('liquidationRisk');
       body = data.symbol
         ? `${data.symbol}${data.marginRatio != null ? ' · margin ratio: ' + String(data.marginRatio) : ''}`
-        : 'Your position is approaching liquidation.';
+        : t('liquidationBody');
       break;
     case 'deposit':
-      title = 'Deposit event';
+      title = t('depositEvent');
       body = data.amount != null && data.currency
         ? `+${String(data.amount)} ${data.currency}${data.network ? ' · ' + data.network : ''}`
-        : 'Deposit event received.';
+        : t('depositEventReceived');
       break;
     case 'withdraw':
-      title = 'Withdrawal event';
+      title = t('withdrawalEvent');
       body = data.amount != null && data.currency
         ? `-${String(data.amount)} ${data.currency}`
-        : 'Withdrawal event received.';
+        : t('withdrawalEventReceived');
       break;
     default:
       title = rawType.replace(/_/g, ' ');
@@ -164,27 +168,27 @@ function mapWebhookEvent(ev: any, readIds: Set<string>): NotifItem {
   return { id, type, title, body, ts, read: readIds.has(id) };
 }
 
-function mapDeposit(dep: any, readIds: Set<string>): NotifItem {
+function mapDeposit(dep: any, readIds: Set<string>, t: T): NotifItem {
   const rawId: string = dep.id ?? dep.txHash ?? String(dep.createdAt);
   const id = `dep-${rawId}`;
   const ts: number = dep.createdAt ? Date.parse(dep.createdAt) : Date.now();
   const status: string = dep.status ?? '';
-  const title = `Deposit ${status}`.trim();
+  const title = `${t('deposit')} ${status}`.trim();
   const currency: string = dep.currency ?? '';
   const network: string = dep.network ?? '';
   const amount: string = dep.amount != null ? String(dep.amount) : '';
   const body = amount
     ? `+${amount} ${currency}${network ? ' · ' + network : ''}`.trim()
-    : currency || 'Deposit record.';
+    : currency || t('depositRecord');
   return { id, type: 'deposit', title, body, ts, read: readIds.has(id) };
 }
 
-function mapWithdrawal(wd: any, readIds: Set<string>): NotifItem {
+function mapWithdrawal(wd: any, readIds: Set<string>, t: T): NotifItem {
   const rawId: string = wd.id ?? wd.withdrawalId ?? wd.txHash ?? String(wd.createdAt);
   const id = `wd-${rawId}`;
   const ts: number = wd.createdAt ? Date.parse(wd.createdAt) : Date.now();
   const status: string = wd.status ?? '';
-  const title = `Withdrawal ${status}`.trim();
+  const title = `${t('withdrawal')} ${status}`.trim();
   const currency: string = wd.currency ?? '';
   const amount: string = wd.amount != null ? String(wd.amount) : '';
   const toAddress: string = wd.toAddress ?? wd.address ?? '';
@@ -193,11 +197,11 @@ function mapWithdrawal(wd: any, readIds: Set<string>): NotifItem {
     : toAddress;
   const body = amount
     ? `-${amount} ${currency}${addrShort ? ' · to ' + addrShort : ''}`.trim()
-    : currency || 'Withdrawal record.';
+    : currency || t('withdrawalRecord');
   return { id, type: 'withdraw', title, body, ts, read: readIds.has(id) };
 }
 
-function mapTrade(trade: any, readIds: Set<string>): NotifItem {
+function mapTrade(trade: any, readIds: Set<string>, t: T): NotifItem {
   const rawId: string = trade.id ?? trade.orderId ?? trade.tradeId ?? String(trade.createdAt ?? trade.ts);
   const id = `trade-${rawId}`;
   // Timestamps: prefer ISO createdAt, fall back to numeric ts, then Date.now() only if truly absent.
@@ -224,8 +228,8 @@ function mapTrade(trade: any, readIds: Set<string>): NotifItem {
   if (side) parts.push(side.toUpperCase());
   if (qty) parts.push(qty);
   if (price) parts.push('@ ' + price);
-  const body = parts.length ? parts.join(' · ') : 'Trade executed.';
-  return { id, type: 'trade', title: 'Trade executed', body, ts, read: readIds.has(id) };
+  const body = parts.length ? parts.join(' · ') : t('tradeExecutedBody');
+  return { id, type: 'trade', title: t('tradeExecuted'), body, ts, read: readIds.has(id) };
 }
 
 // ---- Merge & dedup -----------------------------------------------------------
@@ -235,24 +239,25 @@ function mergeItems(
   withdrawals: any[],
   trades: any[],
   readIds: Set<string>,
+  t: T,
 ): NotifItem[] {
   const seen = new Set<string>();
   const all: NotifItem[] = [];
 
   for (const ev of events) {
-    const item = mapWebhookEvent(ev, readIds);
+    const item = mapWebhookEvent(ev, readIds, t);
     if (!seen.has(item.id)) { seen.add(item.id); all.push(item); }
   }
   for (const dep of deposits) {
-    const item = mapDeposit(dep, readIds);
+    const item = mapDeposit(dep, readIds, t);
     if (!seen.has(item.id)) { seen.add(item.id); all.push(item); }
   }
   for (const wd of withdrawals) {
-    const item = mapWithdrawal(wd, readIds);
+    const item = mapWithdrawal(wd, readIds, t);
     if (!seen.has(item.id)) { seen.add(item.id); all.push(item); }
   }
   for (const trade of trades) {
-    const item = mapTrade(trade, readIds);
+    const item = mapTrade(trade, readIds, t);
     if (!seen.has(item.id)) { seen.add(item.id); all.push(item); }
   }
 
@@ -265,6 +270,7 @@ function mergeItems(
 const POLL_MS = 25_000;
 
 export default function Notifications() {
+  const t = useTranslations('notifications');
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotifItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -309,7 +315,7 @@ export default function Notifications() {
       // Read the latest persisted read ids from state (captured by closure) to
       // correctly mark items; use a functional update so we always see latest.
       setReadIds((currentReadIds) => {
-        setItems(mergeItems(events, deposits, withdrawals, trades, currentReadIds));
+        setItems(mergeItems(events, deposits, withdrawals, trades, currentReadIds, t));
         return currentReadIds; // unchanged
       });
     } catch {
@@ -317,7 +323,7 @@ export default function Notifications() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   // Mount fetch + poll every 25s.
   useEffect(() => {
@@ -380,7 +386,7 @@ export default function Notifications() {
       {/* Bell button */}
       <button
         onClick={() => setOpen((o) => !o)}
-        aria-label="Notifications"
+        aria-label={t('ariaLabel')}
         aria-expanded={open}
         className="p-2 bg-slate-900/60 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-400 hover:text-white transition-colors cursor-pointer relative"
       >
@@ -397,10 +403,10 @@ export default function Notifications() {
         <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl shadow-black/40 z-50 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-white">Notifications</span>
+              <span className="text-sm font-bold text-white">{t('header')}</span>
               {unread > 0 && (
                 <span className="text-[10px] font-bold font-mono bg-indigo-500/15 text-indigo-300 px-1.5 py-0.5 rounded-full border border-indigo-500/20">
-                  {unread} new
+                  {t('unreadBadge', { count: unread })}
                 </span>
               )}
             </div>
@@ -413,7 +419,7 @@ export default function Notifications() {
                   onClick={markAllRead}
                   className="flex items-center gap-1 text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 cursor-pointer"
                 >
-                  <CheckCheck className="h-3.5 w-3.5" /> Mark all read
+                  <CheckCheck className="h-3.5 w-3.5" /> {t('markAllRead')}
                 </button>
               )}
             </div>
@@ -422,11 +428,11 @@ export default function Notifications() {
           <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-800/60">
             {loading && visibleItems.length === 0 ? (
               <div className="px-4 py-10 text-center text-xs font-mono text-slate-500">
-                Loading…
+                {t('loading')}
               </div>
             ) : visibleItems.length === 0 ? (
               <div className="px-4 py-10 text-center text-xs font-mono text-slate-500">
-                {items.length === 0 ? 'No notifications yet.' : 'No notifications match your preferences.'}
+                {items.length === 0 ? t('noNotifications') : t('noMatchPreferences')}
               </div>
             ) : (
               visibleItems.map((n) => (
@@ -443,14 +449,14 @@ export default function Notifications() {
                       <span className="text-[13px] font-semibold text-white truncate">{n.title}</span>
                     </div>
                     <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{n.body}</p>
-                    <span className="text-[10px] font-mono text-slate-500">{relTime(n.ts)}</span>
+                    <span className="text-[10px] font-mono text-slate-500">{relTime(n.ts, t)}</span>
                   </div>
                   <div className="flex flex-col items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {!n.read && (
                       <button
                         onClick={() => markRead(n.id)}
-                        aria-label="Mark read"
-                        title="Mark read"
+                        aria-label={t('markRead')}
+                        title={t('markRead')}
                         className="p-1 text-slate-400 hover:text-emerald-400 cursor-pointer"
                       >
                         <Check className="h-3.5 w-3.5" />
@@ -458,8 +464,8 @@ export default function Notifications() {
                     )}
                     <button
                       onClick={() => dismiss(n.id)}
-                      aria-label="Dismiss"
-                      title="Dismiss"
+                      aria-label={t('dismiss')}
+                      title={t('dismiss')}
                       className="p-1 text-slate-400 hover:text-rose-400 cursor-pointer"
                     >
                       <X className="h-3.5 w-3.5" />
@@ -472,7 +478,7 @@ export default function Notifications() {
 
           <div className="px-4 py-2.5 border-t border-slate-800 text-center">
             <span className="text-[11px] font-mono text-slate-500">
-              Live from Nia-Hub activity &amp; events
+              {t('footer')}
             </span>
           </div>
         </div>

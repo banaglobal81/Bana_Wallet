@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Decimal from 'decimal.js';
+import { useTranslations } from 'next-intl';
 import { Screen, Asset, SystemSettings } from '../types';
 import { requestNiaWithdrawal } from '../utils/niaApi';
 import {
@@ -20,6 +21,7 @@ interface WithdrawProps {
 }
 
 export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps) {
+  const t = useTranslations('withdraw');
   const [selectedAsset, setSelectedAsset] = useState<string>('ETH');
   const [amount, setAmount] = useState<string>('');
   const [destination, setDestination] = useState<string>('');
@@ -42,7 +44,7 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
       setResult(r || {});
       setStage('done');
     } catch (e: any) {
-      setApiError(e?.message || 'Withdrawal failed');
+      setApiError(e?.message || t('withdrawalFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -77,7 +79,7 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
         <div className="flex items-center gap-3">
           <button
             onClick={() => onNavigate('WALLET_INTERFACE', 'push_back')}
-            aria-label="Back"
+            aria-label={t('backAria')}
             className="p-2 rounded-xl border border-[#1E3559] bg-[#112643]/50 hover:bg-[#1e3459] text-[#8c90a0] hover:text-white transition-colors cursor-pointer"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -85,16 +87,16 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
               <Upload className="h-6 w-6 text-[#528dff]" />
-              Withdraw
+              {t('pageTitle')}
             </h1>
             <p className="text-xs sm:text-sm text-[#8c90a0] mt-1 font-mono">
-              Send assets from your Nia custody account to an external address.
+              {t('pageSubtitle')}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-lg text-emerald-400 font-semibold text-xs font-mono select-none self-start sm:self-auto">
-          <ShieldCheck className="h-4 w-4" /> NIA SECURED
+          <ShieldCheck className="h-4 w-4" /> {t('niaSecured')}
         </div>
       </header>
 
@@ -110,15 +112,18 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
                 <div className="p-4 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
                   <ShieldCheck className="h-10 w-10" />
                 </div>
-                <h3 className="text-xl font-bold text-white">Withdrawal Requested</h3>
+                <h3 className="text-xl font-bold text-white">{t('withdrawalRequested')}</h3>
                 <p className="text-sm text-[#8c90a0] max-w-sm">
-                  Your request to withdraw <span className="text-white font-bold">{amountDec.toNumber()} {selectedAsset}</span> has
-                  been submitted to Nia-Hub for processing.
+                  {t.rich('withdrawalRequestedBody', {
+                    amount: amountDec.toNumber(),
+                    asset: selectedAsset,
+                    b: (chunks) => <span className="text-white font-bold">{chunks}</span>,
+                  })}
                 </p>
                 {(result?.withdrawalId || result?.status) && (
                   <div className="mt-1 flex flex-col items-center gap-1 font-mono text-xs">
                     {result?.withdrawalId && (
-                      <span className="text-[#8c90a0]">ID: <span className="text-white">{result.withdrawalId}</span></span>
+                      <span className="text-[#8c90a0]">{t('idLabel')} <span className="text-white">{result.withdrawalId}</span></span>
                     )}
                     {result?.status && (
                       <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">
@@ -131,13 +136,13 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
                   onClick={() => onNavigate('ACTIVITY_HISTORY', 'push')}
                   className="mt-2 px-5 py-2.5 bg-[#112643] hover:bg-[#1e3459] border border-[#1E3559] text-white rounded-xl text-sm font-bold cursor-pointer flex items-center gap-2"
                 >
-                  View in History <ChevronRight className="h-4 w-4" />
+                  {t('viewInHistory')} <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
             ) : (
               <>
                 <h3 className="font-sans font-extrabold text-[#d8e2ff] text-sm uppercase tracking-wider">
-                  {stage === 'review' ? 'Review Withdrawal' : 'Withdrawal Details'}
+                  {stage === 'review' ? t('reviewTitle') : t('detailsTitle')}
                 </h3>
 
                 {/* Asset selector */}
@@ -161,8 +166,8 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
                 {/* Amount */}
                 <div className="p-4 rounded-xl bg-[#020d24]/80 border border-[#1E3559] flex flex-col gap-2">
                   <div className="flex justify-between text-xs font-mono text-[#8c90a0]">
-                    <span>AMOUNT</span>
-                    <span>Balance: {balance.toLocaleString('en-US')} {selectedAsset}</span>
+                    <span>{t('amount')}</span>
+                    <span>{t('balance', { amount: balance.toLocaleString('en-US'), asset: selectedAsset })}</span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <input
@@ -179,20 +184,20 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
                           onClick={handleMax}
                           className="px-2 py-1 bg-[#112643] hover:bg-[#1e3459] border border-[#1E3559] text-[#528dff] rounded text-[10px] font-bold cursor-pointer"
                         >
-                          MAX
+                          {t('max')}
                         </button>
                       )}
                       <span className="font-mono text-sm text-[#afc6ff] font-bold">{selectedAsset}</span>
                     </div>
                   </div>
                   {overBalance && (
-                    <span className="text-[11px] text-rose-400 font-mono">Amount exceeds available balance.</span>
+                    <span className="text-[11px] text-rose-400 font-mono">{t('amountExceedsBalance')}</span>
                   )}
                 </div>
 
                 {/* Destination */}
                 <div className="p-4 rounded-xl bg-[#020d24]/80 border border-[#1E3559] flex flex-col gap-2">
-                  <span className="text-xs font-mono text-[#8c90a0]">DESTINATION ADDRESS</span>
+                  <span className="text-xs font-mono text-[#8c90a0]">{t('destinationAddress')}</span>
                   <input
                     type="text"
                     value={destination}
@@ -202,7 +207,7 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
                     placeholder="0x..."
                   />
                   {destination.length > 0 && !addressLooksValid && (
-                    <span className="text-[11px] text-rose-400 font-mono">Enter a valid 0x wallet address.</span>
+                    <span className="text-[11px] text-rose-400 font-mono">{t('invalidAddress')}</span>
                   )}
                 </div>
 
@@ -217,7 +222,7 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
                         : 'bg-gradient-to-r from-[#0059c7] to-[#2E7DFF] hover:from-[#2e7dff] hover:to-[#528dff] text-white border-[#528dff]/50 shadow-[0_0_20px_rgba(46,125,255,0.3)]'
                     }`}
                   >
-                    Review Withdrawal
+                    {t('reviewWithdrawal')}
                   </button>
                 ) : (
                   <div className="flex flex-col gap-2.5">
@@ -231,14 +236,14 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
                       disabled={submitting}
                       className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold text-sm rounded-xl border border-emerald-400/40 cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.25)] disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      {submitting ? 'Submitting…' : 'Confirm Withdrawal'}
+                      {submitting ? t('submitting') : t('confirmWithdrawal')}
                     </button>
                     <button
                       onClick={() => { setStage('form'); setApiError(null); }}
                       disabled={submitting}
                       className="w-full py-3 bg-[#020d24]/60 hover:bg-[#112643] text-[#8c90a0] hover:text-white font-bold text-sm rounded-xl border border-[#1E3559]/80 cursor-pointer disabled:opacity-60"
                     >
-                      Edit
+                      {t('edit')}
                     </button>
                   </div>
                 )}
@@ -251,22 +256,22 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
         <div className="lg:col-span-2 min-w-0 flex flex-col gap-6">
           <div className="p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-4 font-mono text-xs">
             <h3 className="font-sans font-extrabold text-[#d8e2ff] text-xs uppercase tracking-wider mb-1">
-              Transaction Summary
+              {t('transactionSummary')}
             </h3>
             <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
-              <span className="text-[#8c90a0]">Asset</span>
+              <span className="text-[#8c90a0]">{t('asset')}</span>
               <span className="text-white font-bold">{selectedAsset}</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
-              <span className="text-[#8c90a0]">Amount</span>
+              <span className="text-[#8c90a0]">{t('amountLabel')}</span>
               <span className="text-white font-bold">{amountDec.toNumber()} {selectedAsset}</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
-              <span className="text-[#8c90a0]">Network Fee</span>
+              <span className="text-[#8c90a0]">{t('networkFee')}</span>
               <span className="text-white font-bold">{networkFee} {selectedAsset}</span>
             </div>
             <div className="flex justify-between items-center py-2">
-              <span className="text-[#8c90a0]">You will send</span>
+              <span className="text-[#8c90a0]">{t('youWillSend')}</span>
               <span className="text-emerald-400 font-bold">
                 {totalSend.toNumber().toLocaleString('en-US', { maximumFractionDigits: 6 })} {selectedAsset}
               </span>
@@ -276,8 +281,7 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
           <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 flex items-start gap-2.5">
             <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
             <p className="text-xs text-[#8c90a0] leading-relaxed">
-              Withdrawals are irreversible. Double-check the destination address — funds sent to a wrong
-              address cannot be recovered.
+              {t('irreversibleWarning')}
             </p>
           </div>
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import Decimal from 'decimal.js';
 import { Screen, SystemSettings } from '../types';
 import { copyToClipboard } from '../utils/clipboard';
@@ -30,6 +31,7 @@ interface SettingsProps {
 }
 
 export default function Settings({ settings, onUpdateSettings, onNavigate }: SettingsProps) {
+  const t = useTranslations('settings');
   const [copied, setCopied] = useState(false);
   const [rpcInput, setRpcInput] = useState(settings.rpcUrl);
   const [rpcSaved, setRpcSaved] = useState(false);
@@ -46,7 +48,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
     try {
       setNiaStatus(await getNiaStatus());
     } catch (e: any) {
-      setNiaError(e?.message || 'Backend not reachable');
+      setNiaError(e?.message || t('backendNotReachable'));
       setNiaStatus(null);
     } finally {
       setNiaLoading(false);
@@ -92,8 +94,8 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
   const handleChangePassword = async () => {
     setPwError(null);
     setPwSuccess(false);
-    if (newPw.length < 8) { setPwError('New password must be at least 8 characters'); return; }
-    if (newPw !== confirmPw) { setPwError('New password and confirmation do not match'); return; }
+    if (newPw.length < 8) { setPwError(t('passwordTooShort')); return; }
+    if (newPw !== confirmPw) { setPwError(t('passwordMismatch')); return; }
     setPwSubmitting(true);
     try {
       await changePassword(curPw, newPw);
@@ -101,7 +103,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
       setCurPw(''); setNewPw(''); setConfirmPw('');
       setTimeout(() => setPwSuccess(false), 4000);
     } catch (e: any) {
-      setPwError(e?.message || 'Could not change password');
+      setPwError(e?.message || t('couldNotChangePassword'));
     } finally {
       setPwSubmitting(false);
     }
@@ -120,7 +122,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
     // Load account info.
     (async () => {
       try { setAccount(await getAccount()); }
-      catch (e: any) { setAccountError(e?.message || 'Could not load account'); }
+      catch (e: any) { setAccountError(e?.message || t('couldNotLoadAccount')); }
     })();
     // Sync notification prefs (in case another tab changed them).
     setNotifPrefs(getNotifPrefs());
@@ -155,29 +157,29 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
 
       {/* Breadcrumbs Navigation List */}
       <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-mono text-slate-400 bg-slate-900 p-3 rounded-2xl border border-slate-800 select-none">
-        <span className="text-indigo-400 font-bold">NODE MANIFEST REGISTRY:</span>
-        <a 
-          href="#portfolio" 
+        <span className="text-indigo-400 font-bold">{t('breadcrumbRegistry')}</span>
+        <a
+          href="#portfolio"
           onClick={(e) => { e.preventDefault(); handleNav('PORTFOLIO_DASHBOARD', 'push_back'); }}
           className="hover:text-slate-200 hover:underline transition-all cursor-pointer font-semibold"
         >
-          Portfolio
+          {t('breadcrumbPortfolio')}
         </a>
         <span>/</span>
-        <a 
-          href="#swap" 
+        <a
+          href="#swap"
           onClick={(e) => { e.preventDefault(); handleNav('SWAP_INTERFACE', 'push'); }}
           className="hover:text-slate-200 hover:underline transition-all cursor-pointer font-semibold"
         >
-          Swap
+          {t('breadcrumbSwap')}
         </a>
         <span>/</span>
-        <a 
-          href="#activity" 
+        <a
+          href="#activity"
           onClick={(e) => { e.preventDefault(); handleNav('ACTIVITY_HISTORY', 'push'); }}
           className="hover:text-slate-200 hover:underline transition-all cursor-pointer font-semibold"
         >
-          Activity
+          {t('breadcrumbActivity')}
         </a>
       </nav>
 
@@ -185,15 +187,15 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
       <header className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center pb-3 border-b border-slate-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-            Security & Node Settings
+            {t('pageTitle')}
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 font-mono">
-            Adjust private routing nodes, consensus gas speed thresholds, and MEV front-run firewalls.
+            {t('pageSubtitle')}
           </p>
         </div>
 
         <div className="self-start sm:self-auto flex items-center gap-1 text-[11px] font-mono font-bold bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-xl text-indigo-400 uppercase tracking-widest">
-          Client v1.9 • SECURE
+          {t('clientBadge')}
         </div>
       </header>
 
@@ -207,7 +209,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
           <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 bento-hover shadow-lg">
             <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider flex items-center gap-2">
               <User className="h-4 w-4 text-indigo-400" />
-              Account
+              {t('accountTitle')}
             </h3>
             {accountError ? (
               <div className="p-3.5 bg-rose-500/5 border border-rose-500/20 rounded-xl text-xs font-mono text-rose-300">
@@ -215,7 +217,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
               </div>
             ) : !account ? (
               <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-400">
-                Loading account…
+                {t('loadingAccount')}
               </div>
             ) : (
               <div className="flex flex-col gap-3 mt-1">
@@ -234,7 +236,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                 </div>
                 <div className="flex items-center gap-2 text-[11px] font-mono text-slate-500">
                   <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                  Signed in with {account.authMethod === 'google' ? 'Google' : 'email & password'}
+                  {t('signedInWith', { method: account.authMethod === 'google' ? t('signedInGoogle') : t('signedInEmail') })}
                 </div>
               </div>
             )}
@@ -244,23 +246,22 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
           <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 bento-hover shadow-lg">
             <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider flex items-center gap-2">
               <Lock className="h-4 w-4 text-indigo-400" />
-              Security
+              {t('securityTitle')}
             </h3>
             {account && account.authMethod === 'google' ? (
               <p className="text-xs text-slate-400 leading-relaxed">
-                This account signs in with Google, so there{"'"}s no password to change here.
-                Manage it from your Google account.
+                {t('googleNoPassword')}
               </p>
             ) : (
               <>
-                <p className="text-xs text-slate-400 leading-relaxed">Change your login password.</p>
+                <p className="text-xs text-slate-400 leading-relaxed">{t('changePasswordIntro')}</p>
                 <div className="flex flex-col gap-2.5 mt-1">
                   <input
                     type="password"
                     autoComplete="current-password"
                     value={curPw}
                     onChange={(e) => setCurPw(e.target.value)}
-                    placeholder="Current password"
+                    placeholder={t('currentPasswordPlaceholder')}
                     className="p-3.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs font-mono focus:outline-none text-slate-200 placeholder-slate-600 transition-colors"
                   />
                   <input
@@ -268,7 +269,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                     autoComplete="new-password"
                     value={newPw}
                     onChange={(e) => setNewPw(e.target.value)}
-                    placeholder="New password (min 8 characters)"
+                    placeholder={t('newPasswordPlaceholder')}
                     className="p-3.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs font-mono focus:outline-none text-slate-200 placeholder-slate-600 transition-colors"
                   />
                   <input
@@ -276,7 +277,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                     autoComplete="new-password"
                     value={confirmPw}
                     onChange={(e) => setConfirmPw(e.target.value)}
-                    placeholder="Confirm new password"
+                    placeholder={t('confirmPasswordPlaceholder')}
                     className="p-3.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs font-mono focus:outline-none text-slate-200 placeholder-slate-600 transition-colors"
                   />
                   {pwError && (
@@ -284,7 +285,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                   )}
                   {pwSuccess && (
                     <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-mono font-bold">
-                      <Check className="h-4 w-4 shrink-0" /> Password updated successfully.
+                      <Check className="h-4 w-4 shrink-0" /> {t('passwordUpdated')}
                     </div>
                   )}
                   <button
@@ -293,7 +294,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                     className="self-start px-5 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl border border-indigo-500/20 font-bold text-xs transition-all cursor-pointer shadow-md select-none flex items-center gap-2"
                   >
                     {pwSubmitting && <RefreshCw className="h-3.5 w-3.5 animate-spin" />}
-                    {pwSubmitting ? 'Updating…' : 'Update password'}
+                    {pwSubmitting ? t('updating') : t('updatePassword')}
                   </button>
                 </div>
               </>
@@ -305,7 +306,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider flex items-center gap-2">
                 <KeyRound className="h-4 w-4 text-indigo-400" />
-                Connect Nia Asset
+                {t('connectNiaTitle')}
               </h3>
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-mono border ${
                 niaConnected
@@ -313,29 +314,28 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                   : 'bg-slate-800 text-slate-400 border-slate-700'
               }`}>
                 {niaConnected ? <Link2 className="h-3 w-3" /> : <Link2Off className="h-3 w-3" />}
-                {niaConnected ? 'CONNECTED' : 'NOT CONNECTED'}
+                {niaConnected ? t('connected') : t('notConnected')}
               </span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Your Nia-Hub keys live securely on the BANA backend ({'.'}env) and are never exposed to the browser.
-              This shows the live connection status.
+              {t('niaKeysBody')}
             </p>
 
             {niaLoading ? (
               <div className="mt-1 p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-400">
-                Checking backend connection…
+                {t('checkingBackend')}
               </div>
             ) : niaError ? (
               <div className="mt-1 flex flex-col gap-2.5">
                 <div className="p-3.5 bg-rose-500/5 border border-rose-500/20 rounded-xl text-xs font-mono text-rose-300 leading-relaxed">
-                  Backend not reachable: {niaError}.<br />
-                  Start it with <span className="text-white">npm run server</span> (it proxies /api to :8787).
+                  {t('backendNotReachableError', { error: niaError })}<br />
+                  {t.rich('startServerHint', { code: (chunks) => <span className="text-white">{chunks}</span> })}
                 </div>
                 <button
                   onClick={checkNiaStatus}
                   className="self-start px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-lg text-xs font-bold cursor-pointer flex items-center gap-2"
                 >
-                  <RefreshCw className="h-3.5 w-3.5" /> Recheck
+                  <RefreshCw className="h-3.5 w-3.5" /> {t('recheck')}
                 </button>
               </div>
             ) : (
@@ -347,18 +347,18 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                       : <Link2Off className="h-5 w-5 text-slate-500 shrink-0" />}
                     <div className="min-w-0">
                       <div className="text-xs font-mono text-slate-300 font-semibold">
-                        {niaConnected ? `API Key ${niaStatus?.keyPreview ?? ''}` : 'No API key configured'}
+                        {niaConnected ? t('apiKeyLabel', { preview: niaStatus?.keyPreview ?? '' }) : t('noApiKey')}
                       </div>
                       <div className="text-[10px] font-mono text-slate-500 truncate">
                         {niaConnected
-                          ? `Broker ${niaStatus?.brokerId ?? '—'}`
-                          : 'Add NIA_API_KEY / NIA_API_SECRET to .env, then restart the server'}
+                          ? t('brokerLabel', { broker: niaStatus?.brokerId ?? '—' })
+                          : t('addKeysHint')}
                       </div>
                     </div>
                   </div>
                   <button
                     onClick={checkNiaStatus}
-                    aria-label="Recheck connection"
+                    aria-label={t('recheckConnection')}
                     className="shrink-0 p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg cursor-pointer"
                   >
                     <RefreshCw className="h-4 w-4" />
@@ -370,7 +370,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                   <div className="flex items-center justify-between gap-3 p-3 bg-slate-950 border border-slate-800 rounded-xl">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="text-[11px] font-mono text-slate-400">
-                        Test user <span className="text-slate-300">{niaStatus?.hasDefaultUser ? '(set)' : '(none)'}</span>
+                        {t('testUser')} <span className="text-slate-300">{niaStatus?.hasDefaultUser ? t('testUserSet') : t('testUserNone')}</span>
                       </span>
                     </div>
                     <span className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-mono border ${
@@ -384,10 +384,10 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                     }`}>
                       {funded === 'checking' && <RefreshCw className="h-3 w-3 animate-spin" />}
                       {funded === 'funded' && <Check className="h-3 w-3" />}
-                      {funded === 'checking' ? 'CHECKING…'
-                        : funded === 'funded' ? 'FUNDED'
-                        : funded === 'empty' ? 'EMPTY'
-                        : 'CHECK FAILED'}
+                      {funded === 'checking' ? t('checking')
+                        : funded === 'funded' ? t('funded')
+                        : funded === 'empty' ? t('empty')
+                        : t('checkFailed')}
                     </span>
                   </div>
                 )}
@@ -396,7 +396,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                 <div className="flex items-start gap-2 text-[11px] text-slate-500 leading-relaxed font-mono">
                   <Lock className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
                   <span>
-                    The API secret stays in the server{"'"}s {'.'}env file and is <span className="text-slate-300">never sent to the browser</span>.
+                    {t.rich('secretNote', { highlight: (chunks) => <span className="text-slate-300">{chunks}</span> })}
                   </span>
                 </div>
               </div>
@@ -406,10 +406,10 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
           {/* Section A: Vault Address Copy Box */}
           <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 bento-hover shadow-lg">
             <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider">
-              Consensus Cryptographic Wallet
+              {t('walletTitle')}
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              This is your verified self-custody wallet address hosting your Institutional Vault funds. Keep private keys offline.
+              {t('walletBody')}
             </p>
 
             <div className="flex items-center justify-between gap-3 p-3.5 bg-slate-950 border border-slate-800 rounded-xl mt-1">
@@ -422,7 +422,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                 className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition-all flex items-center justify-center gap-1.5 cursor-pointer text-xs font-sans font-bold shadow-md shrink-0"
               >
                 {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
-                {copied ? 'Copied' : 'Copy'}
+                {copied ? t('copied') : t('copy')}
               </button>
             </div>
           </div>
@@ -430,10 +430,10 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
           {/* Section B: Custom RPC Connection */}
           <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 bento-hover shadow-lg">
             <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider">
-              Private Relayer RPC Node URI
+              {t('rpcTitle')}
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Configure your network relay client connection endpoint. Custom endpoints may alter latency.
+              {t('rpcBody')}
             </p>
 
             <div className="flex flex-col gap-2 mt-1">
@@ -443,20 +443,20 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                   value={rpcInput}
                   onChange={(e) => setRpcInput(e.target.value)}
                   className="flex-1 p-3.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs font-mono focus:outline-none text-slate-200 placeholder-slate-600 transition-colors"
-                  placeholder="https://your-node-address..."
+                  placeholder={t('rpcPlaceholder')}
                 />
                 <button 
                   onClick={handleUpdateRpc}
                   className="px-5 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl border border-indigo-500/20 font-bold text-xs transition-all cursor-pointer shadow-md select-none shrink-0"
                 >
-                  Update
+                  {t('update')}
                 </button>
               </div>
 
               {rpcSaved && (
                 <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-mono font-bold mt-1.5">
                   <Check className="h-4 w-4 shrink-0" />
-                  Connection endpoint configuration synchronized successfully.
+                  {t('rpcSaved')}
                 </div>
               )}
             </div>
@@ -467,10 +467,10 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
             <div className="flex justify-between items-center pb-2 border-b border-slate-800/60">
               <div>
                 <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider">
-                  Mempool MEV protection
+                  {t('mevTitle')}
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
-                  Toggle secure BANA Private Router tunnel proxying.
+                  {t('mevBody')}
                 </p>
               </div>
 
@@ -494,9 +494,9 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
             <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl text-xs text-slate-300 leading-relaxed flex items-center gap-3">
               <Sparkles className="h-4 w-4 text-indigo-400 shrink-0" />
               <span>
-                {settings.mevProtection 
-                  ? 'BANA Private Shield prevents mempool crawlers from sandboxing or copy-trading your swaps.' 
-                  : 'Security Alert: Disabling protection leaves swaps vulnerable to sandwich slippage bots.'}
+                {settings.mevProtection
+                  ? t('mevOn')
+                  : t('mevOff')}
               </span>
             </div>
           </div>
@@ -509,10 +509,10 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
           {/* Section D: Consensus Gas Threshold Speed */}
           <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 font-mono text-xs bento-hover shadow-lg">
             <h3 className="font-sans font-bold text-slate-100 text-[14px] uppercase tracking-wider mb-1">
-              Consensus Speed (Gas Limit)
+              {t('gasTitle')}
             </h3>
             <p className="text-xs font-sans text-slate-400 leading-relaxed">
-              Select default priority block coverage speeds. Fast and Instant bypass network traffic queues.
+              {t('gasBody')}
             </p>
 
             <div className="flex flex-col gap-2.5 mt-2 font-sans select-none">
@@ -528,7 +528,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                 >
                   <div className="flex items-center gap-3">
                     <Zap className={`h-4 w-4 ${settings.networkGas === speed ? 'text-indigo-400' : 'text-slate-400'}`} />
-                    <span className="text-[13px]">{speed} Priority</span>
+                    <span className="text-[13px]">{t('gasPriority', { speed })}</span>
                   </div>
                   <span className="text-[10px] font-mono text-slate-450 font-semibold">
                     {speed === 'Standard' && '30 Gwei (~$4.50)'}
@@ -543,10 +543,10 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
           {/* Section E: Default Slippage Settings */}
           <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 font-mono text-xs bento-hover shadow-lg">
             <h3 className="font-sans font-bold text-slate-100 text-[14px] uppercase tracking-wider mb-1">
-              Default Slippage Settings
+              {t('slippageTitle')}
             </h3>
             <p className="text-xs font-sans text-slate-400 leading-relaxed">
-              Protect trade output amounts by reverting swaps that leak capital past predefined parameters.
+              {t('slippageBody')}
             </p>
 
             <div className="grid grid-cols-4 gap-2 text-xs font-sans select-none mt-2">
@@ -571,7 +571,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                     : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
                 }`}
               >
-                Custom
+                {t('custom')}
               </button>
             </div>
 
@@ -586,7 +586,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                       const v = e.target.value;
                       if (v === '' || /^\d*\.?\d*$/.test(v)) onUpdateSettings({ customSlippage: v });
                     }}
-                    placeholder="Custom %"
+                    placeholder={t('customPercent')}
                     className="w-full p-2.5 pr-8 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-lg text-xs font-mono focus:outline-none text-slate-200 placeholder-slate-600 transition-colors"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-mono">%</span>
@@ -596,9 +596,9 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                   let warn: string | null = null;
                   try {
                     const d = new Decimal(settings.customSlippage || 0);
-                    if (d.lte(0)) warn = 'Enter a slippage greater than 0%.';
-                    else if (d.gt(50)) warn = 'Very high slippage — trades may lose significant value.';
-                  } catch { warn = 'Enter a valid number.'; }
+                    if (d.lte(0)) warn = t('slippageGreaterThanZero');
+                    else if (d.gt(50)) warn = t('slippageVeryHigh');
+                  } catch { warn = t('slippageInvalid'); }
                   return warn ? <span className="text-[10px] font-mono text-amber-400">{warn}</span> : null;
                 })()}
               </div>
@@ -609,10 +609,10 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
           <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 font-mono text-xs bento-hover shadow-lg">
             <h3 className="font-sans font-bold text-slate-100 text-[14px] uppercase tracking-wider mb-1 flex items-center gap-2">
               <Bell className="h-4 w-4 text-indigo-400" />
-              Notifications
+              {t('notificationsTitle')}
             </h3>
             <p className="text-xs font-sans text-slate-400 leading-relaxed">
-              Choose which activity appears in your notification feed.
+              {t('notificationsBody')}
             </p>
 
             <div className="flex flex-col gap-2 mt-1 font-sans">
@@ -624,7 +624,7 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                   </div>
                   <button
                     onClick={() => toggleNotifPref(cat.key)}
-                    aria-label={`Toggle ${cat.label}`}
+                    aria-label={t('toggleCategory', { label: cat.label })}
                     aria-pressed={notifPrefs[cat.key]}
                     className={`w-12 h-7 rounded-full p-1 transition-colors duration-300 relative cursor-pointer outline-none border shrink-0 ${
                       notifPrefs[cat.key]

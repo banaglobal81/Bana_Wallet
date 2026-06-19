@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import Decimal from 'decimal.js';
+import { useTranslations } from 'next-intl';
 import { getNiaBalance, getNiaPrice, getNiaKlines } from '../utils/niaApi';
 
 // ---------------------------------------------------------------------------
@@ -112,6 +113,7 @@ interface DashboardProps {
 // ---------------------------------------------------------------------------
 
 export default function Dashboard({ settings, onNavigate }: DashboardProps) {
+  const t = useTranslations('dashboard');
   // ---- UI state -----------------------------------------------------------
   const [hoveredAsset, setHoveredAsset] = useState<string | null>(null);
   const [showAllocInfo, setShowAllocInfo] = useState(false);
@@ -301,7 +303,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
     if (loading) {
       return (
         <div className="w-36 h-36 rounded-full bg-slate-800/60 animate-pulse flex items-center justify-center">
-          <span className="text-[10px] font-mono text-slate-500">Loading</span>
+          <span className="text-[10px] font-mono text-slate-500">{t('loading')}</span>
         </div>
       );
     }
@@ -309,7 +311,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
     if (donutSlices.length === 0) {
       return (
         <div className="w-36 h-36 rounded-full border-4 border-slate-700 flex items-center justify-center">
-          <span className="text-[10px] font-mono text-slate-500 text-center px-2">No assets</span>
+          <span className="text-[10px] font-mono text-slate-500 text-center px-2">{t('noAssets')}</span>
         </div>
       );
     }
@@ -347,7 +349,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
 
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
           <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wide">
-            {hoveredAsset ?? 'Assets'}
+            {hoveredAsset ?? t('assets')}
           </span>
           <span className="text-xl font-bold font-mono text-white mt-0.5">
             {hoveredAsset
@@ -367,7 +369,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
     if (klineLoading) {
       return (
         <div className="h-32 mt-2 w-full flex items-center justify-center">
-          <span className="text-xs font-mono text-slate-500">Loading price data…</span>
+          <span className="text-xs font-mono text-slate-500">{t('loadingPriceData')}</span>
         </div>
       );
     }
@@ -375,7 +377,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
     if (klinePoints.length < 2) {
       return (
         <div className="h-32 mt-2 w-full flex items-center justify-center">
-          <span className="text-xs font-mono text-slate-500">No price history available</span>
+          <span className="text-xs font-mono text-slate-500">{t('noPriceHistory')}</span>
         </div>
       );
     }
@@ -460,13 +462,13 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
       <header className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center bg-[#020617]">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex flex-wrap items-center gap-2">
-            Portfolio Dashboard
+            {t('pageTitle')}
             <span className="text-[10px] sm:text-xs font-mono font-bold bg-indigo-500/10 px-2.5 py-0.5 rounded text-indigo-400 uppercase tracking-widest border border-indigo-500/20">
-              SECURED WITH BENTO
+              {t('securedBadge')}
             </span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 font-mono break-all">
-            Vault Router v3.4 • Verified Address: {settings.connectedWallet.slice(0, 10)}...{settings.connectedWallet.slice(-6)}
+            {t('vaultSubtitle', { address: `${settings.connectedWallet.slice(0, 10)}...${settings.connectedWallet.slice(-6)}` })}
           </p>
         </div>
 
@@ -476,7 +478,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
             className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700/60 text-slate-200 rounded-xl font-bold text-sm transition-all duration-200 flex items-center gap-2 cursor-pointer shadow-sm"
           >
             <Download className="h-4 w-4 text-slate-400" />
-            Receive
+            {t('receive')}
           </button>
 
           <button
@@ -484,7 +486,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
             className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-all duration-200 flex items-center gap-2 cursor-pointer shadow-[0_0_15px_rgba(99,102,241,0.25)] border border-indigo-500/30"
           >
             <Upload className="h-4 w-4" />
-            Send
+            {t('send')}
           </button>
 
         </div>
@@ -498,7 +500,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
           {/* Total portfolio value */}
           <div>
             <span className="text-xs font-mono text-slate-400 uppercase tracking-widest font-bold">
-              Total Portfolio Value
+              {t('totalPortfolioValue')}
             </span>
             <div className="flex items-baseline gap-2 mt-2">
               {loading ? (
@@ -526,7 +528,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
           {/* 24h change detail */}
           <div className="border-t border-slate-800 md:border-t-0 md:border-l md:pl-8 py-1">
             <span className="text-xs font-mono text-slate-400 uppercase tracking-widest font-bold">
-              24h Change
+              {t('change24h')}
             </span>
             {loading ? (
               <div className="h-8 w-32 rounded-lg bg-slate-800 animate-pulse mt-1.5" />
@@ -540,7 +542,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
           {/* Distinct assets held */}
           <div className="border border-indigo-500/10 rounded-2xl bg-indigo-500/5 md:border-none md:rounded-none md:bg-transparent md:border-l md:pl-8 py-3 px-4 md:py-1 md:px-0">
             <span className="text-xs font-mono text-indigo-300 md:text-slate-400 uppercase tracking-widest font-bold">
-              Assets Held
+              {t('assetsHeld')}
             </span>
             {loading ? (
               <div className="h-8 w-20 rounded-lg bg-slate-800 animate-pulse mt-1.5" />
@@ -548,7 +550,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
               <p className="text-2xl font-bold font-sans text-indigo-400 md:text-slate-200 mt-1.5 flex items-center gap-2">
                 {String(distinctAssets).padStart(2, '0')}
                 <span className="text-[10px] bg-indigo-500/10 text-indigo-400 font-bold border border-indigo-500/20 px-1.5 py-0.5 rounded uppercase font-sans">
-                  LIVE
+                  {t('live')}
                 </span>
               </p>
             )}
@@ -566,12 +568,12 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
           <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-4 bento-hover shadow-lg">
             <div className="flex justify-between items-center">
               <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider">
-                Asset Allocation
+                {t('assetAllocation')}
               </h3>
               <div className="relative">
                 <button
                   onClick={() => setShowAllocInfo((v) => !v)}
-                  aria-label="What is asset allocation?"
+                  aria-label={t('allocationInfoLabel')}
                   aria-expanded={showAllocInfo}
                   className={`p-1 transition-colors cursor-pointer ${showAllocInfo ? 'text-indigo-400' : 'text-slate-400 hover:text-white'}`}
                 >
@@ -581,10 +583,9 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowAllocInfo(false)} />
                     <div className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-3rem)] p-3.5 bg-slate-950 border border-slate-700 rounded-xl shadow-2xl shadow-black/40 z-50 text-left">
-                      <p className="text-[12px] font-bold text-white mb-1">Asset Allocation</p>
+                      <p className="text-[12px] font-bold text-white mb-1">{t('allocationInfoTitle')}</p>
                       <p className="text-[11px] text-slate-400 leading-relaxed">
-                        How your portfolio is split across tokens, by percentage of total value.
-                        Hover a ring segment to see that token's share. Rebalance via Swap to adjust it.
+                        {t('allocationInfoBody')}
                       </p>
                     </div>
                   </>
@@ -598,9 +599,9 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
               {/* Dynamic legends */}
               <div className="flex flex-col gap-2 font-mono text-xs select-none">
                 {loading ? (
-                  <span className="text-slate-500">Loading…</span>
+                  <span className="text-slate-500">{t('loadingEllipsis')}</span>
                 ) : donutSlices.length === 0 ? (
-                  <span className="text-slate-500">No assets</span>
+                  <span className="text-slate-500">{t('noAssets')}</span>
                 ) : (
                   donutSlices.slice(0, 6).map((slice) => (
                     <div key={slice.currency} className="flex items-center gap-2">
@@ -614,7 +615,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
                 {!loading && donutSlices.length > 6 && (
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-slate-600 block flex-shrink-0" />
-                    <span className="text-slate-400">+{donutSlices.length - 6} more</span>
+                    <span className="text-slate-400">{t('moreAssets', { count: donutSlices.length - 6 })}</span>
                   </div>
                 )}
               </div>
@@ -626,9 +627,9 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
             <div className="flex justify-between items-center">
               <div>
                 <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider">
-                  BTC Price — 30d
+                  {t('btcPrice30d')}
                 </h3>
-                <p className="text-[10px] font-mono text-slate-500 mt-0.5">Live via Nia-Hub · daily close</p>
+                <p className="text-[10px] font-mono text-slate-500 mt-0.5">{t('btcPriceSubtitle')}</p>
               </div>
               <Layers className="h-4 w-4 text-indigo-400 opacity-60" />
             </div>
@@ -641,7 +642,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-slate-800 pb-4">
               <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider">
-                Current Assets
+                {t('currentAssets')}
               </h3>
             </div>
 
@@ -654,15 +655,15 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
             ) : portfolioAssets.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
                 <Sparkles className="h-10 w-10 text-slate-600" />
-                <p className="text-slate-300 font-bold text-base">No assets yet — fund your account to see your portfolio</p>
+                <p className="text-slate-300 font-bold text-base">{t('noAssetsTitle')}</p>
                 <p className="text-slate-500 text-sm max-w-xs">
-                  Deposit crypto to your BANA wallet address and your balances will appear here.
+                  {t('noAssetsBody')}
                 </p>
                 <button
                   onClick={() => onNavigate('DEPOSIT_INTERFACE', 'push')}
                   className="mt-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer"
                 >
-                  Deposit Now
+                  {t('depositNow')}
                 </button>
               </div>
             ) : (
@@ -670,12 +671,12 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
                 <table className="w-full min-w-[520px] text-left border-collapse">
                   <thead>
                     <tr className="border-b border-slate-800/80 text-[11px] font-mono text-slate-400 uppercase tracking-wider">
-                      <th className="pb-3 font-semibold">Token</th>
-                      <th className="pb-3 text-right font-semibold">Price</th>
-                      <th className="pb-3 text-right font-semibold">24h%</th>
-                      <th className="pb-3 text-right font-semibold">Amount</th>
-                      <th className="pb-3 text-right font-semibold">Value</th>
-                      <th className="pb-3 text-right font-semibold">Alloc%</th>
+                      <th className="pb-3 font-semibold">{t('tableToken')}</th>
+                      <th className="pb-3 text-right font-semibold">{t('tablePrice')}</th>
+                      <th className="pb-3 text-right font-semibold">{t('tableChange24h')}</th>
+                      <th className="pb-3 text-right font-semibold">{t('tableAmount')}</th>
+                      <th className="pb-3 text-right font-semibold">{t('tableValue')}</th>
+                      <th className="pb-3 text-right font-semibold">{t('tableAlloc')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/50">
@@ -705,7 +706,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
                           <td className="py-3.5 px-2 text-right font-mono text-xs text-white">
                             {asset.hasPrice
                               ? `$${asset.price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`
-                              : <span className="text-slate-500 text-[10px]">no market</span>}
+                              : <span className="text-slate-500 text-[10px]">{t('noMarket')}</span>}
                           </td>
 
                           <td className="py-3.5 px-2 text-right">
@@ -746,7 +747,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
 
           <div className="mt-5 pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
             <span className="text-slate-400">
-              {loading ? 'Fetching balances…' : `${portfolioAssets.length} asset${portfolioAssets.length !== 1 ? 's' : ''} with non-zero balance`}
+              {loading ? t('fetchingBalances') : t('assetsWithBalance', { count: portfolioAssets.length })}
             </span>
             <a
               href="#swap"
@@ -756,7 +757,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
               }}
               className="text-indigo-400 hover:text-indigo-300 font-bold font-sans flex items-center gap-1 group/link transition-colors cursor-pointer"
             >
-              <span>Go to Swap</span>
+              <span>{t('goToSwap')}</span>
               <ChevronRight className="h-4 w-4 group-hover/link:translate-x-0.5 transition-transform" />
             </a>
           </div>
@@ -771,15 +772,15 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
           </div>
           <div>
             <h4 className="text-sm font-bold text-white tracking-wide">
-              Hardware Wallet Integration Guard Active
+              {t('footerTitle')}
             </h4>
             <p className="text-xs text-slate-400 mt-0.5">
-              Secure private keys remain strictly off-network. High-precision hardware consensus algorithms verified.
+              {t('footerBody')}
             </p>
           </div>
         </div>
         <div className="text-xs font-mono font-bold text-indigo-400 border border-indigo-500/25 px-3 py-1.5 rounded-xl bg-indigo-500/5">
-          Consensus: SECURE
+          {t('consensusSecure')}
         </div>
       </footer>
     </div>

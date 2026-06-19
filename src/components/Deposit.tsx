@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { Screen, Asset, SystemSettings } from '../types';
 import { getNiaDeposits } from '../utils/niaApi';
 import {
@@ -19,6 +20,7 @@ interface DepositProps {
 }
 
 export default function Deposit({ assets, settings, onNavigate }: DepositProps) {
+  const t = useTranslations('deposit');
   const [selectedAsset, setSelectedAsset] = useState<string>('ETH');
 
   // Live deposit history from Nia-Hub.
@@ -48,7 +50,7 @@ export default function Deposit({ assets, settings, onNavigate }: DepositProps) 
         <div className="flex items-center gap-3">
           <button
             onClick={() => onNavigate('WALLET_INTERFACE', 'push_back')}
-            aria-label="Back"
+            aria-label={t('backAria')}
             className="p-2 rounded-xl border border-[#1E3559] bg-[#112643]/50 hover:bg-[#1e3459] text-[#8c90a0] hover:text-white transition-colors cursor-pointer"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -56,16 +58,16 @@ export default function Deposit({ assets, settings, onNavigate }: DepositProps) 
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
               <Download className="h-6 w-6 text-emerald-400" />
-              Deposit
+              {t('pageTitle')}
             </h1>
             <p className="text-xs sm:text-sm text-[#8c90a0] mt-1 font-mono">
-              Receive assets into your Nia custody account.
+              {t('pageSubtitle')}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-lg text-emerald-400 font-semibold text-xs font-mono select-none self-start sm:self-auto">
-          <ShieldCheck className="h-4 w-4" /> NIA SECURED
+          <ShieldCheck className="h-4 w-4" /> {t('niaSecured')}
         </div>
       </header>
 
@@ -75,7 +77,7 @@ export default function Deposit({ assets, settings, onNavigate }: DepositProps) 
         <div className="lg:col-span-3 min-w-0 flex flex-col gap-5">
           <div className="p-6 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-4">
             <h3 className="font-sans font-extrabold text-[#d8e2ff] text-sm uppercase tracking-wider">
-              Select Asset to Deposit
+              {t('selectAsset')}
             </h3>
 
             {/* Asset chips */}
@@ -98,14 +100,14 @@ export default function Deposit({ assets, settings, onNavigate }: DepositProps) 
             {/* Deposit address unavailable */}
             <div className="mt-1 p-4 rounded-xl bg-[#020d24]/80 border border-[#1E3559] flex flex-col gap-3">
               <span className="text-xs font-mono text-[#8c90a0] uppercase tracking-wider">
-                {selectedAsset} Deposit Address
+                {t('depositAddressLabel', { asset: selectedAsset })}
               </span>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-[#0d1f3c]/60 border border-[#1E3559]">
                 <Info className="h-4 w-4 text-[#528dff] shrink-0 mt-0.5" />
                 <p className="text-xs text-[#8c90a0] leading-relaxed">
-                  On-chain deposit address generation is <span className="text-[#d8e2ff] font-semibold">not yet available</span> for
-                  this account. To obtain your {selectedAsset} deposit address, please contact your account manager or{' '}
-                  <span className="text-[#528dff] font-semibold">reach out to BANA support</span>.
+                  {t('addressUnavailablePrefix')} <span className="text-[#d8e2ff] font-semibold">{t('notYetAvailable')}</span>{' '}
+                  {t('addressUnavailableMid', { asset: selectedAsset })}{' '}
+                  <span className="text-[#528dff] font-semibold">{t('reachOutSupport')}</span>{t('addressUnavailableSuffix')}
                 </p>
               </div>
             </div>
@@ -114,9 +116,8 @@ export default function Deposit({ assets, settings, onNavigate }: DepositProps) 
             <div className="p-3.5 rounded-xl bg-amber-500/5 border border-amber-500/20 flex items-start gap-2.5">
               <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
               <p className="text-xs text-[#8c90a0] leading-relaxed">
-                Only send <span className="text-amber-300 font-bold">{selectedAsset}</span> on the{' '}
-                <span className="text-amber-300 font-bold">{settings.activeChain}</span> network to the address
-                provided by your account manager. Sending to an incorrect address or network may result in permanent loss.
+                {t('warningPrefix')} <span className="text-amber-300 font-bold">{selectedAsset}</span> {t('warningOn')}{' '}
+                <span className="text-amber-300 font-bold">{settings.activeChain}</span> {t('warningSuffix')}
               </p>
             </div>
           </div>
@@ -126,14 +127,14 @@ export default function Deposit({ assets, settings, onNavigate }: DepositProps) 
         <div className="lg:col-span-2 min-w-0 flex flex-col gap-6">
           <div className="p-6 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col items-center gap-4">
             <h3 className="font-sans font-extrabold text-[#d8e2ff] text-sm uppercase tracking-wider self-start">
-              Scan to Deposit
+              {t('scanToDeposit')}
             </h3>
             {/* QR placeholder — shown once a deposit address is provisioned */}
             <div className="w-44 h-44 rounded-2xl bg-[#020d24] border border-[#1E3559]/50 flex items-center justify-center opacity-40">
               <QrCode className="h-24 w-24 text-[#528dff]/50" />
             </div>
             <p className="text-[11px] font-mono text-[#8c90a0] text-center">
-              QR code unavailable — deposit address not yet provisioned for this account.
+              {t('qrUnavailable')}
             </p>
           </div>
 
@@ -141,14 +142,14 @@ export default function Deposit({ assets, settings, onNavigate }: DepositProps) 
           <div className="p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <h3 className="font-sans font-extrabold text-[#d8e2ff] text-sm uppercase tracking-wider">
-                Recent Deposits
+                {t('recentDeposits')}
               </h3>
-              <span className="text-[10px] font-mono text-[#8c90a0]">via Nia-Hub</span>
+              <span className="text-[10px] font-mono text-[#8c90a0]">{t('viaNiaHub')}</span>
             </div>
             {depLoading ? (
-              <p className="text-xs font-mono text-[#8c90a0] py-2">Loading…</p>
+              <p className="text-xs font-mono text-[#8c90a0] py-2">{t('loadingEllipsis')}</p>
             ) : deposits.length === 0 ? (
-              <p className="text-xs font-mono text-[#8c90a0] py-2">No deposits yet.</p>
+              <p className="text-xs font-mono text-[#8c90a0] py-2">{t('noDeposits')}</p>
             ) : (
               <div className="flex flex-col divide-y divide-[#1E3559]/40">
                 {deposits.slice(0, 6).map((d, i) => (

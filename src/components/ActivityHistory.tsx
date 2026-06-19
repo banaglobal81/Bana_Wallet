@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import Decimal from 'decimal.js';
 import { Screen, Activity, SystemSettings } from '../types';
 import { copyToClipboard } from '../utils/clipboard';
@@ -26,6 +27,7 @@ interface ActivityHistoryProps {
 }
 
 export default function ActivityHistory({ activities, settings, onNavigate }: ActivityHistoryProps) {
+  const t = useTranslations('activity');
   const [filter, setFilter] = useState<'All' | 'Completed' | 'Pending'>('All');
   const [copiedTx, setCopiedTx] = useState<string | null>(null);
 
@@ -159,29 +161,29 @@ export default function ActivityHistory({ activities, settings, onNavigate }: Ac
 
       {/* Safe Breadcrumbs Navigation List (Saves xpath lookups additionally!) */}
       <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-mono text-slate-400 bg-slate-900 p-3 rounded-2xl border border-slate-800 select-none">
-        <span className="text-indigo-400 font-bold">NODE MANIFEST REGISTRY:</span>
-        <a 
-          href="#portfolio" 
+        <span className="text-indigo-400 font-bold">{t('breadcrumbRegistry')}</span>
+        <a
+          href="#portfolio"
           onClick={(e) => { e.preventDefault(); handleNav('PORTFOLIO_DASHBOARD', 'push_back'); }}
           className="hover:text-slate-200 hover:underline transition-all cursor-pointer font-semibold"
         >
-          Portfolio
+          {t('breadcrumbPortfolio')}
         </a>
         <span>/</span>
-        <a 
-          href="#swap" 
+        <a
+          href="#swap"
           onClick={(e) => { e.preventDefault(); handleNav('SWAP_INTERFACE', 'push'); }}
           className="hover:text-slate-200 hover:underline transition-all cursor-pointer font-semibold"
         >
-          Swap
+          {t('breadcrumbSwap')}
         </a>
         <span>/</span>
-        <a 
-          href="#settings" 
+        <a
+          href="#settings"
           onClick={(e) => { e.preventDefault(); handleNav('SETTINGS_INTERFACE', 'push'); }}
           className="hover:text-slate-200 hover:underline transition-all cursor-pointer font-semibold"
         >
-          Settings
+          {t('breadcrumbSettings')}
         </a>
       </nav>
 
@@ -189,10 +191,10 @@ export default function ActivityHistory({ activities, settings, onNavigate }: Ac
       <header className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center pb-3 border-b border-slate-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-            System Activity Log
+            {t('pageTitle')}
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 font-mono">
-            Full cryptographic execution trails synced across private RPC block indexing relays.
+            {t('pageSubtitle')}
           </p>
         </div>
 
@@ -208,7 +210,7 @@ export default function ActivityHistory({ activities, settings, onNavigate }: Ac
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              {tab === 'All' ? 'All Activities' : tab}
+              {tab === 'All' ? t('filterAll') : tab === 'Completed' ? t('filterCompleted') : t('filterPending')}
             </button>
           ))}
         </div>
@@ -222,19 +224,19 @@ export default function ActivityHistory({ activities, settings, onNavigate }: Ac
           <table className="w-full min-w-[680px] text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-800 text-[11px] font-mono text-slate-400 uppercase tracking-wider font-bold">
-                <th className="pb-3 pl-2.5 font-semibold">Action</th>
-                <th className="pb-3 font-semibold">Description</th>
-                <th className="pb-3 font-semibold">EVM Inputs/Outputs</th>
-                <th className="pb-3 text-right font-semibold">Network Gas</th>
-                <th className="pb-3 text-right font-semibold">Status Hash</th>
-                <th className="pb-3 text-right font-semibold pr-2.5">Copy</th>
+                <th className="pb-3 pl-2.5 font-semibold">{t('colAction')}</th>
+                <th className="pb-3 font-semibold">{t('colDescription')}</th>
+                <th className="pb-3 font-semibold">{t('colInputsOutputs')}</th>
+                <th className="pb-3 text-right font-semibold">{t('colNetworkGas')}</th>
+                <th className="pb-3 text-right font-semibold">{t('colStatusHash')}</th>
+                <th className="pb-3 text-right font-semibold pr-2.5">{t('colCopy')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/40">
               {filteredActivities.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-8 text-sm font-mono text-slate-450">
-                    No corresponding transaction activities recorded under filter "{filter}"
+                    {t('noActivity', { filter })}
                   </td>
                 </tr>
               ) : (
@@ -277,14 +279,14 @@ export default function ActivityHistory({ activities, settings, onNavigate }: Ac
                       ) : act.type === 'Receive' ? (
                         <span className="text-emerald-450 text-emerald-400">+{act.toAmount} {act.toSymbol}</span>
                       ) : (
-                        <span className="text-purple-300">Approve spend threshold</span>
+                        <span className="text-purple-300">{t('approveSpend')}</span>
                       )}
                     </td>
 
                     {/* Gas Fee */}
                     <td className="py-4 text-right font-mono text-xs text-slate-400">
                       <div>{act.gasFee}</div>
-                      <span className="text-[9px] uppercase tracking-wide">PRIVATE Relayer</span>
+                      <span className="text-[9px] uppercase tracking-wide">{t('privateRelayer')}</span>
                     </td>
 
                     {/* Transaction Status Badge */}
@@ -318,7 +320,7 @@ export default function ActivityHistory({ activities, settings, onNavigate }: Ac
                       <button 
                         onClick={() => handleCopyTx(act.txHash)}
                         className="p-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500/30 rounded-xl transition-all cursor-pointer text-slate-400 hover:text-indigo-400 inline-flex items-center justify-center"
-                        title="Copy Transaction Hash"
+                        title={t('copyTxTitle')}
                       >
                         {copiedTx === act.txHash ? (
                           <Check className="h-3.5 w-3.5 text-emerald-400" />
@@ -341,21 +343,21 @@ export default function ActivityHistory({ activities, settings, onNavigate }: Ac
             {source === 'loading' ? (
               <>
                 <RefreshCw className="h-3.5 w-3.5 text-indigo-400 animate-spin" />
-                Syncing with Nia-Hub…
+                {t('syncing')}
               </>
             ) : source === 'live' ? (
               <>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Live • {liveActs?.length ?? 0} records from Nia-Hub
+                {t('liveRecords', { count: liveActs?.length ?? 0 })}
               </>
             ) : (
               <>
                 <RefreshCw className="h-3.5 w-3.5 text-slate-500" />
-                Demo data — no live activity yet
+                {t('demoData')}
               </>
             )}
           </span>
-          <span className="font-mono">Address Index: BANA-SECURE-ETH</span>
+          <span className="font-mono">{t('addressIndex')}</span>
         </div>
 
       </section>
