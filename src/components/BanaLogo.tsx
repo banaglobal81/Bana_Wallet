@@ -1,14 +1,13 @@
 'use client';
 
 import React from 'react';
-import emblem from '../assets/images/bana_emblem.png';
 
 interface BanaLogoProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
 }
 
-// Chrome / brushed-silver gradient to match the metallic emblem.
+// Chrome / brushed-silver gradient wordmark.
 const chrome: React.CSSProperties = {
   backgroundImage:
     'linear-gradient(180deg,#f4f7fb 0%,#cfd8e4 38%,#8c99ab 52%,#b9c4d2 60%,#eef2f8 100%)',
@@ -20,27 +19,15 @@ const chrome: React.CSSProperties = {
 };
 
 export default function BanaLogo({ className = '', size = 'md' }: BanaLogoProps) {
-  const s = {
-    sm: { img: 'h-8', text: 'text-base', gap: 'gap-2' },
-    md: { img: 'h-10', text: 'text-2xl', gap: 'gap-2.5' },
-    lg: { img: 'h-16', text: 'text-4xl', gap: 'gap-3.5' },
-  }[size];
+  const text = { sm: 'text-base', md: 'text-2xl', lg: 'text-4xl' }[size];
 
   return (
-    <div className={`flex items-center ${s.gap} select-none ${className}`}>
-      <img
-        src={typeof emblem === 'string' ? emblem : (emblem as { src: string }).src}
-        alt="BANA Wallet"
-        className={`${s.img} w-auto object-contain pointer-events-none`}
-        referrerPolicy="no-referrer"
-      />
-      <div
-        className={`font-sans font-extrabold leading-[0.95] tracking-tight ${s.text}`}
-        style={chrome}
-      >
-        <div>BANA</div>
-        <div>WALLET</div>
-      </div>
+    <div
+      className={`font-sans font-extrabold leading-[0.95] tracking-tight select-none ${text} ${className}`}
+      style={chrome}
+    >
+      <div>BANA</div>
+      <div>WALLET</div>
     </div>
   );
 }
