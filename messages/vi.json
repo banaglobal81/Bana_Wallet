@@ -90,7 +90,8 @@
     "adminNoteBody": "Với vai trò <highlight>quản trị / nhà môi giới</highlight>, bạn quản lý người dùng và thu hoa hồng. Ví và nạp tiền của người dùng cuối được tạo ở phía Nia-Hub; bảng này phản ánh dữ liệu thanh toán thực của đại lý qua khóa API.",
     "accessDeniedTitle": "Chỉ dành cho quản trị",
     "accessDeniedBody": "Bảng thanh toán chỉ dành cho <highlight>tài khoản quản trị</highlight>. Vui lòng đăng nhập bằng tài khoản quản trị để truy cập dữ liệu hoa hồng và thanh toán.",
-    "backToPortfolio": "Quay lại danh mục"
+    "backToPortfolio": "Quay lại danh mục",
+    "tenantIdMissing": "Nia-Hub không cung cấp"
   },
   "dashboard": {
     "pageTitle": "Bảng điều khiển danh mục",
@@ -210,13 +211,21 @@
     "depositAddressLabel": "Địa chỉ nạp {asset}",
     "addressUnavailable": "Việc tạo địa chỉ nạp on-chain hiện chưa khả dụng cho tài khoản này.",
     "addressUnavailableContact": "Để nhận địa chỉ nạp {asset}, vui lòng liên hệ quản lý tài khoản của bạn hoặc <support>liên hệ hỗ trợ BANA</support>.",
-    "warning": "Chỉ gửi {asset} trên mạng {chain} đến địa chỉ do quản lý tài khoản của bạn cung cấp. Gửi đến địa chỉ hoặc mạng không chính xác có thể dẫn đến mất mát vĩnh viễn.",
+    "warning": "Chỉ gửi {asset} qua mạng {network} đến địa chỉ ở trên. Gửi tài sản khác hoặc dùng sai địa chỉ hoặc mạng có thể dẫn đến mất vĩnh viễn.",
     "scanToDeposit": "Quét để nạp",
     "qrUnavailable": "Mã QR không khả dụng — địa chỉ nạp chưa được cấp cho tài khoản này.",
     "recentDeposits": "Nạp tiền gần đây",
     "viaNiaHub": "qua Nia-Hub",
     "loadingEllipsis": "Đang tải…",
-    "noDeposits": "Chưa có khoản nạp nào."
+    "noDeposits": "Chưa có khoản nạp nào.",
+    "networkLabel": "Mạng",
+    "generatingAddress": "Đang tạo địa chỉ nạp {asset} của bạn…",
+    "addressError": "Hiện không thể tạo địa chỉ nạp. Vui lòng thử lại sau giây lát.",
+    "copyAddress": "Sao chép",
+    "copied": "Đã sao chép vào bộ nhớ tạm",
+    "memoLabel": "Memo / Tag (bắt buộc)",
+    "memoWarning": "Bạn PHẢI kèm memo này khi nạp. Khoản nạp không có memo sẽ không được ghi có vào tài khoản của bạn.",
+    "networkUnavailable": "Nạp qua mạng {network} hiện chưa khả dụng — vui lòng chọn mạng khác."
   },
   "walletPage": {
     "title": "Ví",

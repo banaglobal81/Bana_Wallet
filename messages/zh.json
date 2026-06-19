@@ -90,7 +90,8 @@
     "adminNoteBody": "作为<highlight>管理员 / 经纪商</highlight>，您负责管理用户并收取佣金。最终用户的钱包和入金在 Nia-Hub 端创建，此面板通过 API 密钥反映您租户的真实结算数据。",
     "accessDeniedTitle": "仅限管理员访问",
     "accessDeniedBody": "结算面板仅向<highlight>管理员账户</highlight>开放。请使用管理员账户登录以访问佣金和结算数据。",
-    "backToPortfolio": "返回投资组合"
+    "backToPortfolio": "返回投资组合",
+    "tenantIdMissing": "Nia-Hub 未提供"
   },
   "dashboard": {
     "pageTitle": "投资组合仪表盘",
@@ -210,13 +211,21 @@
     "depositAddressLabel": "{asset} 入金地址",
     "addressUnavailable": "此账户暂不支持链上入金地址生成功能。",
     "addressUnavailableContact": "如需获取您的 {asset} 入金地址，请联系您的客户经理或<support>联系 BANA 客服</support>。",
-    "warning": "请仅通过 {chain} 网络将 {asset} 发送至客户经理提供的地址。发送至错误的地址或网络可能导致资产永久丢失。",
+    "warning": "请务必通过 {network} 网络将 {asset} 发送至上方地址。发送其他资产或使用错误的地址或网络可能导致永久损失。",
     "scanToDeposit": "扫码入金",
     "qrUnavailable": "二维码不可用 — 此账户尚未配置入金地址。",
     "recentDeposits": "近期入金",
     "viaNiaHub": "通过 Nia-Hub",
     "loadingEllipsis": "加载中…",
-    "noDeposits": "暂无入金记录。"
+    "noDeposits": "暂无入金记录。",
+    "networkLabel": "网络",
+    "generatingAddress": "正在生成您的 {asset} 充值地址…",
+    "addressError": "暂时无法生成充值地址，请稍后重试。",
+    "copyAddress": "复制",
+    "copied": "已复制到剪贴板",
+    "memoLabel": "备注 / 标签（必填）",
+    "memoWarning": "充值时必须填写此备注。未填写备注的充值将无法记入您的账户。",
+    "networkUnavailable": "{network} 网络的充值暂未开放 — 请选择其他网络。"
   },
   "walletPage": {
     "title": "钱包",

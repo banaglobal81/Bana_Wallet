@@ -90,7 +90,8 @@
     "adminNoteBody": "<highlight>管理者 / ブローカー</highlight>として、ユーザーを管理し手数料を回収します。エンドユーザーのウォレットと入金は Nia-Hub 側で作成され、このパネルは API キーを通じてテナントの実際の精算データを反映します。",
     "accessDeniedTitle": "管理者専用アクセス",
     "accessDeniedBody": "精算パネルは<highlight>管理者アカウント</highlight>のみ利用できます。管理者アカウントでログインして手数料および精算データにアクセスしてください。",
-    "backToPortfolio": "ポートフォリオに戻る"
+    "backToPortfolio": "ポートフォリオに戻る",
+    "tenantIdMissing": "Nia-Hubから提供されていません"
   },
   "dashboard": {
     "pageTitle": "ポートフォリオダッシュボード",
@@ -210,13 +211,21 @@
     "depositAddressLabel": "{asset} 入金アドレス",
     "addressUnavailable": "このアカウントでは、オンチェーン入金アドレスの生成はまだ利用できません。",
     "addressUnavailableContact": "{asset} の入金アドレスを取得するには、アカウントマネージャーにお問い合わせいただくか、<support>BANA サポートまでご連絡ください</support>。",
-    "warning": "{asset} は必ず {chain} ネットワーク上で、アカウントマネージャーから提供されたアドレスにのみ送金してください。誤ったアドレスやネットワークへの送金は、資産の永久的な損失につながる可能性があります。",
+    "warning": "{asset}は必ず{network}ネットワークで上記アドレス宛に送金してください。異なる資産の送金、または誤ったアドレス・ネットワークの使用は、資産の永久的な損失につながる場合があります。",
     "scanToDeposit": "スキャンして入金",
     "qrUnavailable": "QR コードは利用できません — このアカウントには入金アドレスがまだ割り当てられていません。",
     "recentDeposits": "最近の入金",
     "viaNiaHub": "Nia-Hub 経由",
     "loadingEllipsis": "読み込み中…",
-    "noDeposits": "入金履歴はまだありません。"
+    "noDeposits": "入金履歴はまだありません。",
+    "networkLabel": "ネットワーク",
+    "generatingAddress": "{asset}の入金アドレスを生成しています…",
+    "addressError": "現在、入金アドレスを生成できません。しばらくしてからもう一度お試しください。",
+    "copyAddress": "コピー",
+    "copied": "クリップボードにコピーしました",
+    "memoLabel": "メモ / タグ（必須）",
+    "memoWarning": "入金時には必ずこのメモを含めてください。メモのない入金はアカウントに反映されません。",
+    "networkUnavailable": "{network} ネットワークでの入金はまだ利用できません — 別のネットワークを選択してください。"
   },
   "walletPage": {
     "title": "ウォレット",

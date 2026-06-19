@@ -90,7 +90,8 @@
     "adminNoteBody": "<highlight>관리자 / 브로커</highlight>로서 사용자를 관리하고 수수료를 수취합니다. 최종 사용자 지갑과 입금은 Nia-Hub 측에서 생성되며, 이 패널은 API 키를 통해 테넌트의 실제 정산 데이터를 반영합니다.",
     "accessDeniedTitle": "관리자 전용 접근",
     "accessDeniedBody": "정산 패널은 <highlight>관리자 계정</highlight>만 이용할 수 있습니다. 관리자 계정으로 로그인하여 수수료 및 정산 데이터에 접근하세요.",
-    "backToPortfolio": "포트폴리오로 돌아가기"
+    "backToPortfolio": "포트폴리오로 돌아가기",
+    "tenantIdMissing": "Nia-Hub에서 제공되지 않음"
   },
   "dashboard": {
     "pageTitle": "포트폴리오 대시보드",
@@ -210,13 +211,21 @@
     "depositAddressLabel": "{asset} 입금 주소",
     "addressUnavailable": "이 계정에는 아직 온체인 입금 주소가 생성되지 않았습니다.",
     "addressUnavailableContact": "{asset} 입금 주소를 받으려면 계정 매니저에게 문의하거나 <support>BANA 지원팀에 문의하세요</support>.",
-    "warning": "{chain} 네트워크에서 계정 매니저가 제공한 주소로만 {asset}을(를) 보내세요. 잘못된 주소나 네트워크로 보내면 영구적인 손실이 발생할 수 있습니다.",
+    "warning": "{asset}은(는) 반드시 {network} 네트워크로 위 주소에 보내세요. 다른 자산을 보내거나 잘못된 주소·네트워크를 사용하면 영구적으로 손실될 수 있습니다.",
     "scanToDeposit": "스캔하여 입금",
     "qrUnavailable": "QR 코드를 사용할 수 없습니다 — 이 계정에 입금 주소가 아직 프로비저닝되지 않았습니다.",
     "recentDeposits": "최근 입금",
     "viaNiaHub": "Nia-Hub 경유",
     "loadingEllipsis": "로딩 중…",
-    "noDeposits": "아직 입금 내역이 없습니다."
+    "noDeposits": "아직 입금 내역이 없습니다.",
+    "networkLabel": "네트워크",
+    "generatingAddress": "{asset} 입금 주소를 생성하는 중…",
+    "addressError": "지금 입금 주소를 생성할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+    "copyAddress": "복사",
+    "copied": "클립보드에 복사됨",
+    "memoLabel": "메모 / 태그 (필수)",
+    "memoWarning": "입금 시 반드시 이 메모를 포함해야 합니다. 메모 없이 보낸 입금은 계정에 반영되지 않습니다.",
+    "networkUnavailable": "{network} 네트워크 입금은 아직 지원되지 않습니다 — 다른 네트워크를 선택해 주세요."
   },
   "walletPage": {
     "title": "지갑",

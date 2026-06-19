@@ -1,16 +1,21 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useTranslations } from 'next-intl';
 import { Screen, Asset, SystemSettings } from '../types';
-import { getNiaDeposits } from '../utils/niaApi';
+import { getNiaDeposits, createDepositAddress, getNiaMarkets } from '../utils/niaApi';
+import { copyToClipboard } from '../utils/clipboard';
 import {
   ArrowLeft,
   QrCode,
   ShieldCheck,
   AlertTriangle,
   Download,
-  Info
+  Info,
+  Copy,
+  Check,
+  Loader2
 } from 'lucide-react';
 
 interface DepositProps {
@@ -19,13 +24,114 @@ interface DepositProps {
   onNavigate: (toScreen: Screen, direction: 'push' | 'push_back' | 'slide_up' | 'none') => void;
 }
 
-export default function Deposit({ assets, settings, onNavigate }: DepositProps) {
+// A deposit-enabled (currency, network) catalogue entry, derived live from
+// /api/nia/markets — so the asset chips and network codes always match what the
+// tenant actually supports (e.g. ETH / TRX / BASE / SOL — NOT guessed ERC20/TRC20).
+interface CurrencyOption {
+  symbol: string;
+  networks: { code: string; chainType?: string }[];
+}
+
+export default function Deposit({ onNavigate }: DepositProps) {
   const t = useTranslations('deposit');
-  const [selectedAsset, setSelectedAsset] = useState<string>('ETH');
+
+  // Supported deposit currencies/networks, loaded from Nia-Hub markets.
+  const [currencies, setCurrencies] = useState<CurrencyOption[]>([]);
+  const [marketsLoading, setMarketsLoading] = useState(true);
+  const [selectedAsset, setSelectedAsset] = useState<string>('');
+  const [selectedNetwork, setSelectedNetwork] = useState<string>('');
+
+  // Deposit address state for the selected asset + network.
+  const [address, setAddress] = useState<string>('');
+  const [memo, setMemo] = useState<string>('');
+  const [addrLoading, setAddrLoading] = useState(true);
+  const [addrError, setAddrError] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Live deposit history from Nia-Hub.
   const [deposits, setDeposits] = useState<any[]>([]);
   const [depLoading, setDepLoading] = useState(true);
+
+  const assetNetworks =
+    currencies.find((c) => c.symbol === selectedAsset)?.networks ?? [];
+
+  // Load the supported deposit currencies/networks from markets on mount.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await getNiaMarkets();
+        // Keep only currencies with at least one deposit-enabled network.
+        const list: CurrencyOption[] = (data?.currencies ?? [])
+          .map((c: any) => ({
+            symbol: c.symbol as string,
+            networks: (c.networks ?? [])
+              .filter((n: any) => n.depositEnabled)
+              .map((n: any) => ({ code: n.networkCode as string, chainType: n.chainType as string })),
+          }))
+          .filter((c: CurrencyOption) => c.networks.length > 0);
+        if (cancelled) return;
+        setCurrencies(list);
+        if (list.length) {
+          setSelectedAsset(list[0].symbol);
+          setSelectedNetwork(list[0].networks[0].code);
+        } else {
+          // No supported deposit assets — stop the address spinner, show the error state.
+          setAddrLoading(false);
+          setAddrError(true);
+        }
+      } catch {
+        if (cancelled) return;
+        setAddrLoading(false);
+        setAddrError(true);
+      } finally {
+        if (!cancelled) setMarketsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Keep the selected network valid when the asset changes.
+  useEffect(() => {
+    if (!assetNetworks.length) return;
+    if (!assetNetworks.some((n) => n.code === selectedNetwork)) {
+      setSelectedNetwork(assetNetworks[0].code);
+    }
+  }, [selectedAsset, currencies]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch (idempotently create) the deposit address whenever asset/network changes.
+  useEffect(() => {
+    if (!selectedAsset || !selectedNetwork) return; // wait until markets resolve a selection
+    let cancelled = false;
+    setAddrLoading(true);
+    setAddrError(false);
+    setCopied(false);
+    (async () => {
+      try {
+        const r = await createDepositAddress({ currency: selectedAsset, network: selectedNetwork });
+        if (cancelled) return;
+        setAddress(r.address);
+        setMemo(r.memo);
+      } catch {
+        if (cancelled) return;
+        setAddress('');
+        setMemo('');
+        setAddrError(true);
+      } finally {
+        if (!cancelled) setAddrLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedAsset, selectedNetwork]);
+
+  const handleCopy = async () => {
+    if (!address) return;
+    const ok = await copyToClipboard(address);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -80,45 +186,127 @@ export default function Deposit({ assets, settings, onNavigate }: DepositProps) 
               {t('selectAsset')}
             </h3>
 
-            {/* Asset chips */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {assets.map((a) => (
-                <button
-                  key={a.id}
-                  onClick={() => setSelectedAsset(a.symbol)}
-                  className={`py-2.5 px-3 rounded-xl border text-sm font-bold font-mono transition-all cursor-pointer ${
-                    selectedAsset === a.symbol
-                      ? 'bg-[#2E7DFF]/10 border-[#528dff]/50 text-white'
-                      : 'bg-[#020d24]/50 border-[#1E3559] text-[#8c90a0] hover:text-white'
-                  }`}
-                >
-                  {a.symbol}
-                </button>
-              ))}
-            </div>
+            {/* Asset chips — sourced live from Nia-Hub markets (deposit-enabled only) */}
+            {marketsLoading ? (
+              <div className="flex items-center gap-2.5 py-2">
+                <Loader2 className="h-4 w-4 text-[#528dff] shrink-0 animate-spin" />
+                <p className="text-xs font-mono text-[#8c90a0]">{t('loadingEllipsis')}</p>
+              </div>
+            ) : currencies.length === 0 ? (
+              <p className="text-xs font-mono text-[#8c90a0] py-2">{t('addressError')}</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {currencies.map((c) => (
+                  <button
+                    key={c.symbol}
+                    onClick={() => setSelectedAsset(c.symbol)}
+                    className={`py-2.5 px-3 rounded-xl border text-sm font-bold font-mono transition-all cursor-pointer ${
+                      selectedAsset === c.symbol
+                        ? 'bg-[#2E7DFF]/10 border-[#528dff]/50 text-white'
+                        : 'bg-[#020d24]/50 border-[#1E3559] text-[#8c90a0] hover:text-white'
+                    }`}
+                  >
+                    {c.symbol}
+                  </button>
+                ))}
+              </div>
+            )}
 
-            {/* Deposit address unavailable */}
+            {/* Network selector (shown only when the asset supports more than one) */}
+            {assetNetworks.length > 1 && (
+              <div className="flex flex-col gap-2">
+                <span className="text-xs font-mono text-[#8c90a0] uppercase tracking-wider">
+                  {t('networkLabel')}
+                </span>
+                <div className="flex flex-wrap gap-2.5">
+                  {assetNetworks.map((n) => (
+                    <button
+                      key={n.code}
+                      onClick={() => setSelectedNetwork(n.code)}
+                      className={`py-2 px-4 rounded-xl border text-xs font-bold font-mono transition-all cursor-pointer ${
+                        selectedNetwork === n.code
+                          ? 'bg-[#2E7DFF]/10 border-[#528dff]/50 text-white'
+                          : 'bg-[#020d24]/50 border-[#1E3559] text-[#8c90a0] hover:text-white'
+                      }`}
+                    >
+                      {n.code}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Deposit address */}
             <div className="mt-1 p-4 rounded-xl bg-[#020d24]/80 border border-[#1E3559] flex flex-col gap-3">
               <span className="text-xs font-mono text-[#8c90a0] uppercase tracking-wider">
                 {t('depositAddressLabel', { asset: selectedAsset })}
               </span>
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-[#0d1f3c]/60 border border-[#1E3559]">
-                <Info className="h-4 w-4 text-[#528dff] shrink-0 mt-0.5" />
-                <p className="text-xs text-[#8c90a0] leading-relaxed">
-                  {t('addressUnavailable')}{' '}
-                  {t.rich('addressUnavailableContact', {
-                    asset: selectedAsset,
-                    support: (chunks) => <span className="text-[#528dff] font-semibold">{chunks}</span>,
-                  })}
-                </p>
-              </div>
+
+              {addrLoading ? (
+                <div className="flex items-center gap-2.5 p-3 rounded-lg bg-[#0d1f3c]/60 border border-[#1E3559]">
+                  <Loader2 className="h-4 w-4 text-[#528dff] shrink-0 animate-spin" />
+                  <p className="text-xs text-[#8c90a0]">{t('generatingAddress', { asset: selectedAsset })}</p>
+                </div>
+              ) : addrError || !address ? (
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                  <Info className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-[#8c90a0] leading-relaxed">
+                    {selectedNetwork
+                      ? t('networkUnavailable', { network: selectedNetwork })
+                      : t('addressError')}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-[#0d1f3c]/60 border border-[#1E3559]">
+                    <code className="text-xs sm:text-sm font-mono text-[#d8e2ff] break-all flex-1 min-w-0">
+                      {address}
+                    </code>
+                    <button
+                      onClick={handleCopy}
+                      aria-label={t('copyAddress')}
+                      className="p-2 rounded-lg border border-[#1E3559] bg-[#112643]/50 hover:bg-[#1e3459] text-[#8c90a0] hover:text-white transition-colors cursor-pointer shrink-0"
+                    >
+                      {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {copied && (
+                    <span className="text-[11px] font-mono text-emerald-400">{t('copied')}</span>
+                  )}
+
+                  {/* Memo / tag — required for shared-master-wallet chains (e.g. TRON) */}
+                  {memo && (
+                    <div className="flex flex-col gap-2 mt-1">
+                      <span className="text-xs font-mono text-[#8c90a0] uppercase tracking-wider">
+                        {t('memoLabel')}
+                      </span>
+                      <div className="flex items-center gap-2 p-3 rounded-lg bg-[#0d1f3c]/60 border border-[#1E3559]">
+                        <code className="text-xs sm:text-sm font-mono text-[#d8e2ff] break-all flex-1 min-w-0">
+                          {memo}
+                        </code>
+                        <button
+                          onClick={() => copyToClipboard(memo)}
+                          aria-label={t('copyAddress')}
+                          className="p-2 rounded-lg border border-[#1E3559] bg-[#112643]/50 hover:bg-[#1e3459] text-[#8c90a0] hover:text-white transition-colors cursor-pointer shrink-0"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                        <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                        <p className="text-xs text-[#8c90a0] leading-relaxed">{t('memoWarning')}</p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Warning */}
             <div className="p-3.5 rounded-xl bg-amber-500/5 border border-amber-500/20 flex items-start gap-2.5">
               <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
               <p className="text-xs text-[#8c90a0] leading-relaxed">
-                {t('warning', { asset: selectedAsset, chain: settings.activeChain })}
+                {t('warning', { asset: selectedAsset, network: selectedNetwork })}
               </p>
             </div>
           </div>
@@ -130,13 +318,28 @@ export default function Deposit({ assets, settings, onNavigate }: DepositProps) 
             <h3 className="font-sans font-extrabold text-[#d8e2ff] text-sm uppercase tracking-wider self-start">
               {t('scanToDeposit')}
             </h3>
-            {/* QR placeholder — shown once a deposit address is provisioned */}
-            <div className="w-44 h-44 rounded-2xl bg-[#020d24] border border-[#1E3559]/50 flex items-center justify-center opacity-40">
-              <QrCode className="h-24 w-24 text-[#528dff]/50" />
-            </div>
-            <p className="text-[11px] font-mono text-[#8c90a0] text-center">
-              {t('qrUnavailable')}
-            </p>
+            {/* QR code of the live deposit address */}
+            {address && !addrLoading && !addrError ? (
+              <>
+                <div className="w-44 h-44 rounded-2xl bg-white p-3 flex items-center justify-center">
+                  <QRCodeSVG value={address} size={152} level="M" className="w-full h-full" />
+                </div>
+                <p className="text-[11px] font-mono text-[#8c90a0] text-center break-all">
+                  {address}
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="w-44 h-44 rounded-2xl bg-[#020d24] border border-[#1E3559]/50 flex items-center justify-center opacity-40">
+                  {addrLoading
+                    ? <Loader2 className="h-16 w-16 text-[#528dff]/50 animate-spin" />
+                    : <QrCode className="h-24 w-24 text-[#528dff]/50" />}
+                </div>
+                <p className="text-[11px] font-mono text-[#8c90a0] text-center">
+                  {addrLoading ? t('generatingAddress', { asset: selectedAsset }) : t('qrUnavailable')}
+                </p>
+              </>
+            )}
           </div>
 
           {/* Live deposit history */}

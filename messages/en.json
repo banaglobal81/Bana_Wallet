@@ -90,7 +90,8 @@
     "adminNoteBody": "As the <highlight>admin / broker</highlight>, you manage users and collect commissions. End-user wallets and funding are created on the Nia-Hub side; this panel reflects your tenant’s real settlement data via the API key.",
     "accessDeniedTitle": "Admin access only",
     "accessDeniedBody": "The Settlement panel is only available to <highlight>Admin accounts</highlight>. Sign in with an admin account to access commission and settlement data.",
-    "backToPortfolio": "Back to Portfolio"
+    "backToPortfolio": "Back to Portfolio",
+    "tenantIdMissing": "Not provided by Nia-Hub"
   },
   "dashboard": {
     "pageTitle": "Portfolio Dashboard",
@@ -210,13 +211,21 @@
     "depositAddressLabel": "{asset} Deposit Address",
     "addressUnavailable": "On-chain deposit address generation is not yet available for this account.",
     "addressUnavailableContact": "To get your {asset} deposit address, contact your account manager or <support>reach out to BANA support</support>.",
-    "warning": "Only send {asset} on the {chain} network to the address provided by your account manager. Sending to an incorrect address or network may result in permanent loss.",
+    "warning": "Only send {asset} on the {network} network to the address above. Sending a different asset, or using the wrong address or network, may result in permanent loss.",
     "scanToDeposit": "Scan to Deposit",
     "qrUnavailable": "QR code unavailable — deposit address not yet provisioned for this account.",
     "recentDeposits": "Recent Deposits",
     "viaNiaHub": "via Nia-Hub",
     "loadingEllipsis": "Loading…",
-    "noDeposits": "No deposits yet."
+    "noDeposits": "No deposits yet.",
+    "networkLabel": "Network",
+    "generatingAddress": "Generating your {asset} deposit address…",
+    "addressError": "Could not generate a deposit address right now. Please try again in a moment.",
+    "copyAddress": "Copy",
+    "copied": "Copied to clipboard",
+    "memoLabel": "Memo / Tag (required)",
+    "memoWarning": "You MUST include this memo with your deposit. Deposits sent without it cannot be credited to your account.",
+    "networkUnavailable": "Deposits on {network} aren't available yet — please choose another network."
   },
   "walletPage": {
     "title": "Wallet",
