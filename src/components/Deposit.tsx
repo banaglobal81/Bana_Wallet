@@ -105,9 +105,11 @@ export default function Deposit({ assets, settings, onNavigate }: DepositProps) 
               <div className="flex items-start gap-3 p-3 rounded-lg bg-[#0d1f3c]/60 border border-[#1E3559]">
                 <Info className="h-4 w-4 text-[#528dff] shrink-0 mt-0.5" />
                 <p className="text-xs text-[#8c90a0] leading-relaxed">
-                  {t('addressUnavailablePrefix')} <span className="text-[#d8e2ff] font-semibold">{t('notYetAvailable')}</span>{' '}
-                  {t('addressUnavailableMid', { asset: selectedAsset })}{' '}
-                  <span className="text-[#528dff] font-semibold">{t('reachOutSupport')}</span>{t('addressUnavailableSuffix')}
+                  {t('addressUnavailable')}{' '}
+                  {t.rich('addressUnavailableContact', {
+                    asset: selectedAsset,
+                    support: (chunks) => <span className="text-[#528dff] font-semibold">{chunks}</span>,
+                  })}
                 </p>
               </div>
             </div>
@@ -116,8 +118,7 @@ export default function Deposit({ assets, settings, onNavigate }: DepositProps) 
             <div className="p-3.5 rounded-xl bg-amber-500/5 border border-amber-500/20 flex items-start gap-2.5">
               <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
               <p className="text-xs text-[#8c90a0] leading-relaxed">
-                {t('warningPrefix')} <span className="text-amber-300 font-bold">{selectedAsset}</span> {t('warningOn')}{' '}
-                <span className="text-amber-300 font-bold">{settings.activeChain}</span> {t('warningSuffix')}
+                {t('warning', { asset: selectedAsset, chain: settings.activeChain })}
               </p>
             </div>
           </div>

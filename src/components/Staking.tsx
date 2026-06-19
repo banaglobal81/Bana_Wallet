@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Decimal from 'decimal.js';
 import { useTranslations } from 'next-intl';
 import { Screen, SystemSettings } from '../types';
+import { getNiaBalance } from '../utils/niaApi';
 import {
   Coins,
   TrendingUp,
@@ -20,14 +21,14 @@ interface StakingProps {
   onNavigate: (toScreen: Screen, direction: 'push' | 'push_back' | 'slide_up' | 'none') => void;
 }
 
-// Mock staking pools — locked positions that earn yield over time.
+// Staking pools — APY/lock metadata only. There is NO Nia staking-balance endpoint,
+// so staked amounts & rewards are real-data-absent (rendered as 0 / empty state),
+// and the "amount to stake" max is driven by the user's real WALLET balance.
 const STAKING_POOLS = [
   {
     symbol: 'ETH',
     name: 'Ethereum',
     apy: 4.2,
-    staked: 2.5,
-    rewards: 0.0184,
     lockDays: 0,
     accent: 'text-indigo-300',
     ring: 'border-indigo-400/30',
@@ -37,8 +38,6 @@ const STAKING_POOLS = [
     symbol: 'LINK',
     name: 'Chainlink',
     apy: 6.8,
-    staked: 120,
-    rewards: 1.94,
     lockDays: 14,
     accent: 'text-sky-300',
     ring: 'border-sky-400/30',
@@ -48,8 +47,6 @@ const STAKING_POOLS = [
     symbol: 'ARB',
     name: 'Arbitrum',
     apy: 9.5,
-    staked: 600,
-    rewards: 12.4,
     lockDays: 30,
     accent: 'text-cyan-300',
     ring: 'border-cyan-400/30',
@@ -57,12 +54,79 @@ const STAKING_POOLS = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Balance shape parser (defensive — accepts array OR object with array props).
+// Mirrors Dashboard.tsx so per-asset wallet balances are consistent across screens.
+// ---------------------------------------------------------------------------
+interface RawBalanceRow {
+  currency: string;
+  balance: string;
+  locked: string;
+  walletType?: string;
+}
+
+function flattenBalanceData(raw: unknown): RawBalanceRow[] {
+  if (Array.isArray(raw)) {
+    return raw as RawBalanceRow[];
+  }
+  if (raw !== null && typeof raw === 'object') {
+    const rows: RawBalanceRow[] = [];
+    for (const val of Object.values(raw as Record<string, unknown>)) {
+      if (Array.isArray(val)) {
+        rows.push(...(val as RawBalanceRow[]));
+      }
+    }
+    return rows;
+  }
+  return [];
+}
+
+/** Aggregate real wallet balances (balance + locked) per currency, with decimal.js. */
+function aggregateBalances(raw: unknown): Map<string, Decimal> {
+  const rows = flattenBalanceData(raw);
+  const bySymbol = new Map<string, Decimal>();
+  for (const row of rows) {
+    if (!row.currency) continue;
+    const bal = new Decimal(row.balance ?? '0');
+    const lkd = new Decimal(row.locked ?? '0');
+    const prev = bySymbol.get(row.currency) ?? new Decimal(0);
+    bySymbol.set(row.currency, prev.plus(bal).plus(lkd));
+  }
+  return bySymbol;
+}
+
 export default function Staking({ settings, onNavigate }: StakingProps) {
   const t = useTranslations('staking');
   const [selectedPool, setSelectedPool] = useState<string>('ETH');
-  const [stakeAmount, setStakeAmount] = useState<string>('1.00');
+  const [stakeAmount, setStakeAmount] = useState<string>('');
+
+  // Real per-asset WALLET balances fetched from Nia on mount.
+  const [balances, setBalances] = useState<Map<string, Decimal>>(new Map());
+  const [balanceLoading, setBalanceLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setBalanceLoading(true);
+      let rawData: unknown;
+      try {
+        rawData = await getNiaBalance();
+      } catch {
+        rawData = []; // on error treat as empty — never fall back to mock
+      }
+      if (cancelled) return;
+      setBalances(aggregateBalances(rawData));
+      setBalanceLoading(false);
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
   const pool = STAKING_POOLS.find((p) => p.symbol === selectedPool) || STAKING_POOLS[0];
+
+  /** Real wallet balance available to stake for a symbol (0 when none). */
+  const getBalance = (symbol: string): Decimal => balances.get(symbol) ?? new Decimal(0);
+  const walletBalance = getBalance(pool.symbol);
 
   // Use decimal.js for the stake amount & reward projection (rule #2). Guard invalid input.
   let amount: Decimal;
@@ -72,11 +136,18 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
     amount = new Decimal(0);
   }
   const amountIsPositive = amount.gt(0);
+  const overBalance = amount.gt(walletBalance);
+  const hasNoBalance = !balanceLoading && walletBalance.lte(0);
+  const canStake = amountIsPositive && !overBalance && !hasNoBalance;
   // Simple projected yearly reward estimate = amount * APY%
   const projectedYearly = amount.times(new Decimal(pool.apy).div(100));
 
-  const totalStakedValue = STAKING_POOLS.reduce((sum, p) => sum + p.staked, 0);
-  const totalRewards = STAKING_POOLS.reduce((sum, p) => sum + p.rewards, 0);
+  // No real staking-balance endpoint exists, so staked/rewards are 0 (empty state),
+  // never fabricated. Headline totals therefore read 0 until a real source exists.
+  const totalStakedValue = new Decimal(0);
+  const totalRewards = new Decimal(0);
+
+  const handleMaxStake = () => setStakeAmount(walletBalance.toFixed());
 
   return (
     <div className="flex-1 min-h-full bg-[#06132a] text-[#d8e2ff] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
@@ -102,12 +173,12 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
       <section className="shrink-0 grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-1">
           <span className="text-[11px] font-mono uppercase tracking-widest text-[#8c90a0] font-bold">{t('totalStaked')}</span>
-          <span className="text-2xl font-bold font-sans text-white">{totalStakedValue.toLocaleString('en-US')} <span className="text-sm text-[#8c90a0]">{t('tokens')}</span></span>
+          <span className="text-2xl font-bold font-sans text-white">{totalStakedValue.toString()} <span className="text-sm text-[#8c90a0]">{t('tokens')}</span></span>
         </div>
         <div className="p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-1">
           <span className="text-[11px] font-mono uppercase tracking-widest text-[#8c90a0] font-bold">{t('claimableRewards')}</span>
           <span className="text-2xl font-bold font-sans text-emerald-400 flex items-center gap-2">
-            +{totalRewards.toLocaleString('en-US', { maximumFractionDigits: 3 })}
+            +{totalRewards.toString()}
             <Sparkles className="h-4 w-4 animate-pulse" />
           </span>
         </div>
@@ -147,7 +218,9 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
                       <div className="min-w-0">
                         <div className="font-bold text-white text-[15px] truncate">{p.name}</div>
                         <span className="font-mono text-xs text-[#8c90a0]">
-                          {t('stakedLabel', { amount: p.staked.toLocaleString('en-US'), symbol: p.symbol })}
+                          {balanceLoading
+                            ? t('loadingBalance')
+                            : t('walletAvailable', { amount: getBalance(p.symbol).toSignificantDigits(8).toString(), symbol: p.symbol })}
                           {p.lockDays > 0 && (
                             <span className="ml-2 inline-flex items-center gap-1 text-[10px]">
                               <Lock className="h-3 w-3" /> {t('lockBadge', { days: p.lockDays })}
@@ -198,7 +271,14 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
 
             {/* Amount input */}
             <div className="p-4 rounded-xl bg-[#020d24]/80 border border-[#1E3559] flex flex-col gap-2">
-              <span className="text-xs font-mono text-[#8c90a0]">{t('amountToStake')}</span>
+              <div className="flex justify-between text-xs font-mono text-[#8c90a0]">
+                <span>{t('amountToStake')}</span>
+                <span>
+                  {balanceLoading
+                    ? t('loadingBalance')
+                    : t('balance', { amount: walletBalance.toSignificantDigits(8).toString(), asset: pool.symbol })}
+                </span>
+              </div>
               <div className="flex items-center justify-between gap-3">
                 <input
                   type="text"
@@ -207,8 +287,22 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
                   className="bg-transparent text-xl font-bold font-mono text-white focus:outline-none w-full min-w-0"
                   placeholder="0.00"
                 />
-                <span className="font-mono text-sm text-[#afc6ff] font-bold shrink-0">{pool.symbol}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={handleMaxStake}
+                    className="px-2 py-1 bg-[#112643] hover:bg-[#1e3459] border border-[#1E3559] text-[#528dff] rounded text-[10px] font-bold cursor-pointer"
+                  >
+                    {t('max')}
+                  </button>
+                  <span className="font-mono text-sm text-[#afc6ff] font-bold">{pool.symbol}</span>
+                </div>
               </div>
+              {overBalance && !hasNoBalance && (
+                <span className="text-[11px] text-rose-400 font-mono">{t('amountExceedsBalance')}</span>
+              )}
+              {hasNoBalance && (
+                <span className="text-[11px] text-amber-400 font-mono">{t('noBalanceHint', { asset: pool.symbol })}</span>
+              )}
             </div>
 
             {/* Projected reward */}
@@ -233,9 +327,9 @@ export default function Staking({ settings, onNavigate }: StakingProps) {
 
             {/* CTA (demo only) */}
             <button
-              disabled={!amountIsPositive}
+              disabled={!canStake}
               className={`w-full mt-1 py-4 rounded-xl font-sans font-bold text-base text-center transition-all duration-300 border flex items-center justify-center gap-2 cursor-pointer ${
-                !amountIsPositive
+                !canStake
                   ? 'bg-[#112643]/30 border-[#1E3559] text-[#8c90a0]/60 cursor-not-allowed'
                   : 'bg-gradient-to-r from-[#0059c7] to-[#2E7DFF] hover:from-[#2e7dff] hover:to-[#528dff] text-white border-[#528dff]/50 shadow-[0_0_20px_rgba(46,125,255,0.3)] hover:scale-[1.01] active:scale-100'
               }`}

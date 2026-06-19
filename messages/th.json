@@ -53,7 +53,7 @@
     "secureMev": "MEV ปลอดภัย",
     "mevActive": "เปิดใช้งาน",
     "mevInactive": "ปิดใช้งาน",
-    "vaultAddress": "ที่อยู่วอลต์"
+    "vaultAddress": "รหัสวอลต์"
   },
   "profileMenu": {
     "profileButton": "เมนูโปรไฟล์",
@@ -129,13 +129,13 @@
     "fetchingBalances": "กำลังดึงยอดคงเหลือ…",
     "assetsWithBalance": "{count, plural, one {# สินทรัพย์ที่มียอดคงเหลือ} other {# สินทรัพย์ที่มียอดคงเหลือ}}",
     "goToSwap": "ไปที่การสวอป",
-    "footerTitle": "การป้องกันการเชื่อมต่อฮาร์ดแวร์วอลเล็ตเปิดใช้งานอยู่",
+    "footerTitle": "เปิดใช้การป้องกันการเชื่อมต่อ Hardware Wallet",
     "footerBody": "คีย์ส่วนตัวที่ปลอดภัยยังคงอยู่นอกเครือข่ายอย่างเข้มงวด อัลกอริทึมฉันทามติฮาร์ดแวร์ความแม่นยำสูงได้รับการตรวจสอบแล้ว",
     "consensusSecure": "ฉันทามติ: ปลอดภัย"
   },
   "swap": {
     "pageTitle": "สวอปสินทรัพย์",
-    "pageSubtitle": "การกำหนดเส้นทางสภาพคล่องโดยตรงพร้อมการป้องกัน MEV แบบส่วนตัว ไม่มีการแซนด์บ็อกซ์",
+    "pageSubtitle": "การกำหนดเส้นทางสภาพคล่องโดยตรงพร้อมการป้องกัน MEV แบบส่วนตัว ไม่มีการแซนด์วิช",
     "mevGuardOn": "เปิดการป้องกัน MEV",
     "cardTitle": "สวอป",
     "youPay": "คุณจ่าย",
@@ -143,7 +143,7 @@
     "max": "สูงสุด",
     "youReceive": "คุณได้รับ",
     "securityParams": "พารามิเตอร์จำลองความปลอดภัย",
-    "scenarioRisky": "เสี่ยง / HONEYPOT",
+    "scenarioRisky": "เสี่ยง / กับดัก (HONEYPOT)",
     "scenarioStandard": "สัญญามาตรฐาน",
     "scenarioBody": "การสวอปอาจกำหนดเส้นทางผ่านสินทรัพย์แบบไดนามิก สลับตัวเลือกนี้เพื่อตรวจสอบการตอบสนองของระบบของเราภายในเครื่องจำลอง!",
     "standardApprovedAsset": "สินทรัพย์ที่ได้รับการอนุมัติมาตรฐาน",
@@ -166,12 +166,14 @@
     "routeBanaPort": "BANA Port",
     "routeOptimalPool": "พูลที่เหมาะสมที่สุด",
     "routeSafeGuard": "เซฟการ์ด",
-    "routeRouted": "กำหนดเส้นทางแล้ว"
+    "routeRouted": "กำหนดเส้นทางแล้ว",
+    "loadingBalance": "กำลังโหลดยอดคงเหลือ…",
+    "noBalanceHint": "ไม่มี {asset} ให้สวอป — กรุณาฝากก่อน"
   },
   "staking": {
     "pageTitle": "สเตกกิ้ง",
     "pageSubtitle": "ล็อกสินทรัพย์เพื่อช่วยรักษาความปลอดภัยเครือข่ายและรับผลตอบแทนแบบพาสซีฟ",
-    "nonCustodial": "ไม่มีผู้ดูแลทรัพย์สิน",
+    "nonCustodial": "ดูแลด้วยตนเอง (Non-Custodial)",
     "totalStaked": "สเตกทั้งหมด",
     "tokens": "โทเค็น",
     "claimableRewards": "รางวัลที่เคลมได้",
@@ -191,7 +193,13 @@
     "lockDays": "{days} วัน",
     "network": "เครือข่าย",
     "needMore": "ต้องการ {symbol} เพิ่ม?",
-    "swapToStakeMore": "สวอปสินทรัพย์เพื่อสเตกเพิ่ม"
+    "swapToStakeMore": "สวอปสินทรัพย์เพื่อสเตกเพิ่ม",
+    "loadingBalance": "กำลังโหลดยอดคงเหลือ…",
+    "noBalanceHint": "ไม่มี {asset} ให้สเตก — กรุณาฝากก่อน",
+    "walletAvailable": "มี {amount} {symbol} ที่ใช้ได้",
+    "amountExceedsBalance": "จำนวนเกินยอดคงเหลือในกระเป๋าเงินของคุณ",
+    "max": "สูงสุด",
+    "balance": "ยอดคงเหลือ: {amount} {asset}"
   },
   "deposit": {
     "backAria": "กลับ",
@@ -200,20 +208,36 @@
     "niaSecured": "NIA ปลอดภัย",
     "selectAsset": "เลือกสินทรัพย์ที่จะฝาก",
     "depositAddressLabel": "ที่อยู่สำหรับฝาก {asset}",
-    "addressUnavailablePrefix": "การสร้างที่อยู่สำหรับฝากแบบ on-chain",
-    "notYetAvailable": "ยังไม่พร้อมใช้งาน",
-    "addressUnavailableMid": "สำหรับบัญชีนี้ หากต้องการรับที่อยู่สำหรับฝาก {asset} ของคุณ กรุณาติดต่อผู้จัดการบัญชีของคุณ หรือ",
-    "reachOutSupport": "ติดต่อฝ่ายสนับสนุน BANA",
-    "addressUnavailableSuffix": ".",
-    "warningPrefix": "ส่งเฉพาะ",
-    "warningOn": "บน",
-    "warningSuffix": "เครือข่ายไปยังที่อยู่ที่ผู้จัดการบัญชีของคุณให้มาเท่านั้น การส่งไปยังที่อยู่หรือเครือข่ายที่ไม่ถูกต้องอาจส่งผลให้สูญเสียอย่างถาวร",
+    "addressUnavailable": "ยังไม่สามารถสร้างที่อยู่สำหรับฝากแบบ on-chain สำหรับบัญชีนี้ได้",
+    "addressUnavailableContact": "หากต้องการรับที่อยู่สำหรับฝาก {asset} ของคุณ กรุณาติดต่อผู้จัดการบัญชีของคุณ หรือ <support>ติดต่อฝ่ายสนับสนุน BANA</support>",
+    "warning": "ส่งเฉพาะ {asset} บนเครือข่าย {chain} ไปยังที่อยู่ที่ผู้จัดการบัญชีของคุณให้มาเท่านั้น การส่งไปยังที่อยู่หรือเครือข่ายที่ไม่ถูกต้องอาจส่งผลให้สูญเสียอย่างถาวร",
     "scanToDeposit": "สแกนเพื่อฝาก",
     "qrUnavailable": "ไม่สามารถใช้ QR โค้ดได้ — ยังไม่ได้จัดเตรียมที่อยู่สำหรับฝากสำหรับบัญชีนี้",
     "recentDeposits": "การฝากล่าสุด",
     "viaNiaHub": "ผ่าน Nia-Hub",
     "loadingEllipsis": "กำลังโหลด…",
     "noDeposits": "ยังไม่มีการฝาก"
+  },
+  "walletPage": {
+    "title": "กระเป๋าเงิน",
+    "subtitle": "บัญชีผู้ใช้ — ฝาก ถอน และตรวจสอบยอดคงเหลือ",
+    "niaSecured": "NIA ปลอดภัย",
+    "depositTitle": "ฝาก / รับ",
+    "depositSubtitle": "เพิ่มเงินเข้ากระเป๋าเงินของคุณ",
+    "withdrawTitle": "ถอน / ส่ง",
+    "withdrawSubtitle": "ส่งเงินไปยังที่อยู่",
+    "balances": "ยอดคงเหลือ",
+    "refreshBalancesAria": "รีเฟรชยอดคงเหลือ",
+    "loadingBalances": "กำลังโหลดยอดคงเหลือจาก Nia-Hub…",
+    "backendUnreachable": "ไม่สามารถเชื่อมต่อแบ็กเอนด์ได้ (รัน npm run server)",
+    "noBalances": "ยังไม่มียอดคงเหลือ",
+    "noBalancesBody": "ผู้ใช้รายนี้ยังไม่มีเงินทุน เมื่อตั้งค่าผู้ใช้ที่มีเงินทุนแล้ว ยอดคงเหลือจะแสดงที่นี่โดยอัตโนมัติ",
+    "tableWallet": "กระเป๋าเงิน",
+    "tableAsset": "สินทรัพย์",
+    "tableAvailable": "ใช้ได้",
+    "tableLocked": "ล็อกอยู่",
+    "transactionHistory": "ประวัติธุรกรรม",
+    "transactionHistorySubtitle": "การฝาก การถอน และการเทรด"
   },
   "withdraw": {
     "backAria": "กลับ",
@@ -242,7 +266,9 @@
     "amountLabel": "จำนวน",
     "networkFee": "ค่าธรรมเนียมเครือข่าย",
     "youWillSend": "คุณจะส่ง",
-    "irreversibleWarning": "การถอนไม่สามารถย้อนกลับได้ ตรวจสอบที่อยู่ปลายทางให้แน่ใจอีกครั้ง — เงินที่ส่งไปยังที่อยู่ที่ไม่ถูกต้องไม่สามารถกู้คืนได้"
+    "irreversibleWarning": "การถอนไม่สามารถย้อนกลับได้ ตรวจสอบที่อยู่ปลายทางให้แน่ใจอีกครั้ง — เงินที่ส่งไปยังที่อยู่ที่ไม่ถูกต้องไม่สามารถกู้คืนได้",
+    "loadingBalance": "กำลังโหลดยอดคงเหลือ…",
+    "noBalanceHint": "ไม่มี {asset} ให้ถอน — กรุณาฝากก่อน"
   },
   "settings": {
     "breadcrumbRegistry": "ทะเบียนรายการโหนด:",
@@ -367,8 +393,8 @@
     "orderUpdatedBody": "มีการอัปเดตคำสั่ง",
     "positionUpdated": "อัปเดตสถานะแล้ว",
     "positionChanged": "สถานะมีการเปลี่ยนแปลง",
-    "liquidationRisk": "ความเสี่ยงในการชำระบัญชี",
-    "liquidationBody": "สถานะของคุณกำลังเข้าใกล้การชำระบัญชี",
+    "liquidationRisk": "ความเสี่ยงในการถูกบังคับปิดสถานะ",
+    "liquidationBody": "สถานะของคุณกำลังเข้าใกล้การถูกบังคับปิด (Liquidation)",
     "depositEvent": "เหตุการณ์การฝาก",
     "depositEventReceived": "ได้รับเหตุการณ์การฝากแล้ว",
     "withdrawalEvent": "เหตุการณ์การถอน",

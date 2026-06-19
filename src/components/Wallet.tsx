@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { Screen, SystemSettings } from '../types'; // SystemSettings kept for WalletProps signature
 import { getNiaBalance } from '../utils/niaApi';
 import {
@@ -21,6 +22,7 @@ interface WalletProps {
 interface BalanceRow { walletType: string; currency: string; balance: string; locked?: string }
 
 export default function Wallet({ onNavigate }: WalletProps) {
+  const t = useTranslations('walletPage');
   // User-side balances only — broker/settlement panel lives at /admin/settlement
   const [rows, setRows] = useState<BalanceRow[]>([]);
   const [balState, setBalState] = useState<'loading' | 'ok' | 'error'>('loading');
@@ -49,14 +51,14 @@ export default function Wallet({ onNavigate }: WalletProps) {
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
             <WalletIcon className="h-7 w-7 text-[#528dff]" />
-            Wallet
+            {t('title')}
           </h1>
           <p className="text-xs sm:text-sm text-[#8c90a0] mt-1 font-mono">
-            User account — deposit, withdraw, and review balances.
+            {t('subtitle')}
           </p>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-lg text-emerald-400 font-semibold text-xs font-mono select-none self-start sm:self-auto">
-          <ShieldCheck className="h-4 w-4" /> NIA SECURED
+          <ShieldCheck className="h-4 w-4" /> {t('niaSecured')}
         </div>
       </header>
 
@@ -70,8 +72,8 @@ export default function Wallet({ onNavigate }: WalletProps) {
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400"><Download className="h-5 w-5" /></div>
                 <div>
-                  <div className="text-sm font-bold text-white">Deposit / Receive</div>
-                  <div className="text-xs text-[#8c90a0]">Add funds to your wallet</div>
+                  <div className="text-sm font-bold text-white">{t('depositTitle')}</div>
+                  <div className="text-xs text-[#8c90a0]">{t('depositSubtitle')}</div>
                 </div>
               </div>
               <ChevronRight className="h-4 w-4 text-[#8c90a0] group-hover:translate-x-0.5 transition-transform" />
@@ -83,8 +85,8 @@ export default function Wallet({ onNavigate }: WalletProps) {
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-[#528dff]/10 rounded-xl text-[#528dff]"><Upload className="h-5 w-5" /></div>
                 <div>
-                  <div className="text-sm font-bold text-white">Withdraw / Send</div>
-                  <div className="text-xs text-[#8c90a0]">Send funds to an address</div>
+                  <div className="text-sm font-bold text-white">{t('withdrawTitle')}</div>
+                  <div className="text-xs text-[#8c90a0]">{t('withdrawSubtitle')}</div>
                 </div>
               </div>
               <ChevronRight className="h-4 w-4 text-[#8c90a0] group-hover:translate-x-0.5 transition-transform" />
@@ -94,30 +96,30 @@ export default function Wallet({ onNavigate }: WalletProps) {
           {/* Balances */}
           <div className="p-6 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-sans font-extrabold text-[#d8e2ff] text-sm uppercase tracking-wider">Balances</h3>
-              <button onClick={loadUser} aria-label="Refresh balances" className="p-2 bg-[#020d24]/60 hover:bg-[#1e3459] border border-[#1E3559] rounded-lg text-[#8c90a0] hover:text-white transition-colors cursor-pointer">
+              <h3 className="font-sans font-extrabold text-[#d8e2ff] text-sm uppercase tracking-wider">{t('balances')}</h3>
+              <button onClick={loadUser} aria-label={t('refreshBalancesAria')} className="p-2 bg-[#020d24]/60 hover:bg-[#1e3459] border border-[#1E3559] rounded-lg text-[#8c90a0] hover:text-white transition-colors cursor-pointer">
                 <RefreshCw className={`h-4 w-4 ${balState === 'loading' ? 'animate-spin' : ''}`} />
               </button>
             </div>
             {balState === 'loading' ? (
-              <p className="text-xs font-mono text-[#8c90a0] py-6 text-center">Loading balances from Nia-Hub…</p>
+              <p className="text-xs font-mono text-[#8c90a0] py-6 text-center">{t('loadingBalances')}</p>
             ) : balState === 'error' ? (
-              <p className="text-xs font-mono text-rose-300 py-6 text-center">Couldn't reach the backend (run npm run server).</p>
+              <p className="text-xs font-mono text-rose-300 py-6 text-center">{t('backendUnreachable')}</p>
             ) : rows.length === 0 ? (
               <div className="py-8 text-center flex flex-col items-center gap-2">
                 <div className="p-3 bg-[#020d24]/60 rounded-full border border-[#1E3559]"><WalletIcon className="h-6 w-6 text-[#8c90a0]" /></div>
-                <p className="text-sm font-bold text-white">No balances yet</p>
-                <p className="text-xs text-[#8c90a0] max-w-xs">This user has no funds. Once a funded user is configured, balances appear here automatically.</p>
+                <p className="text-sm font-bold text-white">{t('noBalances')}</p>
+                <p className="text-xs text-[#8c90a0] max-w-xs">{t('noBalancesBody')}</p>
               </div>
             ) : (
               <div className="overflow-x-auto -mx-2 px-2">
                 <table className="w-full min-w-[420px] text-left border-collapse">
                   <thead>
                     <tr className="border-b border-[#1E3559]/60 text-[11px] font-mono text-[#8c90a0] uppercase tracking-wider">
-                      <th className="pb-3 font-semibold">Wallet</th>
-                      <th className="pb-3 font-semibold">Asset</th>
-                      <th className="pb-3 text-right font-semibold">Available</th>
-                      <th className="pb-3 text-right font-semibold">Locked</th>
+                      <th className="pb-3 font-semibold">{t('tableWallet')}</th>
+                      <th className="pb-3 font-semibold">{t('tableAsset')}</th>
+                      <th className="pb-3 text-right font-semibold">{t('tableAvailable')}</th>
+                      <th className="pb-3 text-right font-semibold">{t('tableLocked')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#1E3559]/40">
@@ -143,8 +145,8 @@ export default function Wallet({ onNavigate }: WalletProps) {
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-[#528dff]/10 rounded-xl text-[#528dff]"><ActivityIcon className="h-5 w-5" /></div>
               <div className="text-left">
-                <div className="text-sm font-bold text-white">Transaction history</div>
-                <div className="text-xs text-[#8c90a0]">Deposits, withdrawals & trades</div>
+                <div className="text-sm font-bold text-white">{t('transactionHistory')}</div>
+                <div className="text-xs text-[#8c90a0]">{t('transactionHistorySubtitle')}</div>
               </div>
             </div>
             <ChevronRight className="h-4 w-4 text-[#8c90a0] group-hover:translate-x-0.5 transition-transform" />

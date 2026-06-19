@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Decimal from 'decimal.js';
 import { useTranslations } from 'next-intl';
 import { Screen, Asset, SystemSettings } from '../types';
-import { 
+import { getNiaBalance } from '../utils/niaApi';
+import {
   ArrowUpDown, 
   Settings as SettingsIcon, 
   ShieldAlert, 
@@ -15,6 +16,47 @@ import {
   Activity,
   ChevronDown
 } from 'lucide-react';
+
+// ---------------------------------------------------------------------------
+// Balance shape parser (defensive — accepts array OR object with array props).
+// Mirrors Dashboard.tsx so per-asset balances are consistent across screens.
+// ---------------------------------------------------------------------------
+interface RawBalanceRow {
+  currency: string;
+  balance: string;
+  locked: string;
+  walletType?: string;
+}
+
+function flattenBalanceData(raw: unknown): RawBalanceRow[] {
+  if (Array.isArray(raw)) {
+    return raw as RawBalanceRow[];
+  }
+  if (raw !== null && typeof raw === 'object') {
+    const rows: RawBalanceRow[] = [];
+    for (const val of Object.values(raw as Record<string, unknown>)) {
+      if (Array.isArray(val)) {
+        rows.push(...(val as RawBalanceRow[]));
+      }
+    }
+    return rows;
+  }
+  return [];
+}
+
+/** Aggregate real wallet balances (balance + locked) per currency, with decimal.js. */
+function aggregateBalances(raw: unknown): Map<string, Decimal> {
+  const rows = flattenBalanceData(raw);
+  const bySymbol = new Map<string, Decimal>();
+  for (const row of rows) {
+    if (!row.currency) continue;
+    const bal = new Decimal(row.balance ?? '0');
+    const lkd = new Decimal(row.locked ?? '0');
+    const prev = bySymbol.get(row.currency) ?? new Decimal(0);
+    bySymbol.set(row.currency, prev.plus(bal).plus(lkd));
+  }
+  return bySymbol;
+}
 
 interface SwapProps {
   assets: Asset[];
@@ -49,10 +91,30 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
     ARB: { ETH: 0.00082, USDC: 1.98, LINK: 0.1075, ARB: 1 },
   };
 
-  const getBalance = (symbol: string) => {
-    const found = assets.find(a => a.symbol === symbol);
-    return found ? found.holdings : 0;
-  };
+  // Real per-asset balances fetched from Nia on mount.
+  const [balances, setBalances] = useState<Map<string, Decimal>>(new Map());
+  const [balanceLoading, setBalanceLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setBalanceLoading(true);
+      let rawData: unknown;
+      try {
+        rawData = await getNiaBalance();
+      } catch {
+        rawData = []; // on error treat as empty — never fall back to mock
+      }
+      if (cancelled) return;
+      setBalances(aggregateBalances(rawData));
+      setBalanceLoading(false);
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  /** Real available balance for a symbol as Decimal (0 when none). */
+  const getBalance = (symbol: string): Decimal => balances.get(symbol) ?? new Decimal(0);
 
   const handlePayAmountChange = (val: string) => {
     // Basic number normalization
@@ -70,9 +132,13 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
   const payIsPositive = payDec.gt(0);
   const receiveAmount = payDec.times(currentRate);
 
+  const fromBalance = getBalance(fromAsset);
+  const hasNoBalance = !balanceLoading && fromBalance.lte(0);
+  const overBalance = payDec.gt(fromBalance);
+  const canReview = payIsPositive && !hasNoBalance && !overBalance;
+
   const handleMaxClick = () => {
-    const bal = getBalance(fromAsset);
-    setPayAmount(bal.toString());
+    setPayAmount(fromBalance.toFixed());
   };
 
   const swapTokens = () => {
@@ -83,7 +149,7 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
 
   // Execute swap initiation
   const handleReviewSwapClick = () => {
-    if (!payAmount || !payIsPositive) return;
+    if (!canReview) return;
 
     // Package the transaction details
     onPrepareSwap({
@@ -149,7 +215,9 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
               <div className="flex justify-between text-xs font-mono text-[#8c90a0]">
                 <span>{t('youPay')}</span>
                 <span className="flex items-center gap-1">
-                  {t('balance', { amount: getBalance(fromAsset).toLocaleString('en-US'), asset: fromAsset })}
+                  {balanceLoading
+                    ? t('loadingBalance')
+                    : t('balance', { amount: getBalance(fromAsset).toSignificantDigits(8).toString(), asset: fromAsset })}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-3 mt-1">
@@ -198,7 +266,9 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
               <div className="flex justify-between text-xs font-mono text-[#8c90a0]">
                 <span>{t('youReceive')}</span>
                 <span className="flex items-center gap-1">
-                  {t('balance', { amount: getBalance(toAsset).toLocaleString('en-US'), asset: toAsset })}
+                  {balanceLoading
+                    ? t('loadingBalance')
+                    : t('balance', { amount: getBalance(toAsset).toSignificantDigits(8).toString(), asset: toAsset })}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-3 mt-1">
@@ -260,12 +330,19 @@ export default function Swap({ assets, settings, onNavigate, onPrepareSwap }: Sw
               </div>
             </div>
 
+            {/* No-balance hint */}
+            {hasNoBalance && (
+              <span className="text-[11px] text-amber-400 font-mono -mt-1">
+                {t('noBalanceHint', { asset: fromAsset })}
+              </span>
+            )}
+
             {/* PRIMARY CALL TO ACTION */}
             <button
               onClick={handleReviewSwapClick}
-              disabled={!payAmount || !payIsPositive}
+              disabled={!canReview}
               className={`w-full mt-2 py-4 rounded-xl font-sans font-bold text-base text-center transition-all duration-300 border flex items-center justify-center gap-2 cursor-pointer ${
-                (!payAmount || !payIsPositive)
+                !canReview
                   ? 'bg-[#112643]/30 border-[#1E3559] text-[#8c90a0]/60 cursor-not-allowed'
                   : 'bg-gradient-to-r from-[#0059c7] to-[#2E7DFF] hover:from-[#2e7dff] hover:to-[#528dff] text-white border-[#528dff]/50 shadow-[0_0_20px_rgba(46,125,255,0.3)] hover:scale-[1.01] active:scale-100'
               }`}

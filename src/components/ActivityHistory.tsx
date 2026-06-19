@@ -235,8 +235,10 @@ export default function ActivityHistory({ activities, settings, onNavigate }: Ac
             <tbody className="divide-y divide-slate-800/40">
               {filteredActivities.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-sm font-mono text-slate-450">
-                    {t('noActivity', { filter })}
+                  <td colSpan={6} className="text-center py-8 text-sm font-mono text-slate-450 whitespace-normal break-words">
+                    <span className="block sticky left-0 mx-auto max-w-[80vw] px-2">
+                      {t('noActivity', { filter })}
+                    </span>
                   </td>
                 </tr>
               ) : (

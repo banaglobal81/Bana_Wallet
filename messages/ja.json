@@ -53,7 +53,7 @@
     "secureMev": "セキュア MEV",
     "mevActive": "有効",
     "mevInactive": "無効",
-    "vaultAddress": "ボルトアドレス"
+    "vaultAddress": "ボルト参照"
   },
   "profileMenu": {
     "profileButton": "プロフィールメニュー",
@@ -96,7 +96,7 @@
     "pageTitle": "ポートフォリオダッシュボード",
     "securedBadge": "BENTO で保護",
     "vaultSubtitle": "ボルトルーター v3.4 • 検証済みアドレス: {address}",
-    "receive": "受取",
+    "receive": "受け取る",
     "send": "送金",
     "totalPortfolioValue": "ポートフォリオ総額",
     "change24h": "24時間変動",
@@ -131,11 +131,11 @@
     "goToSwap": "スワップへ移動",
     "footerTitle": "ハードウェアウォレット統合ガード稼働中",
     "footerBody": "秘密鍵は厳格にネットワークから隔離されたまま保護されます。高精度ハードウェアコンセンサスアルゴリズムを検証済み。",
-    "consensusSecure": "コンセンサス: セキュア"
+    "consensusSecure": "コンセンサス: 安全"
   },
   "swap": {
     "pageTitle": "資産をスワップ",
-    "pageSubtitle": "プライベート MEV シールドによる直接流動性ルーティング。サンドボックスなし。",
+    "pageSubtitle": "プライベート MEV シールドによる直接流動性ルーティング。サンドイッチ攻撃の隙を与えません。",
     "mevGuardOn": "MEV ガード オン",
     "cardTitle": "スワップ",
     "youPay": "支払う",
@@ -157,7 +157,7 @@
     "exchangeRateValue": "1 {fromAsset} = {rate} {toAsset}",
     "priceImpact": "価格インパクト",
     "swapFee": "スワップ手数料",
-    "networkGasEstimate": "ネットワーク gas 見積もり",
+    "networkGasEstimate": "ネットワークガス見積もり",
     "slippageTolerance": "スリッページ許容度:",
     "slippageValue": "{slippage}%",
     "custom": "カスタム",
@@ -166,7 +166,9 @@
     "routeBanaPort": "BANA ポート",
     "routeOptimalPool": "最適プール",
     "routeSafeGuard": "セーフガード",
-    "routeRouted": "ルーティング済み"
+    "routeRouted": "ルーティング済み",
+    "loadingBalance": "残高を読み込み中…",
+    "noBalanceHint": "スワップできる {asset} がありません — 先に入金してください。"
   },
   "staking": {
     "pageTitle": "ステーキング",
@@ -191,7 +193,13 @@
     "lockDays": "{days} 日",
     "network": "ネットワーク",
     "needMore": "{symbol} がもっと必要ですか？",
-    "swapToStakeMore": "資産をスワップしてさらにステーキング"
+    "swapToStakeMore": "資産をスワップしてさらにステーキング",
+    "loadingBalance": "残高を読み込み中…",
+    "noBalanceHint": "ステーキングできる {asset} がありません — 先に入金してください。",
+    "walletAvailable": "{amount} {symbol} 利用可能",
+    "amountExceedsBalance": "数量がウォレット残高を超えています。",
+    "max": "最大",
+    "balance": "残高: {amount} {asset}"
   },
   "deposit": {
     "backAria": "戻る",
@@ -200,20 +208,36 @@
     "niaSecured": "NIA セキュア",
     "selectAsset": "入金する資産を選択",
     "depositAddressLabel": "{asset} 入金アドレス",
-    "addressUnavailablePrefix": "オンチェーン入金アドレスの生成は",
-    "notYetAvailable": "まだ利用できません",
-    "addressUnavailableMid": "このアカウントではご利用いただけません。{asset} の入金アドレスを取得するには、アカウントマネージャーにお問い合わせいただくか、",
-    "reachOutSupport": "BANA サポートまでご連絡ください",
-    "addressUnavailableSuffix": "。",
-    "warningPrefix": "送金は",
-    "warningOn": "を以下のネットワーク",
-    "warningSuffix": "上で、アカウントマネージャーから提供されたアドレスにのみ行ってください。誤ったアドレスやネットワークへの送金は、資産の永久的な損失につながる可能性があります。",
+    "addressUnavailable": "このアカウントでは、オンチェーン入金アドレスの生成はまだ利用できません。",
+    "addressUnavailableContact": "{asset} の入金アドレスを取得するには、アカウントマネージャーにお問い合わせいただくか、<support>BANA サポートまでご連絡ください</support>。",
+    "warning": "{asset} は必ず {chain} ネットワーク上で、アカウントマネージャーから提供されたアドレスにのみ送金してください。誤ったアドレスやネットワークへの送金は、資産の永久的な損失につながる可能性があります。",
     "scanToDeposit": "スキャンして入金",
     "qrUnavailable": "QR コードは利用できません — このアカウントには入金アドレスがまだ割り当てられていません。",
     "recentDeposits": "最近の入金",
     "viaNiaHub": "Nia-Hub 経由",
     "loadingEllipsis": "読み込み中…",
     "noDeposits": "入金履歴はまだありません。"
+  },
+  "walletPage": {
+    "title": "ウォレット",
+    "subtitle": "ユーザーアカウント — 入金、出金、残高の確認。",
+    "niaSecured": "NIA セキュア",
+    "depositTitle": "入金 / 受け取り",
+    "depositSubtitle": "ウォレットに資金を追加",
+    "withdrawTitle": "出金 / 送金",
+    "withdrawSubtitle": "アドレスへ資金を送金",
+    "balances": "残高",
+    "refreshBalancesAria": "残高を更新",
+    "loadingBalances": "Nia-Hub から残高を読み込み中…",
+    "backendUnreachable": "バックエンドに接続できませんでした（npm run server を実行してください）。",
+    "noBalances": "残高はまだありません",
+    "noBalancesBody": "このユーザーには資金がありません。資金のあるユーザーを設定すると、残高がここに自動的に表示されます。",
+    "tableWallet": "ウォレット",
+    "tableAsset": "資産",
+    "tableAvailable": "利用可能",
+    "tableLocked": "ロック中",
+    "transactionHistory": "取引履歴",
+    "transactionHistorySubtitle": "入金、出金、取引"
   },
   "withdraw": {
     "backAria": "戻る",
@@ -242,7 +266,9 @@
     "amountLabel": "数量",
     "networkFee": "ネットワーク手数料",
     "youWillSend": "送金額",
-    "irreversibleWarning": "出金は取り消せません。送金先アドレスを再度ご確認ください — 誤ったアドレスに送金された資産は回収できません。"
+    "irreversibleWarning": "出金は取り消せません。送金先アドレスを再度ご確認ください — 誤ったアドレスに送金された資産は回収できません。",
+    "loadingBalance": "残高を読み込み中…",
+    "noBalanceHint": "出金できる {asset} がありません — 先に入金してください。"
   },
   "settings": {
     "breadcrumbRegistry": "ノードマニフェストレジストリ:",
@@ -305,7 +331,7 @@
     "mevBody": "セキュアな BANA プライベートルーターのトンネルプロキシを切り替えます。",
     "mevOn": "BANA プライベートシールドは、メムプールクローラーがスワップをサンドボックス化したりコピートレードしたりするのを防ぎます。",
     "mevOff": "セキュリティ警告: 保護を無効にすると、スワップはサンドイッチスリッページボットに対して脆弱になります。",
-    "gasTitle": "コンセンサス速度（gas 上限）",
+    "gasTitle": "コンセンサス速度（ガスリミット）",
     "gasBody": "デフォルトの優先ブロックカバレッジ速度を選択します。Fast と Instant はネットワークの混雑キューを回避します。",
     "gasPriority": "{speed} 優先度",
     "slippageTitle": "デフォルトのスリッページ設定",

@@ -1,10 +1,51 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Decimal from 'decimal.js';
 import { useTranslations } from 'next-intl';
 import { Screen, Asset, SystemSettings } from '../types';
-import { requestNiaWithdrawal } from '../utils/niaApi';
+import { requestNiaWithdrawal, getNiaBalance } from '../utils/niaApi';
+
+// ---------------------------------------------------------------------------
+// Balance shape parser (defensive — accepts array OR object with array props).
+// Mirrors Dashboard.tsx so per-asset available balance is consistent across screens.
+// ---------------------------------------------------------------------------
+interface RawBalanceRow {
+  currency: string;
+  balance: string;
+  locked: string;
+  walletType?: string;
+}
+
+function flattenBalanceData(raw: unknown): RawBalanceRow[] {
+  if (Array.isArray(raw)) {
+    return raw as RawBalanceRow[];
+  }
+  if (raw !== null && typeof raw === 'object') {
+    const rows: RawBalanceRow[] = [];
+    for (const val of Object.values(raw as Record<string, unknown>)) {
+      if (Array.isArray(val)) {
+        rows.push(...(val as RawBalanceRow[]));
+      }
+    }
+    return rows;
+  }
+  return [];
+}
+
+/** Aggregate real wallet balances (balance + locked) per currency, with decimal.js. */
+function aggregateBalances(raw: unknown): Map<string, Decimal> {
+  const rows = flattenBalanceData(raw);
+  const bySymbol = new Map<string, Decimal>();
+  for (const row of rows) {
+    if (!row.currency) continue;
+    const bal = new Decimal(row.balance ?? '0');
+    const lkd = new Decimal(row.locked ?? '0');
+    const prev = bySymbol.get(row.currency) ?? new Decimal(0);
+    bySymbol.set(row.currency, prev.plus(bal).plus(lkd));
+  }
+  return bySymbol;
+}
 import {
   ArrowLeft,
   Upload,
@@ -30,6 +71,28 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
   const [apiError, setApiError] = useState<string | null>(null);
   const [result, setResult] = useState<{ withdrawalId?: string; status?: string } | null>(null);
 
+  // Real per-asset available balances fetched from Nia on mount.
+  const [balances, setBalances] = useState<Map<string, Decimal>>(new Map());
+  const [balanceLoading, setBalanceLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setBalanceLoading(true);
+      let rawData: unknown;
+      try {
+        rawData = await getNiaBalance();
+      } catch {
+        rawData = []; // on error treat as empty — never fall back to mock
+      }
+      if (cancelled) return;
+      setBalances(aggregateBalances(rawData));
+      setBalanceLoading(false);
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
   // Submit a real withdrawal to Nia-Hub via the backend.
   const handleConfirm = async () => {
     setSubmitting(true);
@@ -50,8 +113,8 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
     }
   };
 
-  const asset = assets.find((a) => a.symbol === selectedAsset) || assets[0];
-  const balance = asset?.holdings ?? 0;
+  // Real available balance for the selected asset (Decimal). 0 when none / not loaded.
+  const balance = balances.get(selectedAsset) ?? new Decimal(0);
 
   // Parse the amount once with decimal.js (rule #2). Decimal throws on non-numeric
   // input, so fall back to 0 when the field is empty/invalid.
@@ -62,14 +125,18 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
     amountDec = new Decimal(0);
   }
 
-  const networkFee = 0.0008; // mock; comes from Nia in the real call
+  const networkFee = new Decimal('0.0008'); // mock; comes from Nia in the real call
   const addressLooksValid = /^0x[a-fA-F0-9]{40}$/.test(destination.trim());
+  const amountIsPositive = amountDec.gt(0);
   const overBalance = amountDec.gt(balance);
-  const canReview = amountDec.gt(0) && !overBalance && addressLooksValid;
-  // Total debited = amount + network fee.
-  const totalSend = amountDec.plus(networkFee);
+  const hasNoBalance = !balanceLoading && balance.lte(0);
+  const canReview =
+    amountIsPositive && !overBalance && addressLooksValid && !hasNoBalance;
+  // BUG #9: only fold the network fee into the "you will send" total once a real
+  // positive amount is entered. At amount 0 the total must read 0, not the fee.
+  const totalSend = amountIsPositive ? amountDec.plus(networkFee) : new Decimal(0);
 
-  const handleMax = () => setAmount(balance.toString());
+  const handleMax = () => setAmount(balance.toFixed());
 
   return (
     <div className="flex-1 min-h-full bg-[#06132a] text-[#d8e2ff] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
@@ -167,7 +234,11 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
                 <div className="p-4 rounded-xl bg-[#020d24]/80 border border-[#1E3559] flex flex-col gap-2">
                   <div className="flex justify-between text-xs font-mono text-[#8c90a0]">
                     <span>{t('amount')}</span>
-                    <span>{t('balance', { amount: balance.toLocaleString('en-US'), asset: selectedAsset })}</span>
+                    <span>
+                      {balanceLoading
+                        ? t('loadingBalance')
+                        : t('balance', { amount: balance.toSignificantDigits(8).toString(), asset: selectedAsset })}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <input
@@ -192,6 +263,9 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
                   </div>
                   {overBalance && (
                     <span className="text-[11px] text-rose-400 font-mono">{t('amountExceedsBalance')}</span>
+                  )}
+                  {hasNoBalance && (
+                    <span className="text-[11px] text-amber-400 font-mono">{t('noBalanceHint', { asset: selectedAsset })}</span>
                   )}
                 </div>
 
@@ -264,16 +338,18 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
             </div>
             <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
               <span className="text-[#8c90a0]">{t('amountLabel')}</span>
-              <span className="text-white font-bold">{amountDec.toNumber()} {selectedAsset}</span>
+              <span className="text-white font-bold">
+                {amountIsPositive ? amountDec.toSignificantDigits(8).toString() : '0'} {selectedAsset}
+              </span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-[#1E3559]/30">
               <span className="text-[#8c90a0]">{t('networkFee')}</span>
-              <span className="text-white font-bold">{networkFee} {selectedAsset}</span>
+              <span className="text-white font-bold">{networkFee.toString()} {selectedAsset}</span>
             </div>
             <div className="flex justify-between items-center py-2">
               <span className="text-[#8c90a0]">{t('youWillSend')}</span>
               <span className="text-emerald-400 font-bold">
-                {totalSend.toNumber().toLocaleString('en-US', { maximumFractionDigits: 6 })} {selectedAsset}
+                {amountIsPositive ? totalSend.toSignificantDigits(8).toString() : '0'} {selectedAsset}
               </span>
             </div>
           </div>

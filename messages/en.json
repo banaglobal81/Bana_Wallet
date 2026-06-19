@@ -53,7 +53,7 @@
     "secureMev": "Secure MEV",
     "mevActive": "ACTIVE",
     "mevInactive": "INACTIVE",
-    "vaultAddress": "Vault Address"
+    "vaultAddress": "Vault Ref"
   },
   "profileMenu": {
     "profileButton": "Profile menu",
@@ -166,7 +166,9 @@
     "routeBanaPort": "BANA Port",
     "routeOptimalPool": "Optimal Pool",
     "routeSafeGuard": "Safe Guard",
-    "routeRouted": "Routed"
+    "routeRouted": "Routed",
+    "loadingBalance": "Loading balance…",
+    "noBalanceHint": "No {asset} to swap — deposit first."
   },
   "staking": {
     "pageTitle": "Staking",
@@ -191,7 +193,13 @@
     "lockDays": "{days} days",
     "network": "Network",
     "needMore": "Need more {symbol}?",
-    "swapToStakeMore": "Swap assets to stake more"
+    "swapToStakeMore": "Swap assets to stake more",
+    "loadingBalance": "Loading balance…",
+    "noBalanceHint": "No {asset} to stake — deposit first.",
+    "walletAvailable": "{amount} {symbol} available",
+    "amountExceedsBalance": "Amount exceeds your wallet balance.",
+    "max": "MAX",
+    "balance": "Balance: {amount} {asset}"
   },
   "deposit": {
     "backAria": "Back",
@@ -200,20 +208,36 @@
     "niaSecured": "NIA SECURED",
     "selectAsset": "Select Asset to Deposit",
     "depositAddressLabel": "{asset} Deposit Address",
-    "addressUnavailablePrefix": "On-chain deposit address generation is",
-    "notYetAvailable": "not yet available",
-    "addressUnavailableMid": "for this account. To obtain your {asset} deposit address, please contact your account manager or",
-    "reachOutSupport": "reach out to BANA support",
-    "addressUnavailableSuffix": ".",
-    "warningPrefix": "Only send",
-    "warningOn": "on the",
-    "warningSuffix": "network to the address provided by your account manager. Sending to an incorrect address or network may result in permanent loss.",
+    "addressUnavailable": "On-chain deposit address generation is not yet available for this account.",
+    "addressUnavailableContact": "To get your {asset} deposit address, contact your account manager or <support>reach out to BANA support</support>.",
+    "warning": "Only send {asset} on the {chain} network to the address provided by your account manager. Sending to an incorrect address or network may result in permanent loss.",
     "scanToDeposit": "Scan to Deposit",
     "qrUnavailable": "QR code unavailable — deposit address not yet provisioned for this account.",
     "recentDeposits": "Recent Deposits",
     "viaNiaHub": "via Nia-Hub",
     "loadingEllipsis": "Loading…",
     "noDeposits": "No deposits yet."
+  },
+  "walletPage": {
+    "title": "Wallet",
+    "subtitle": "User account — deposit, withdraw, and review balances.",
+    "niaSecured": "NIA SECURED",
+    "depositTitle": "Deposit / Receive",
+    "depositSubtitle": "Add funds to your wallet",
+    "withdrawTitle": "Withdraw / Send",
+    "withdrawSubtitle": "Send funds to an address",
+    "balances": "Balances",
+    "refreshBalancesAria": "Refresh balances",
+    "loadingBalances": "Loading balances from Nia-Hub…",
+    "backendUnreachable": "Couldn't reach the backend (run npm run server).",
+    "noBalances": "No balances yet",
+    "noBalancesBody": "This user has no funds. Once a funded user is configured, balances appear here automatically.",
+    "tableWallet": "Wallet",
+    "tableAsset": "Asset",
+    "tableAvailable": "Available",
+    "tableLocked": "Locked",
+    "transactionHistory": "Transaction history",
+    "transactionHistorySubtitle": "Deposits, withdrawals & trades"
   },
   "withdraw": {
     "backAria": "Back",
@@ -242,7 +266,9 @@
     "amountLabel": "Amount",
     "networkFee": "Network Fee",
     "youWillSend": "You will send",
-    "irreversibleWarning": "Withdrawals are irreversible. Double-check the destination address — funds sent to a wrong address cannot be recovered."
+    "irreversibleWarning": "Withdrawals are irreversible. Double-check the destination address — funds sent to a wrong address cannot be recovered.",
+    "loadingBalance": "Loading balance…",
+    "noBalanceHint": "No {asset} available to withdraw — deposit first."
   },
   "settings": {
     "breadcrumbRegistry": "NODE MANIFEST REGISTRY:",

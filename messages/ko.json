@@ -14,7 +14,7 @@
   },
   "login": {
     "title": "로그인",
-    "subtitle": "BANA 월렛에 다시 오신 것을 환영합니다",
+    "subtitle": "BANA 지갑에 다시 오신 것을 환영합니다",
     "emailLabel": "이메일",
     "emailPlaceholder": "이메일을 입력하세요",
     "passwordLabel": "비밀번호",
@@ -30,7 +30,7 @@
   },
   "signup": {
     "title": "계정 만들기",
-    "subtitle": "BANA 월렛 시작하기",
+    "subtitle": "BANA 지갑 시작하기",
     "emailLabel": "이메일",
     "emailPlaceholder": "you@example.com",
     "passwordLabel": "비밀번호",
@@ -53,7 +53,7 @@
     "secureMev": "보안 MEV",
     "mevActive": "활성",
     "mevInactive": "비활성",
-    "vaultAddress": "볼트 주소"
+    "vaultAddress": "볼트 참조"
   },
   "profileMenu": {
     "profileButton": "프로필 메뉴",
@@ -94,7 +94,7 @@
   },
   "dashboard": {
     "pageTitle": "포트폴리오 대시보드",
-    "securedBadge": "BENTO로 보안",
+    "securedBadge": "BENTO 보안 적용",
     "vaultSubtitle": "Vault Router v3.4 • 검증된 주소: {address}",
     "receive": "받기",
     "send": "보내기",
@@ -131,7 +131,7 @@
     "goToSwap": "스왑으로 이동",
     "footerTitle": "하드웨어 지갑 통합 가드 활성화",
     "footerBody": "개인 키는 네트워크와 완전히 분리되어 안전하게 보관됩니다. 고정밀 하드웨어 합의 알고리즘이 검증되었습니다.",
-    "consensusSecure": "합의: 보안"
+    "consensusSecure": "합의: 안전"
   },
   "swap": {
     "pageTitle": "자산 스왑",
@@ -166,7 +166,9 @@
     "routeBanaPort": "BANA 포트",
     "routeOptimalPool": "최적 풀",
     "routeSafeGuard": "세이프 가드",
-    "routeRouted": "라우팅됨"
+    "routeRouted": "라우팅됨",
+    "loadingBalance": "잔액 로딩 중…",
+    "noBalanceHint": "스왑할 {asset}이(가) 없습니다 — 먼저 입금하세요."
   },
   "staking": {
     "pageTitle": "스테이킹",
@@ -191,7 +193,13 @@
     "lockDays": "{days}일",
     "network": "네트워크",
     "needMore": "{symbol}이(가) 더 필요하신가요?",
-    "swapToStakeMore": "자산을 스왑하여 더 스테이킹하기"
+    "swapToStakeMore": "자산을 스왑하여 더 스테이킹하기",
+    "loadingBalance": "잔액 로딩 중…",
+    "noBalanceHint": "스테이킹할 {asset}이(가) 없습니다 — 먼저 입금하세요.",
+    "walletAvailable": "{amount} {symbol} 사용 가능",
+    "amountExceedsBalance": "금액이 지갑 잔액을 초과합니다.",
+    "max": "최대",
+    "balance": "잔액: {amount} {asset}"
   },
   "deposit": {
     "backAria": "뒤로",
@@ -200,20 +208,36 @@
     "niaSecured": "NIA 보안",
     "selectAsset": "입금할 자산 선택",
     "depositAddressLabel": "{asset} 입금 주소",
-    "addressUnavailablePrefix": "온체인 입금 주소 생성이",
-    "notYetAvailable": "아직 제공되지 않습니다",
-    "addressUnavailableMid": "이 계정에 대해. {asset} 입금 주소를 받으려면 계정 매니저에게 문의하거나",
-    "reachOutSupport": "BANA 지원팀에 문의하세요",
-    "addressUnavailableSuffix": ".",
-    "warningPrefix": "다음만 보내세요:",
-    "warningOn": "네트워크:",
-    "warningSuffix": "계정 매니저가 제공한 주소로만 보내세요. 잘못된 주소나 네트워크로 보내면 영구적인 손실이 발생할 수 있습니다.",
+    "addressUnavailable": "이 계정에는 아직 온체인 입금 주소가 생성되지 않았습니다.",
+    "addressUnavailableContact": "{asset} 입금 주소를 받으려면 계정 매니저에게 문의하거나 <support>BANA 지원팀에 문의하세요</support>.",
+    "warning": "{chain} 네트워크에서 계정 매니저가 제공한 주소로만 {asset}을(를) 보내세요. 잘못된 주소나 네트워크로 보내면 영구적인 손실이 발생할 수 있습니다.",
     "scanToDeposit": "스캔하여 입금",
     "qrUnavailable": "QR 코드를 사용할 수 없습니다 — 이 계정에 입금 주소가 아직 프로비저닝되지 않았습니다.",
     "recentDeposits": "최근 입금",
     "viaNiaHub": "Nia-Hub 경유",
     "loadingEllipsis": "로딩 중…",
     "noDeposits": "아직 입금 내역이 없습니다."
+  },
+  "walletPage": {
+    "title": "지갑",
+    "subtitle": "사용자 계정 — 입금, 출금 및 잔액 확인.",
+    "niaSecured": "NIA 보안",
+    "depositTitle": "입금 / 받기",
+    "depositSubtitle": "지갑에 자금 추가하기",
+    "withdrawTitle": "출금 / 보내기",
+    "withdrawSubtitle": "주소로 자금 보내기",
+    "balances": "잔액",
+    "refreshBalancesAria": "잔액 새로고침",
+    "loadingBalances": "Nia-Hub에서 잔액을 불러오는 중…",
+    "backendUnreachable": "백엔드에 연결할 수 없습니다 (npm run server를 실행하세요).",
+    "noBalances": "아직 잔액이 없습니다",
+    "noBalancesBody": "이 사용자는 자금이 없습니다. 자금이 있는 사용자가 구성되면 잔액이 여기에 자동으로 표시됩니다.",
+    "tableWallet": "지갑",
+    "tableAsset": "자산",
+    "tableAvailable": "사용 가능",
+    "tableLocked": "잠김",
+    "transactionHistory": "거래 내역",
+    "transactionHistorySubtitle": "입금, 출금 및 거래"
   },
   "withdraw": {
     "backAria": "뒤로",
@@ -242,7 +266,9 @@
     "amountLabel": "금액",
     "networkFee": "네트워크 수수료",
     "youWillSend": "보낼 금액",
-    "irreversibleWarning": "출금은 되돌릴 수 없습니다. 수신 주소를 다시 한번 확인하세요 — 잘못된 주소로 보낸 자금은 복구할 수 없습니다."
+    "irreversibleWarning": "출금은 되돌릴 수 없습니다. 수신 주소를 다시 한번 확인하세요 — 잘못된 주소로 보낸 자금은 복구할 수 없습니다.",
+    "loadingBalance": "잔액 로딩 중…",
+    "noBalanceHint": "출금할 {asset}이(가) 없습니다 — 먼저 입금하세요."
   },
   "settings": {
     "breadcrumbRegistry": "노드 매니페스트 레지스트리:",
@@ -316,7 +342,7 @@
     "slippageVeryHigh": "슬리피지가 매우 높습니다 — 거래에서 상당한 가치가 손실될 수 있습니다.",
     "slippageInvalid": "유효한 숫자를 입력하세요.",
     "notificationsTitle": "알림",
-    "notificationsBody": "알림 피드에 표시할 활동을 선택하세요.",
+    "notificationsBody": "알림 피드에 표시할 활동 유형을 선택하세요.",
     "toggleCategory": "{label} 전환"
   },
   "activity": {
@@ -385,10 +411,10 @@
     "pageSubtitle": "체인 전송 전 상태 기반 EVM 실행 추적 • 블록 20128919",
     "close": "닫기",
     "assetTransferPreview": "자산 전송 미리보기",
-    "leavingWallet": "지갑에서 출금",
+    "leavingWallet": "지갑에서 나감",
     "myAccount": "내 계정 (0x71C...)",
     "privateRpc": "프라이빗 RPC",
-    "enteringWallet": "지갑으로 입금",
+    "enteringWallet": "지갑으로 들어옴",
     "auditReports": "EVM 샌드박스 감사 보고서",
     "check1Title": "대상 컨트랙트 보안 점검",
     "check1Desc": "허니팟 지표를 찾기 위해 바이트코드 분석 중",
