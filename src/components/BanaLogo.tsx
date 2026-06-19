@@ -19,23 +19,11 @@ const chrome: React.CSSProperties = {
   filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.45))',
 };
 
-// A word whose letters are justified edge-to-edge, so every word fills the
-// same block width (BANA spreads to match WALLET) — a clean stacked lockup.
-function Word({ text }: { text: string }) {
-  return (
-    <span className="flex justify-between w-full" style={chrome}>
-      {text.split('').map((ch, i) => (
-        <span key={i}>{ch}</span>
-      ))}
-    </span>
-  );
-}
-
 export default function BanaLogo({ className = '', size = 'md' }: BanaLogoProps) {
   const s = {
-    sm: { img: 'h-8', text: 'text-sm', gap: 'gap-2' },
-    md: { img: 'h-10', text: 'text-xl', gap: 'gap-2.5' },
-    lg: { img: 'h-16', text: 'text-3xl', gap: 'gap-3.5' },
+    sm: { img: 'h-8', text: 'text-base', gap: 'gap-2' },
+    md: { img: 'h-10', text: 'text-2xl', gap: 'gap-2.5' },
+    lg: { img: 'h-16', text: 'text-4xl', gap: 'gap-3.5' },
   }[size];
 
   return (
@@ -46,10 +34,12 @@ export default function BanaLogo({ className = '', size = 'md' }: BanaLogoProps)
         className={`${s.img} w-auto object-contain pointer-events-none`}
         referrerPolicy="no-referrer"
       />
-      {/* inline-flex column sizes to the widest word (WALLET); BANA justifies to match */}
-      <div className={`inline-flex flex-col font-sans font-extrabold leading-[0.95] ${s.text}`}>
-        <Word text="BANA" />
-        <Word text="WALLET" />
+      <div
+        className={`font-sans font-extrabold leading-[0.95] tracking-tight ${s.text}`}
+        style={chrome}
+      >
+        <div>BANA</div>
+        <div>WALLET</div>
       </div>
     </div>
   );
