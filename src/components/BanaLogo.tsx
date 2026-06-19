@@ -19,6 +19,18 @@ const chrome: React.CSSProperties = {
   filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.45))',
 };
 
+// A word whose letters are justified edge-to-edge, so every word fills the
+// same block width (BANA spreads to match WALLET) — a clean stacked lockup.
+function Word({ text }: { text: string }) {
+  return (
+    <span className="flex justify-between w-full" style={chrome}>
+      {text.split('').map((ch, i) => (
+        <span key={i}>{ch}</span>
+      ))}
+    </span>
+  );
+}
+
 export default function BanaLogo({ className = '', size = 'md' }: BanaLogoProps) {
   const s = {
     sm: { img: 'h-8', text: 'text-sm', gap: 'gap-2' },
@@ -34,9 +46,10 @@ export default function BanaLogo({ className = '', size = 'md' }: BanaLogoProps)
         className={`${s.img} w-auto object-contain pointer-events-none`}
         referrerPolicy="no-referrer"
       />
-      <div className={`font-sans font-extrabold tracking-[0.08em] leading-[0.95] ${s.text}`}>
-        <div style={chrome}>BANA</div>
-        <div style={chrome}>WALLET</div>
+      {/* inline-flex column sizes to the widest word (WALLET); BANA justifies to match */}
+      <div className={`inline-flex flex-col font-sans font-extrabold leading-[0.95] ${s.text}`}>
+        <Word text="BANA" />
+        <Word text="WALLET" />
       </div>
     </div>
   );
