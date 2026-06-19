@@ -11,9 +11,9 @@ interface BanaLogoProps {
 export default function BanaLogo({ className = '', size = 'md' }: BanaLogoProps) {
   // Full "BANA WALLET" lockup (emblem + wordmark) — sized by height, width auto.
   const heights = {
-    sm: 'h-9',
-    md: 'h-11',
-    lg: 'h-20',
+    sm: 'h-10',
+    md: 'h-12',
+    lg: 'h-28',
   };
 
   return (
