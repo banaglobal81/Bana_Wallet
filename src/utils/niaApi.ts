@@ -93,6 +93,21 @@ export async function requestNiaWithdrawal(req: WithdrawalRequest): Promise<any>
   return r.data;
 }
 
+export interface DepositAddress { address: string; memo: string }
+
+/**
+ * Create (or fetch, idempotently) the current user's deposit address for a
+ * currency + network. The server derives userId from the session; the client
+ * never supplies it. Always store/display both `address` and `memo` together —
+ * for shared-master-wallet chains (e.g. TRON) the memo identifies the user.
+ */
+export async function createDepositAddress(
+  req: { currency: string; network: string },
+): Promise<DepositAddress> {
+  const r = await postJson<{ ok: boolean; data: DepositAddress }>('/api/nia/address', req);
+  return { address: r.data?.address ?? '', memo: r.data?.memo ?? '' };
+}
+
 // ---- Settlement (Broker / Admin) ----
 
 /** Unsettled commission for the broker (no userId — keyed by API key). */

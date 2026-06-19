@@ -8,7 +8,7 @@ import {
   queryString,
   unwrapEnvelope,
 } from '../../../server/core/nia-signing.js';
-import { NIA_API_KEY, NIA_API_SECRET, NIA_BASE_URL, NIA_BROKER_ID, isConfigured } from './config';
+import { NIA_API_KEY, NIA_API_SECRET, NIA_BASE_URL, NIA_BROKER_ID, NIA_HUB_URL, isConfigured } from './config';
 
 // ---------------------------------------------------------------------------
 // Error type: attaches .status and .data for safe upstream error forwarding.
@@ -141,6 +141,52 @@ export async function niaWalletRequest(
   if (method !== 'GET') fetchOpts.body = bodyStr;
 
   const res = await fetch(`${NIA_BASE_URL}${fullPath}`, fetchOpts);
+  const text = await res.text();
+  let data: unknown;
+  try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+
+  const d = data as Record<string, unknown> | null;
+
+  if (!res.ok || d?.success === false) {
+    throw makeNiaError(
+      (d?.message as string) || (d?.error as string) || `Nia-Hub responded ${res.status}`,
+      res.status,
+      data,
+    );
+  }
+
+  return unwrapEnvelope(data);
+}
+
+// ---------------------------------------------------------------------------
+// Bearer-token API (S2S — no HMAC)
+// ---------------------------------------------------------------------------
+
+/**
+ * Make an S2S Bearer-token call to the Nia-Hub (e.g. address/create-smart-wallet).
+ * Auth: Authorization: Bearer <NIA_API_KEY> — NOT HMAC.
+ * Host: NIA_HUB_URL (falls back to NIA_BASE_URL).
+ * The HMAC secret is never used or exposed here.
+ */
+export async function niaBearerRequest(
+  method: string,
+  apiPath: string,
+  { body }: { body?: Record<string, unknown> } = {},
+): Promise<unknown> {
+  if (!NIA_API_KEY) {
+    throw makeNiaError('Nia-Hub API key is not configured on the server.', 503);
+  }
+
+  const fetchOpts: RequestInit & { headers: Record<string, string>; body?: string } = {
+    method,
+    headers: {
+      Authorization: `Bearer ${NIA_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+  };
+  if (method !== 'GET') fetchOpts.body = JSON.stringify(body ?? {});
+
+  const res = await fetch(`${NIA_HUB_URL}${apiPath}`, fetchOpts);
   const text = await res.text();
   let data: unknown;
   try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }

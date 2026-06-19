@@ -14,13 +14,11 @@ import {
   ArrowLeft,
   Lock,
 } from 'lucide-react';
-import { useApp } from '@/app/providers';
 import { getNiaUnsettled, getNiaSettlementHistory } from '@/utils/niaApi';
 
 export default function AdminSettlementPage() {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === 'ADMIN';
-  const { settings } = useApp();
   const t = useTranslations('settlement');
 
   // Settlement data state
@@ -81,12 +79,13 @@ export default function AdminSettlementPage() {
     unsettled?.unsettledFees && typeof unsettled.unsettledFees === 'object'
       ? Object.entries(unsettled.unsettledFees as Record<string, unknown>).map(([cur, amt]) => [
           cur,
-          // Safely wrap via Decimal; fall back to '0.00' on bad input
+          // Safely wrap via Decimal; surface bad data as '—' rather than a fake 0.00
+          // (a real zero must come from the hub, never from a parse failure).
           (() => {
             try {
               return new Decimal(String(amt)).toFixed(8);
             } catch {
-              return '0.00';
+              return '—';
             }
           })(),
         ])
@@ -133,7 +132,7 @@ export default function AdminSettlementPage() {
         <div className="flex items-center justify-between gap-3 p-3.5 bg-[#020d24]/60 border border-[#1E3559] rounded-xl">
           <span className="text-[11px] font-mono text-[#8c90a0]">{t('tenantIdLabel')}</span>
           <span className="text-xs font-mono text-[#afc6ff] truncate">
-            {unsettled?.tenantId || settings.connectedWallet.slice(0, 18) + '…'}
+            {unsettled?.tenantId || <span className="text-[#8c90a0] italic">{t('tenantIdMissing')}</span>}
           </span>
         </div>
       </div>
