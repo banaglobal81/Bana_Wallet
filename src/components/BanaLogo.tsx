@@ -39,7 +39,7 @@ export default function BanaLogo({ className = '', size = 'md' }: BanaLogoProps)
         style={chrome}
       >
         <div>BANA</div>
-        <div style={{ fontSize: '0.62em' }}>WALLET</div>
+        <div>WALLET</div>
       </div>
     </div>
   );
