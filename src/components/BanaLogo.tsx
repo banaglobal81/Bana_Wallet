@@ -21,9 +21,9 @@ const chrome: React.CSSProperties = {
 
 export default function BanaLogo({ className = '', size = 'md' }: BanaLogoProps) {
   const s = {
-    sm: { img: 'h-10', text: 'text-lg', gap: 'gap-2' },
-    md: { img: 'h-12', text: 'text-3xl', gap: 'gap-2.5' },
-    lg: { img: 'h-20', text: 'text-5xl', gap: 'gap-3.5' },
+    sm: { img: 'h-12', text: 'text-lg', gap: 'gap-2' },
+    md: { img: 'h-14', text: 'text-3xl', gap: 'gap-2.5' },
+    lg: { img: 'h-24', text: 'text-5xl', gap: 'gap-3.5' },
   }[size];
 
   return (
