@@ -21,9 +21,9 @@ const chrome: React.CSSProperties = {
 
 export default function BanaLogo({ className = '', size = 'md' }: BanaLogoProps) {
   const s = {
-    sm: { img: 'h-10', text: 'text-base', gap: 'gap-2' },
-    md: { img: 'h-12', text: 'text-2xl', gap: 'gap-2.5' },
-    lg: { img: 'h-20', text: 'text-4xl', gap: 'gap-3.5' },
+    sm: { img: 'h-10', text: 'text-lg', gap: 'gap-2' },
+    md: { img: 'h-12', text: 'text-3xl', gap: 'gap-2.5' },
+    lg: { img: 'h-20', text: 'text-5xl', gap: 'gap-3.5' },
   }[size];
 
   return (
@@ -40,8 +40,8 @@ export default function BanaLogo({ className = '', size = 'md' }: BanaLogoProps)
         {/* Scale each word horizontally so BANA and WALLET share one width.
             chrome gradient is applied per-word (background-clip:text breaks if a
             transformed child inherits it from the parent). */}
-        <div style={{ ...chrome, width: 'fit-content', transform: 'scaleX(1.18)', transformOrigin: 'left' }}>BANA</div>
-        <div style={{ ...chrome, width: 'fit-content', transform: 'scaleX(0.82)', transformOrigin: 'left' }}>WALLET</div>
+        <div style={{ ...chrome, width: 'fit-content', transform: 'scaleX(1.30)', transformOrigin: 'left' }}>BANA</div>
+        <div style={{ ...chrome, width: 'fit-content', transform: 'scaleX(0.90)', transformOrigin: 'left' }}>WALLET</div>
       </div>
     </div>
   );
