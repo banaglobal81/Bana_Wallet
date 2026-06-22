@@ -36,12 +36,12 @@ export default function BanaLogo({ className = '', size = 'md' }: BanaLogoProps)
         referrerPolicy="no-referrer"
       />
       {/* BANA WALLET wordmark (text) */}
-      <div
-        className={`font-sans font-extrabold leading-[0.95] tracking-tight ${s.text}`}
-        style={chrome}
-      >
-        <div>BANA</div>
-        <div>WALLET</div>
+      <div className={`font-sans font-extrabold leading-[0.95] tracking-tight ${s.text}`}>
+        {/* Scale each word horizontally so BANA and WALLET share one width.
+            chrome gradient is applied per-word (background-clip:text breaks if a
+            transformed child inherits it from the parent). */}
+        <div style={{ ...chrome, width: 'fit-content', transform: 'scaleX(1.18)', transformOrigin: 'left' }}>BANA</div>
+        <div style={{ ...chrome, width: 'fit-content', transform: 'scaleX(0.82)', transformOrigin: 'left' }}>WALLET</div>
       </div>
     </div>
   );
