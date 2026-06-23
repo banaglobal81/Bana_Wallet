@@ -26,7 +26,9 @@
     "errorInvalidCredentials": "Email hoặc mật khẩu không đúng",
     "googleError": "Không thể bắt đầu đăng nhập bằng Google. Vui lòng thử lại.",
     "noAccount": "Chưa có tài khoản?",
-    "createOne": "Tạo tài khoản"
+    "createOne": "Tạo tài khoản",
+    "forgotPassword": "Quên mật khẩu?",
+    "resetSuccess": "Mật khẩu của bạn đã được đặt lại. Vui lòng đăng nhập bằng mật khẩu mới."
   },
   "signup": {
     "title": "Tạo tài khoản",
@@ -474,5 +476,30 @@
     "agreement": "Tôi hiểu rằng khi tiếp tục, <b>tôi bỏ qua tất cả quy tắc tường lửa của BANA</b> và chịu hoàn toàn trách nhiệm cho mọi mất mát không thể đảo ngược của vốn mô phỏng.",
     "reject": "Từ chối",
     "confirmAnyway": "Vẫn xác nhận"
+  },
+  "forgotPassword": {
+    "title": "Quên mật khẩu",
+    "subtitle": "Nhập email của bạn và chúng tôi sẽ gửi liên kết đặt lại.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@example.com",
+    "submit": "Gửi liên kết đặt lại",
+    "submitting": "Đang gửi…",
+    "sentNotice": "Nếu có tài khoản với email đó, liên kết đặt lại đang được gửi. Hãy kiểm tra hộp thư (và mục spam).",
+    "backToLogin": "Quay lại đăng nhập"
+  },
+  "resetPassword": {
+    "title": "Đặt mật khẩu mới",
+    "subtitle": "Chọn mật khẩu mới cho tài khoản của bạn.",
+    "newPasswordLabel": "Mật khẩu mới",
+    "newPasswordPlaceholder": "Ít nhất 8 ký tự",
+    "confirmLabel": "Xác nhận mật khẩu",
+    "confirmPlaceholder": "Nhập lại mật khẩu mới",
+    "submit": "Đặt lại mật khẩu",
+    "submitting": "Đang đặt lại…",
+    "errorTooShort": "Mật khẩu phải có ít nhất 8 ký tự.",
+    "errorMismatch": "Mật khẩu không khớp.",
+    "errorGeneric": "Không thể đặt lại mật khẩu. Vui lòng thử lại.",
+    "missingToken": "Liên kết đặt lại này không hợp lệ hoặc không đầy đủ.",
+    "requestNew": "Yêu cầu liên kết đặt lại mới"
   }
 }

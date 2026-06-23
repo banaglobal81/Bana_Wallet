@@ -30,6 +30,12 @@ export const authConfig = {
       // Helper: build an absolute URL under the current locale.
       const p = (path: string) => new URL(`/${locale}${path}`, nextUrl);
 
+      // Password-reset flow — public, accessible whether logged in or out (a user
+      // who forgot their password is logged out; an email link may open while logged in).
+      if (rest === '/forgot-password' || rest === '/reset-password') {
+        return true;
+      }
+
       // Auth pages (/login, /signup) — redirect logged-in users away.
       const isAuthPage = rest === '/login' || rest === '/signup';
       if (isAuthPage) {

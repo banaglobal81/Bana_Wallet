@@ -26,7 +26,9 @@
     "errorInvalidCredentials": "Invalid email or password",
     "googleError": "Could not start Google sign-in. Please try again.",
     "noAccount": "No account?",
-    "createOne": "Create one"
+    "createOne": "Create one",
+    "forgotPassword": "Forgot password?",
+    "resetSuccess": "Your password has been reset. Please sign in with your new password."
   },
   "signup": {
     "title": "Create account",
@@ -474,5 +476,30 @@
     "agreement": "I understand that by proceeding, <b>I bypass all BANA firewall rules</b> and assume full responsibility for any irreversible loss of simulated capital.",
     "reject": "Reject",
     "confirmAnyway": "Confirm anyway"
+  },
+  "forgotPassword": {
+    "title": "Forgot password",
+    "subtitle": "Enter your email and we'll send you a reset link.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@example.com",
+    "submit": "Send reset link",
+    "submitting": "Sending…",
+    "sentNotice": "If an account exists for that email, a reset link is on its way. Check your inbox (and spam).",
+    "backToLogin": "Back to sign in"
+  },
+  "resetPassword": {
+    "title": "Set a new password",
+    "subtitle": "Choose a new password for your account.",
+    "newPasswordLabel": "New password",
+    "newPasswordPlaceholder": "At least 8 characters",
+    "confirmLabel": "Confirm password",
+    "confirmPlaceholder": "Re-enter your new password",
+    "submit": "Reset password",
+    "submitting": "Resetting…",
+    "errorTooShort": "Password must be at least 8 characters.",
+    "errorMismatch": "Passwords do not match.",
+    "errorGeneric": "Could not reset your password. Please try again.",
+    "missingToken": "This reset link is invalid or incomplete.",
+    "requestNew": "Request a new reset link"
   }
 }

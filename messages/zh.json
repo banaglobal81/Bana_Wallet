@@ -26,7 +26,9 @@
     "errorInvalidCredentials": "邮箱或密码错误",
     "googleError": "无法启动 Google 登录，请重试。",
     "noAccount": "还没有账户？",
-    "createOne": "创建账户"
+    "createOne": "创建账户",
+    "forgotPassword": "忘记密码？",
+    "resetSuccess": "您的密码已重置，请使用新密码登录。"
   },
   "signup": {
     "title": "创建账户",
@@ -474,5 +476,30 @@
     "agreement": "我理解，继续操作即表示<b>我绕过所有 BANA 防火墙规则</b>，并对任何不可逆的模拟资本损失承担全部责任。",
     "reject": "拒绝",
     "confirmAnyway": "仍然确认"
+  },
+  "forgotPassword": {
+    "title": "忘记密码",
+    "subtitle": "输入您的邮箱，我们将向您发送重置链接。",
+    "emailLabel": "邮箱",
+    "emailPlaceholder": "you@example.com",
+    "submit": "发送重置链接",
+    "submitting": "发送中…",
+    "sentNotice": "如果该邮箱已注册账户，重置链接将很快送达。请检查收件箱（及垃圾邮件）。",
+    "backToLogin": "返回登录"
+  },
+  "resetPassword": {
+    "title": "设置新密码",
+    "subtitle": "为您的账户设置新密码。",
+    "newPasswordLabel": "新密码",
+    "newPasswordPlaceholder": "至少 8 个字符",
+    "confirmLabel": "确认密码",
+    "confirmPlaceholder": "再次输入新密码",
+    "submit": "重置密码",
+    "submitting": "重置中…",
+    "errorTooShort": "密码至少需要 8 个字符。",
+    "errorMismatch": "两次输入的密码不一致。",
+    "errorGeneric": "无法重置密码，请重试。",
+    "missingToken": "此重置链接无效或不完整。",
+    "requestNew": "请求新的重置链接"
   }
 }

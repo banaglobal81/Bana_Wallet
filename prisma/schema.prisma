@@ -27,4 +27,8 @@ model User {
   role         Role     @default(USER)
   niaUserId    String?  @unique
   createdAt    DateTime @default(now())
+  // Password-reset (forgot password) — only a HASH of the token is stored, never
+  // the token itself, with a short expiry. Cleared on use.
+  resetTokenHash   String?
+  resetTokenExpiry DateTime?
 }

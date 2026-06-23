@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { signIn } from 'next-auth/react';
-import { Mail, Lock, LogIn, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 
 export default function LoginPage() {
   const t = useTranslations('login');
@@ -15,6 +15,15 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState('');
+  const [resetDone, setResetDone] = useState(false);
+
+  // Show a success banner when arriving from a completed password reset (?reset=1).
+  // Read from window to avoid wrapping the page in a useSearchParams Suspense boundary.
+  useEffect(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('reset') === '1') {
+      setResetDone(true);
+    }
+  }, []);
 
   // Redirects to Google, then back to "/" which routes by role.
   const handleGoogle = async () => {
@@ -49,6 +58,13 @@ export default function LoginPage() {
       <div className="bana-glass rounded-2xl p-8 shadow-2xl shadow-black/40">
         <h1 className="text-2xl font-extrabold text-white mb-1">{t('title')}</h1>
         <p className="text-sm text-slate-400 mb-7">{t('subtitle')}</p>
+
+        {resetDone && (
+          <div className="flex items-start gap-3 px-4 py-3 mb-5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-sm">
+            <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
+            <p>{t('resetSuccess')}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           {/* Email */}
@@ -88,6 +104,11 @@ export default function LoginPage() {
                 placeholder={t('passwordPlaceholder')}
                 className="w-full pl-10 pr-4 py-3 bg-slate-950/60 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-colors"
               />
+            </div>
+            <div className="flex justify-end">
+              <Link href="/forgot-password" className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
+                {t('forgotPassword')}
+              </Link>
             </div>
           </div>
 

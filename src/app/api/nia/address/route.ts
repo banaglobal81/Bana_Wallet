@@ -5,7 +5,13 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { niaBearerRequest } from '@/lib/nia/client';
 import { resolveSessionUserId } from '@/lib/nia/resolve';
+import { niaState } from '@/lib/nia/state';
 import { ok, fail } from '@/lib/nia/respond';
+
+// Asset/network codes are short alphanumeric tickers (e.g. USDC, ETH, TRX, BASE).
+// Enforce a strict shape server-side so arbitrary strings never reach the hub —
+// the UI already constrains choices to the markets list; this closes the direct-API gap.
+const CODE_RE = /^[A-Za-z0-9]{1,16}$/;
 
 /**
  * POST /api/nia/address — create (or fetch, idempotently) a deposit address.
@@ -29,24 +35,40 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return fail(e as Error & { status?: number; data?: { code?: unknown } });
   }
 
-  // -- 2. Validate client-supplied currency + network --
-  const { currency, network } = body as { currency?: string; network?: string };
-  if (!currency || typeof currency !== 'string' || currency.trim() === '') {
+  // -- 2. Validate client-supplied currency + network (strict allow-list shape) --
+  const currency = typeof body.currency === 'string' ? body.currency.trim() : '';
+  const network = typeof body.network === 'string' ? body.network.trim() : '';
+  if (!CODE_RE.test(currency)) {
     return NextResponse.json({ ok: false, error: 'currency is required' }, { status: 400 });
   }
-  if (!network || typeof network !== 'string' || network.trim() === '') {
+  if (!CODE_RE.test(network)) {
     return NextResponse.json({ ok: false, error: 'network is required' }, { status: 400 });
   }
 
-  // -- 3. Create/fetch the deposit address via the Bearer-token endpoint --
+  // -- 3. In-flight guard: collapse concurrent duplicate creates for the same
+  //       (user, currency, network) so rapid asset/network toggling can't fan out
+  //       redundant S2S calls to the hub. The upstream is idempotent, so a duplicate
+  //       isn't dangerous — this just avoids wasted concurrent requests. --
+  const key = `${userId}|${currency}|${network}`;
+  if (niaState.inFlightAddresses.has(key)) {
+    return NextResponse.json(
+      { ok: false, error: 'Address request already in progress' },
+      { status: 409 },
+    );
+  }
+  niaState.inFlightAddresses.add(key);
+
+  // -- 4. Create/fetch the deposit address via the Bearer-token endpoint --
   try {
     const data = await niaBearerRequest('POST', '/api/v1/address/create-smart-wallet', {
-      body: { userId, currency: currency.trim(), network: network.trim() },
+      body: { userId, currency, network },
     }) as { address?: string; memo?: string } | null;
 
     // Normalize: always return both fields so the client can store address + memo together.
     return ok({ address: data?.address ?? '', memo: data?.memo ?? '' });
   } catch (e) {
     return fail(e as Error & { status?: number; data?: { code?: unknown } });
+  } finally {
+    niaState.inFlightAddresses.delete(key);
   }
 }

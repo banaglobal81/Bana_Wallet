@@ -26,7 +26,9 @@
     "errorInvalidCredentials": "メールアドレスまたはパスワードが正しくありません",
     "googleError": "Google ログインを開始できませんでした。もう一度お試しください。",
     "noAccount": "アカウントをお持ちでないですか？",
-    "createOne": "アカウントを作成"
+    "createOne": "アカウントを作成",
+    "forgotPassword": "パスワードをお忘れですか？",
+    "resetSuccess": "パスワードが再設定されました。新しいパスワードでログインしてください。"
   },
   "signup": {
     "title": "アカウント作成",
@@ -474,5 +476,30 @@
     "agreement": "続行することで、<b>すべての BANA ファイアウォールルールを回避し</b>、シミュレートされた資本の取り消し不能な損失について全責任を負うことを理解しています。",
     "reject": "拒否",
     "confirmAnyway": "それでも確定"
+  },
+  "forgotPassword": {
+    "title": "パスワードをお忘れの場合",
+    "subtitle": "メールアドレスを入力すると、再設定リンクをお送りします。",
+    "emailLabel": "メールアドレス",
+    "emailPlaceholder": "you@example.com",
+    "submit": "再設定リンクを送信",
+    "submitting": "送信中…",
+    "sentNotice": "そのメールアドレスのアカウントが存在する場合、再設定リンクを送信しました。受信トレイ（および迷惑メール）をご確認ください。",
+    "backToLogin": "ログインに戻る"
+  },
+  "resetPassword": {
+    "title": "新しいパスワードを設定",
+    "subtitle": "アカウントの新しいパスワードを入力してください。",
+    "newPasswordLabel": "新しいパスワード",
+    "newPasswordPlaceholder": "8文字以上",
+    "confirmLabel": "パスワードの確認",
+    "confirmPlaceholder": "新しいパスワードを再入力",
+    "submit": "パスワードを再設定",
+    "submitting": "再設定中…",
+    "errorTooShort": "パスワードは8文字以上にしてください。",
+    "errorMismatch": "パスワードが一致しません。",
+    "errorGeneric": "パスワードを再設定できませんでした。もう一度お試しください。",
+    "missingToken": "この再設定リンクは無効または不完全です。",
+    "requestNew": "新しい再設定リンクをリクエスト"
   }
 }
