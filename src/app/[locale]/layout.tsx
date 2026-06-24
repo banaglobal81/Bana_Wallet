@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { SessionProvider } from 'next-auth/react';
+import { ThemeProvider } from 'next-themes';
 import { auth } from '@/auth';
 import { routing } from '@/i18n/routing';
 import { Providers } from '../providers';
@@ -24,13 +25,15 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
   const session = await auth();
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
       <body className="antialiased">
-        <NextIntlClientProvider>
-          <SessionProvider session={session}>
-            <Providers>{children}</Providers>
-          </SessionProvider>
-        </NextIntlClientProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
+          <NextIntlClientProvider>
+            <SessionProvider session={session}>
+              <Providers>{children}</Providers>
+            </SessionProvider>
+          </NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

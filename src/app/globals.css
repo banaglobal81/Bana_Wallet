@@ -73,3 +73,138 @@ input:-webkit-autofill:focus {
 ::-webkit-scrollbar-thumb:hover {
   background: #334155;
 }
+
+/* ============================================================================
+   LIGHT THEME
+   next-themes adds class="light" (or "dark") to <html>. The app is built
+   dark-first with hardcoded colors, so light mode is an override layer that
+   re-maps exactly the color classes in use. Unlayered rules + the `.light`
+   ancestor give these higher priority than Tailwind's utilities.
+   ============================================================================ */
+html { color-scheme: dark; }
+html.light { color-scheme: light; }
+
+.light body {
+  background-color: #eef2f8;
+  color: #15233f;
+}
+
+/* --- Surfaces: page / app background --- */
+.light .bg-\[\#06132a\],
+.light .bg-\[\#06132a\]\/80,
+.light .bg-\[\#06132a\]\/95,
+.light .bg-\[\#020617\],
+.light .bg-slate-950 { background-color: #eef2f8; }
+.light .bg-\[\#0a0f1e\]\/95 { background-color: #e6ecf5; }
+
+/* --- Surfaces: cards / panels / dropdowns (white) --- */
+.light .bg-\[\#112643\],
+.light .bg-\[\#112643\]\/70,
+.light .bg-\[\#112643\]\/60,
+.light .bg-\[\#112643\]\/50,
+.light .bg-\[\#112643\]\/30,
+.light .bg-\[\#0f172a\],
+.light .bg-\[\#0b1830\],
+.light .bg-slate-900 { background-color: #ffffff; }
+
+/* Sidebar / panels using slate-900 with opacity */
+.light .bg-slate-900\/50,
+.light .bg-slate-900\/95,
+.light .lg\:bg-slate-900\/50 { background-color: #f3f6fc; }
+.light .bg-\[\#0d1f3c\]\/60 { background-color: #f5f8fd; }
+
+/* --- Surfaces: deep insets / inputs --- */
+.light .bg-\[\#020d24\],
+.light .bg-\[\#020d24\]\/40,
+.light .bg-\[\#020d24\]\/50,
+.light .bg-\[\#020d24\]\/60,
+.light .bg-\[\#020d24\]\/80,
+.light .bg-\[\#1e2a42\]\/30,
+.light .bg-slate-950\/60 { background-color: #f1f5fb; }
+
+/* --- Surfaces: hover / chrome buttons --- */
+.light .bg-\[\#1e3459\],
+.light .bg-\[\#1e3459\]\/50 { background-color: #e3e9f3; }
+.light .bg-slate-800,
+.light .bg-slate-800\/30,
+.light .bg-slate-800\/40,
+.light .bg-slate-800\/50,
+.light .bg-slate-800\/60 { background-color: #e8edf4; }
+.light .hover\:bg-slate-800:hover,
+.light .hover\:bg-slate-800\/30:hover { background-color: #dfe6f0; }
+.light .hover\:bg-slate-700:hover,
+.light .bg-slate-700 { background-color: #dbe2ec; }
+.light .hover\:bg-\[\#1e3459\]:hover { background-color: #d8e0ee; }
+
+/* --- Accent tints (kept light, not solid) --- */
+.light .bg-\[\#2E7DFF\]\/10,
+.light .bg-\[\#2E7DFF\]\/30 { background-color: #dce8ff; }
+.light .bg-\[\#528dff\]\/10,
+.light .bg-\[\#528dff\]\/15 { background-color: #e5edff; }
+
+/* --- Borders --- */
+.light .border-\[\#1E3559\],
+.light .border-\[\#1e3559\],
+.light .border-\[\#1E3559\]\/30,
+.light .border-\[\#1E3559\]\/40,
+.light .border-\[\#1E3559\]\/50,
+.light .border-\[\#1e3559\]\/50,
+.light .border-\[\#1E3559\]\/60,
+.light .border-\[\#1E3559\]\/80,
+.light .border-\[\#1e3459\],
+.light .border-\[\#06132a\],
+.light .border-slate-700,
+.light .border-slate-700\/60,
+.light .border-slate-600,
+.light .border-slate-800,
+.light .border-slate-800\/60 { border-color: #d3ddec; }
+
+/* --- Text colors --- */
+.light .text-\[\#d8e2ff\] { color: #15233f; }
+.light .text-\[\#8c90a0\],
+.light .text-\[\#8c90a0\]\/60 { color: #5b6576; }
+.light .text-\[\#afc6ff\] { color: #2a4d9c; }
+.light .text-slate-100 { color: #0f172a; }
+.light .text-slate-200 { color: #1f2a3d; }
+.light .text-slate-300 { color: #334155; }
+.light .text-slate-400 { color: #5b6573; }
+
+/* Headings use text-white on dark surfaces → flip to dark in light mode... */
+.light .text-white { color: #15233f; }
+/* ...but keep white text on solid colored buttons/badges. */
+.light .bg-\[\#2E7DFF\],
+.light .bg-\[\#1a6aff\],
+.light .bg-\[\#528dff\],
+.light .bg-indigo-600,
+.light .bg-indigo-500,
+.light .hover\:bg-indigo-500:hover,
+.light .bg-emerald-600,
+.light .bg-emerald-500,
+.light .bg-rose-600,
+.light .bg-rose-500 { color: #ffffff !important; }
+
+/* --- Glassmorphic utilities --- */
+.light .bana-glass {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(203, 213, 225, 0.7);
+}
+.light .bana-glass-bright {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+.light .bana-glass-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+
+/* --- Autofilled inputs + scrollbar in light mode --- */
+.light input:-webkit-autofill,
+.light input:-webkit-autofill:hover,
+.light input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #0f172a;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  caret-color: #0f172a;
+}
+.light ::-webkit-scrollbar-track { background: #e2e8f0; }
+.light ::-webkit-scrollbar-thumb { background: #c2cdda; }
+.light ::-webkit-scrollbar-thumb:hover { background: #aebccd; }
