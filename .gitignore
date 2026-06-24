@@ -16,6 +16,10 @@ out/
 # TypeScript incremental build info
 *.tsbuildinfo
 
+# Local-only credentials notes (never commit)
+*.local.md
+CREDENTIALS.local*
+
 # Playwright E2E
 /test-results/
 /playwright-report/
