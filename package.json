@@ -11,6 +11,10 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "e2e": "playwright test",
+    "e2e:public": "playwright test --project=public",
+    "e2e:ui": "playwright test --ui",
+    "e2e:report": "playwright show-report",
     "postinstall": "prisma generate"
   },
   "prisma": {
@@ -37,6 +41,7 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.14.0",
     "@types/pg": "^8.20.0",
