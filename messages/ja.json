@@ -1,7 +1,8 @@
 {
   "common": {
     "backToWallet": "ウォレットに戻る",
-    "logOut": "ログアウト"
+    "logOut": "ログアウト",
+    "maintenanceBanner": "メンテナンスのため出金を一時停止しています。まもなく再開します。"
   },
   "nav": {
     "portfolio": "ポートフォリオ",
@@ -10,7 +11,11 @@
     "staking": "ステーキング",
     "activity": "アクティビティ",
     "settings": "設定",
-    "settlement": "精算"
+    "settlement": "精算",
+    "users": "ユーザー",
+    "withdrawals": "出金",
+    "dashboard": "ダッシュボード",
+    "adminConsole": "管理コンソール"
   },
   "login": {
     "title": "ログイン",
@@ -55,7 +60,8 @@
     "secureMev": "セキュア MEV",
     "mevActive": "有効",
     "mevInactive": "無効",
-    "vaultAddress": "ボルト参照"
+    "vaultAddress": "ボルト参照",
+    "account": "アカウント"
   },
   "profileMenu": {
     "profileButton": "プロフィールメニュー",
@@ -98,7 +104,7 @@
   "dashboard": {
     "pageTitle": "ポートフォリオダッシュボード",
     "securedBadge": "BENTO で保護",
-    "vaultSubtitle": "ボルトルーター v3.4 • 検証済みアドレス: {address}",
+    "vaultSubtitle": "セキュアなカストディ口座 · {account}",
     "receive": "受け取る",
     "send": "送金",
     "totalPortfolioValue": "ポートフォリオ総額",
@@ -134,7 +140,15 @@
     "goToSwap": "スワップへ移動",
     "footerTitle": "ハードウェアウォレット統合ガード稼働中",
     "footerBody": "秘密鍵は厳格にネットワークから隔離されたまま保護されます。高精度ハードウェアコンセンサスアルゴリズムを検証済み。",
-    "consensusSecure": "コンセンサス: 安全"
+    "consensusSecure": "コンセンサス: 安全",
+    "getStartedTitle": "BANA ウォレットへようこそ",
+    "getStartedBody": "アカウントの準備ができました。入金して取引と運用を始めましょう。",
+    "stepDeposit": "暗号資産を入金",
+    "stepSwap": "スワップ・取引",
+    "stepTrack": "ポートフォリオを管理",
+    "getStartedCta": "最初の入金をする",
+    "hideBalance": "残高を隠す",
+    "showBalance": "残高を表示"
   },
   "swap": {
     "pageTitle": "資産をスワップ",
@@ -171,7 +185,10 @@
     "routeSafeGuard": "セーフガード",
     "routeRouted": "ルーティング済み",
     "loadingBalance": "残高を読み込み中…",
-    "noBalanceHint": "スワップできる {asset} がありません — 先に入金してください。"
+    "noBalanceHint": "スワップできる {asset} がありません — 先に入金してください。",
+    "comingSoonTitle": "スワップは近日公開",
+    "comingSoonBody": "ウォレット内で資産を直接スワップ。最終調整中で、まもなく公開します。",
+    "backToPortfolio": "ポートフォリオに戻る"
   },
   "staking": {
     "pageTitle": "ステーキング",
@@ -202,7 +219,10 @@
     "walletAvailable": "{amount} {symbol} 利用可能",
     "amountExceedsBalance": "数量がウォレット残高を超えています。",
     "max": "最大",
-    "balance": "残高: {amount} {asset}"
+    "balance": "残高: {amount} {asset}",
+    "comingSoonTitle": "ステーキングは近日公開",
+    "comingSoonBody": "暗号資産で報酬を獲得。ステーキングは最終調整中で、まもなくここで利用できます。",
+    "backToPortfolio": "ポートフォリオに戻る"
   },
   "deposit": {
     "backAria": "戻る",
@@ -227,7 +247,9 @@
     "copied": "クリップボードにコピーしました",
     "memoLabel": "メモ / タグ（必須）",
     "memoWarning": "入金時には必ずこのメモを含めてください。メモのない入金はアカウントに反映されません。",
-    "networkUnavailable": "{network} ネットワークでの入金はまだ利用できません — 別のネットワークを選択してください。"
+    "networkUnavailable": "{network} ネットワークでの入金はまだ利用できません — 別のネットワークを選択してください。",
+    "searchAsset": "資産を検索…",
+    "noAssetMatch": "「{q}」に一致する資産がありません"
   },
   "walletPage": {
     "title": "ウォレット",
@@ -248,7 +270,9 @@
     "tableAvailable": "利用可能",
     "tableLocked": "ロック中",
     "transactionHistory": "取引履歴",
-    "transactionHistorySubtitle": "入金、出金、取引"
+    "transactionHistorySubtitle": "入金、出金、取引",
+    "depositNow": "今すぐ入金",
+    "depositWallet": "入金"
   },
   "withdraw": {
     "backAria": "戻る",
@@ -256,7 +280,7 @@
     "pageSubtitle": "Nia カストディアカウントから外部アドレスへ資産を送金します。",
     "niaSecured": "NIA セキュア",
     "withdrawalRequested": "出金リクエスト済み",
-    "withdrawalRequestedBody": "<b>{amount} {asset}</b> の出金リクエストが Nia-Hub に送信され、処理中です。",
+    "withdrawalRequestedBody": "<b>{amount} {asset}</b> の出金リクエストを送信しました。管理者の承認待ちです。アクティビティで状況を確認できます。",
     "idLabel": "ID:",
     "viewInHistory": "履歴で表示",
     "reviewTitle": "出金を確認",
@@ -279,16 +303,19 @@
     "youWillSend": "送金額",
     "irreversibleWarning": "出金は取り消せません。送金先アドレスを再度ご確認ください — 誤ったアドレスに送金された資産は回収できません。",
     "loadingBalance": "残高を読み込み中…",
-    "noBalanceHint": "出金できる {asset} がありません — 先に入金してください。"
+    "noBalanceHint": "出金できる {asset} がありません — 先に入金してください。",
+    "networkLabel": "ネットワーク",
+    "belowMin": "最低出金額は {min} {asset} です。",
+    "addressPlaceholder": "送金先アドレス"
   },
   "settings": {
-    "breadcrumbRegistry": "ノードマニフェストレジストリ:",
+    "breadcrumbRegistry": "クイックリンク:",
     "breadcrumbPortfolio": "ポートフォリオ",
     "breadcrumbSwap": "スワップ",
     "breadcrumbActivity": "アクティビティ",
-    "pageTitle": "セキュリティとノードの設定",
-    "pageSubtitle": "プライベートルーティングノード、コンセンサス gas 速度のしきい値、MEV フロントラン用ファイアウォールを調整します。",
-    "clientBadge": "クライアント v1.9 • セキュア",
+    "pageTitle": "設定",
+    "pageSubtitle": "アカウント、セキュリティ、通知を管理します。",
+    "clientBadge": "保護済み",
     "accountTitle": "アカウント",
     "loadingAccount": "アカウントを読み込み中…",
     "signedInWith": "{method} でログイン中",
@@ -354,7 +381,14 @@
     "slippageInvalid": "有効な数値を入力してください。",
     "notificationsTitle": "通知",
     "notificationsBody": "通知フィードに表示するアクティビティを選択します。",
-    "toggleCategory": "{label} を切り替え"
+    "toggleCategory": "{label} を切り替え",
+    "addressBookTitle": "出金アドレス帳",
+    "addressBookBody": "信頼できる出金アドレスを保存してすぐに選択 — 入力ミスを減らし、より安全な出金。",
+    "deleteAddress": "アドレスを削除",
+    "addressLabelPlaceholder": "ラベル（例：マイバイナンス）",
+    "addressNetworkPlaceholder": "ネットワーク（例：ETH）",
+    "addressValuePlaceholder": "アドレス",
+    "addAddress": "追加"
   },
   "activity": {
     "breadcrumbRegistry": "ノードマニフェストレジストリ:",
@@ -379,7 +413,9 @@
     "syncing": "Nia-Hub と同期中…",
     "liveRecords": "ライブ • Nia-Hub から {count, plural, one {# 件のレコード} other {# 件のレコード}}",
     "demoData": "デモデータ — ライブアクティビティはまだありません",
-    "addressIndex": "アドレスインデックス: BANA-SECURE-ETH"
+    "addressIndex": "アドレスインデックス: BANA-SECURE-ETH",
+    "awaitingApproval": "管理者の承認待ち",
+    "loadError": "アクティビティを読み込めませんでした"
   },
   "notifications": {
     "ariaLabel": "通知",
@@ -501,5 +537,116 @@
     "errorGeneric": "パスワードを再設定できませんでした。もう一度お試しください。",
     "missingToken": "この再設定リンクは無効または不完全です。",
     "requestNew": "新しい再設定リンクをリクエスト"
+  },
+  "adminUsers": {
+    "pageTitle": "ユーザー管理",
+    "pageSubtitle": "アカウント、ロール、パスワードリセットを管理します。",
+    "searchPlaceholder": "メールで検索…",
+    "refresh": "更新",
+    "resetLinkNote": "ワンタイム再設定リンク（30分間有効）— ユーザーに共有してください:",
+    "colEmail": "ユーザー",
+    "colRole": "ロール",
+    "colAuth": "ログイン方法",
+    "colActions": "操作",
+    "roleUser": "ユーザー",
+    "roleAdmin": "管理者",
+    "makeAdmin": "管理者にする",
+    "makeUser": "ユーザーにする",
+    "resetLink": "再設定リンク",
+    "googleNoReset": "Googleアカウント — リセットするパスワードがありません",
+    "authGoogle": "Google",
+    "authPassword": "パスワード",
+    "loading": "読み込み中…",
+    "noUsers": "ユーザーが見つかりません。",
+    "total": "ユーザー{count}人",
+    "disabledBadge": "無効",
+    "viewWallet": "ウォレットを表示",
+    "disable": "アカウントを無効化",
+    "enable": "アカウントを有効化",
+    "walletTitle": "ユーザーウォレット",
+    "balances": "残高",
+    "noBalances": "残高なし",
+    "deposits": "入金",
+    "withdrawals": "出金",
+    "none": "なし"
+  },
+  "adminWithdrawals": {
+    "pageTitle": "出金承認",
+    "pageSubtitle": "資金が出る前に出金を確認・承認します。",
+    "refresh": "更新",
+    "loading": "読み込み中…",
+    "queueEmpty": "出金リクエストはありません。",
+    "securityNote": "出金は管理者が承認するまで保留されます。承認時にのみ資金がプラットフォームから出ます。",
+    "colUser": "ユーザー",
+    "colAmount": "金額",
+    "colTo": "送金先",
+    "colStatus": "ステータス",
+    "colActions": "操作",
+    "approve": "承認",
+    "reject": "却下",
+    "confirmApprove": "{amount} {currency} の出金を承認しますか？資金が今すぐ送金されます。",
+    "rejectReasonPrompt": "却下理由（任意）:",
+    "pendingCount": "{count}件保留中",
+    "statusPENDING": "保留中",
+    "statusAPPROVED": "承認済み",
+    "statusREJECTED": "却下",
+    "statusFAILED": "失敗"
+  },
+  "adminDashboard": {
+    "pageTitle": "ダッシュボード",
+    "pageSubtitle": "ブローカー概要 — ユーザー、出金、最近の活動。",
+    "refresh": "更新",
+    "totalUsers": "総ユーザー数",
+    "newThisWeek": "今週 +{n}",
+    "pendingWithdrawals": "保留中の出金",
+    "needsReview": "要確認",
+    "approved": "承認済み出金",
+    "rejectedN": "{n}件却下",
+    "admins": "管理者",
+    "disabledN": "{n}件無効",
+    "recentActivity": "最近の管理者活動",
+    "noActivity": "活動はありません。",
+    "loading": "読み込み中…",
+    "actions": {
+      "USER_ROLE_CHANGE": "ロール変更",
+      "USER_DISABLE": "アカウント無効化",
+      "USER_ENABLE": "アカウント有効化",
+      "USER_RESET_LINK": "パスワード再設定リンク発行",
+      "WITHDRAWAL_APPROVE": "出金承認",
+      "WITHDRAWAL_REJECT": "出金却下",
+      "POLICY_UPDATE": "ポリシーを更新"
+    },
+    "recentWithdrawals": "最近の出金",
+    "recentDeposits": "最近の入金",
+    "noWithdrawals": "まだ出金はありません。",
+    "noDeposits": "最近の入金はありません。ハブで入金Webhookが設定されると、ここに表示されます。",
+    "viewAll": "すべて表示"
+  },
+  "adminSettings": {
+    "pageTitle": "プラットフォーム設定",
+    "pageSubtitle": "出金ポリシーとプラットフォーム全体の設定。",
+    "saved": "保存しました",
+    "loading": "読み込み中…",
+    "save": "保存",
+    "whitelistTitle": "ホワイトリストのみ出金",
+    "whitelistBody": "オンにすると、ユーザーはアドレス帳に保存されたアドレスにのみ出金できます。新規アドレスへの出金をブロックします。",
+    "autoApproveTitle": "少額出金の自動承認",
+    "autoApproveBody": "この金額未満のステーブルコイン出金は承認キューをスキップして自動送金されます。それより大きい金額（およびすべての非ステーブルコイン）は手動審査が必要です。空欄の場合はすべて承認が必要です。",
+    "autoApprovePlaceholder": "例: 100",
+    "autoApproveOn": "${amount}未満のステーブルコイン出金を自動承認します。",
+    "autoApproveOff": "すべての出金に手動承認が必要です。",
+    "maintenanceTitle": "メンテナンスモード",
+    "maintenanceBody": "プラットフォーム全体の出金を一時停止し、ユーザーにバナーを表示します。障害やハブ停止時に使用します。",
+    "signupsTitle": "新規登録",
+    "signupsBody": "新規ユーザーの登録を許可します。オフにすると登録を停止します。",
+    "dailyLimitTitle": "1日の出金上限",
+    "dailyLimitBody": "ユーザー1人が24時間に出金できる合計の上限（USD、ステーブルコイン）。アカウント侵害の被害を制限します。空欄で上限なし。",
+    "dailyLimitOn": "ユーザーごとに24時間${amount}に制限。",
+    "dailyLimitOff": "1日の出金上限なし。",
+    "identityTitle": "プラットフォーム情報",
+    "identityBody": "ユーザーに表示される表示名とサポートメール。",
+    "displayNamePlaceholder": "表示名（例：BANA Wallet）",
+    "supportEmailPlaceholder": "support@yourdomain.com",
+    "amountPlaceholder": "例: 100"
   }
 }

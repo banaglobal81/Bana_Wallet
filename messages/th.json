@@ -1,7 +1,8 @@
 {
   "common": {
     "backToWallet": "กลับไปที่กระเป๋าเงิน",
-    "logOut": "ออกจากระบบ"
+    "logOut": "ออกจากระบบ",
+    "maintenanceBanner": "การถอนถูกหยุดชั่วคราวเพื่อบำรุงรักษา เราจะกลับมาเร็วๆ นี้"
   },
   "nav": {
     "portfolio": "พอร์ตโฟลิโอ",
@@ -10,7 +11,11 @@
     "staking": "สเตกกิ้ง",
     "activity": "กิจกรรม",
     "settings": "การตั้งค่า",
-    "settlement": "การชำระบัญชี"
+    "settlement": "การชำระบัญชี",
+    "users": "ผู้ใช้",
+    "withdrawals": "การถอน",
+    "dashboard": "แดชบอร์ด",
+    "adminConsole": "คอนโซลผู้ดูแล"
   },
   "login": {
     "title": "เข้าสู่ระบบ",
@@ -55,7 +60,8 @@
     "secureMev": "MEV ปลอดภัย",
     "mevActive": "เปิดใช้งาน",
     "mevInactive": "ปิดใช้งาน",
-    "vaultAddress": "รหัสวอลต์"
+    "vaultAddress": "รหัสวอลต์",
+    "account": "บัญชี"
   },
   "profileMenu": {
     "profileButton": "เมนูโปรไฟล์",
@@ -98,7 +104,7 @@
   "dashboard": {
     "pageTitle": "แดชบอร์ดพอร์ตโฟลิโอ",
     "securedBadge": "ปกป้องด้วย BENTO",
-    "vaultSubtitle": "Vault Router v3.4 • ที่อยู่ที่ยืนยันแล้ว: {address}",
+    "vaultSubtitle": "บัญชีคัสโตดีที่ปลอดภัย · {account}",
     "receive": "รับ",
     "send": "ส่ง",
     "totalPortfolioValue": "มูลค่าพอร์ตโฟลิโอทั้งหมด",
@@ -134,7 +140,15 @@
     "goToSwap": "ไปที่การสวอป",
     "footerTitle": "เปิดใช้การป้องกันการเชื่อมต่อ Hardware Wallet",
     "footerBody": "คีย์ส่วนตัวที่ปลอดภัยยังคงอยู่นอกเครือข่ายอย่างเข้มงวด อัลกอริทึมฉันทามติฮาร์ดแวร์ความแม่นยำสูงได้รับการตรวจสอบแล้ว",
-    "consensusSecure": "ฉันทามติ: ปลอดภัย"
+    "consensusSecure": "ฉันทามติ: ปลอดภัย",
+    "getStartedTitle": "ยินดีต้อนรับสู่ BANA Wallet",
+    "getStartedBody": "บัญชีของคุณพร้อมแล้ว เติมเงินเพื่อเริ่มเทรดและรับผลตอบแทน",
+    "stepDeposit": "ฝากคริปโต",
+    "stepSwap": "สลับหรือเทรด",
+    "stepTrack": "ติดตามพอร์ตของคุณ",
+    "getStartedCta": "ฝากครั้งแรก",
+    "hideBalance": "ซ่อนยอดเงิน",
+    "showBalance": "แสดงยอดเงิน"
   },
   "swap": {
     "pageTitle": "สวอปสินทรัพย์",
@@ -171,7 +185,10 @@
     "routeSafeGuard": "เซฟการ์ด",
     "routeRouted": "กำหนดเส้นทางแล้ว",
     "loadingBalance": "กำลังโหลดยอดคงเหลือ…",
-    "noBalanceHint": "ไม่มี {asset} ให้สวอป — กรุณาฝากก่อน"
+    "noBalanceHint": "ไม่มี {asset} ให้สวอป — กรุณาฝากก่อน",
+    "comingSoonTitle": "Swap เร็วๆ นี้",
+    "comingSoonBody": "สลับสินทรัพย์ได้ภายในกระเป๋าเงินของคุณ เรากำลังปรับแต่งขั้นสุดท้าย เร็วๆ นี้",
+    "backToPortfolio": "กลับไปที่พอร์ต"
   },
   "staking": {
     "pageTitle": "สเตกกิ้ง",
@@ -202,7 +219,10 @@
     "walletAvailable": "มี {amount} {symbol} ที่ใช้ได้",
     "amountExceedsBalance": "จำนวนเกินยอดคงเหลือในกระเป๋าเงินของคุณ",
     "max": "สูงสุด",
-    "balance": "ยอดคงเหลือ: {amount} {asset}"
+    "balance": "ยอดคงเหลือ: {amount} {asset}",
+    "comingSoonTitle": "Staking เร็วๆ นี้",
+    "comingSoonBody": "รับผลตอบแทนจากคริปโตของคุณ เรากำลังปรับแต่ง Staking ขั้นสุดท้าย และจะเปิดให้ใช้เร็วๆ นี้",
+    "backToPortfolio": "กลับไปที่พอร์ต"
   },
   "deposit": {
     "backAria": "กลับ",
@@ -227,7 +247,9 @@
     "copied": "คัดลอกไปยังคลิปบอร์ดแล้ว",
     "memoLabel": "memo / แท็ก (จำเป็น)",
     "memoWarning": "คุณต้องใส่ memo นี้เมื่อฝากเงิน การฝากที่ไม่มี memo จะไม่สามารถเข้าบัญชีของคุณได้",
-    "networkUnavailable": "ยังไม่รองรับการฝากผ่านเครือข่าย {network} — โปรดเลือกเครือข่ายอื่น"
+    "networkUnavailable": "ยังไม่รองรับการฝากผ่านเครือข่าย {network} — โปรดเลือกเครือข่ายอื่น",
+    "searchAsset": "ค้นหาสินทรัพย์…",
+    "noAssetMatch": "ไม่มีสินทรัพย์ที่ตรงกับ “{q}”"
   },
   "walletPage": {
     "title": "กระเป๋าเงิน",
@@ -248,7 +270,9 @@
     "tableAvailable": "ใช้ได้",
     "tableLocked": "ล็อกอยู่",
     "transactionHistory": "ประวัติธุรกรรม",
-    "transactionHistorySubtitle": "การฝาก การถอน และการเทรด"
+    "transactionHistorySubtitle": "การฝาก การถอน และการเทรด",
+    "depositNow": "ฝากเลย",
+    "depositWallet": "ฝาก"
   },
   "withdraw": {
     "backAria": "กลับ",
@@ -256,7 +280,7 @@
     "pageSubtitle": "ส่งสินทรัพย์จากบัญชีดูแลทรัพย์สิน Nia ของคุณไปยังที่อยู่ภายนอก",
     "niaSecured": "NIA ปลอดภัย",
     "withdrawalRequested": "ส่งคำขอถอนแล้ว",
-    "withdrawalRequestedBody": "คำขอถอน <b>{amount} {asset}</b> ของคุณถูกส่งไปยัง Nia-Hub เพื่อดำเนินการแล้ว",
+    "withdrawalRequestedBody": "คำขอถอน <b>{amount} {asset}</b> ถูกส่งแล้วและกำลังรอผู้ดูแลอนุมัติ คุณสามารถดูสถานะได้ในกิจกรรม",
     "idLabel": "รหัส:",
     "viewInHistory": "ดูในประวัติ",
     "reviewTitle": "ตรวจสอบการถอน",
@@ -279,16 +303,19 @@
     "youWillSend": "คุณจะส่ง",
     "irreversibleWarning": "การถอนไม่สามารถย้อนกลับได้ ตรวจสอบที่อยู่ปลายทางให้แน่ใจอีกครั้ง — เงินที่ส่งไปยังที่อยู่ที่ไม่ถูกต้องไม่สามารถกู้คืนได้",
     "loadingBalance": "กำลังโหลดยอดคงเหลือ…",
-    "noBalanceHint": "ไม่มี {asset} ให้ถอน — กรุณาฝากก่อน"
+    "noBalanceHint": "ไม่มี {asset} ให้ถอน — กรุณาฝากก่อน",
+    "networkLabel": "เครือข่าย",
+    "belowMin": "ยอดถอนขั้นต่ำคือ {min} {asset}",
+    "addressPlaceholder": "ที่อยู่ผู้รับ"
   },
   "settings": {
-    "breadcrumbRegistry": "ทะเบียนรายการโหนด:",
+    "breadcrumbRegistry": "ลิงก์ด่วน:",
     "breadcrumbPortfolio": "พอร์ตโฟลิโอ",
     "breadcrumbSwap": "สวอป",
     "breadcrumbActivity": "กิจกรรม",
-    "pageTitle": "การตั้งค่าความปลอดภัยและโหนด",
-    "pageSubtitle": "ปรับโหนดการกำหนดเส้นทางส่วนตัว เกณฑ์ความเร็ว gas ของฉันทามติ และไฟร์วอลล์ป้องกันการฟรอนต์รัน MEV",
-    "clientBadge": "ไคลเอนต์ v1.9 • ปลอดภัย",
+    "pageTitle": "การตั้งค่า",
+    "pageSubtitle": "จัดการบัญชี ความปลอดภัย และการแจ้งเตือน",
+    "clientBadge": "ปลอดภัย",
     "accountTitle": "บัญชี",
     "loadingAccount": "กำลังโหลดบัญชี…",
     "signedInWith": "เข้าสู่ระบบด้วย {method}",
@@ -354,7 +381,14 @@
     "slippageInvalid": "กรอกตัวเลขที่ถูกต้อง",
     "notificationsTitle": "การแจ้งเตือน",
     "notificationsBody": "เลือกกิจกรรมที่จะปรากฏในฟีดการแจ้งเตือนของคุณ",
-    "toggleCategory": "สลับ {label}"
+    "toggleCategory": "สลับ {label}",
+    "addressBookTitle": "สมุดที่อยู่ถอนเงิน",
+    "addressBookBody": "บันทึกที่อยู่ถอนที่เชื่อถือได้เพื่อเลือกอย่างรวดเร็ว — ลดการพิมพ์ผิด ถอนปลอดภัยขึ้น",
+    "deleteAddress": "ลบที่อยู่",
+    "addressLabelPlaceholder": "ป้ายชื่อ (เช่น Binance ของฉัน)",
+    "addressNetworkPlaceholder": "เครือข่าย (เช่น ETH)",
+    "addressValuePlaceholder": "ที่อยู่",
+    "addAddress": "เพิ่ม"
   },
   "activity": {
     "breadcrumbRegistry": "ทะเบียนรายการโหนด:",
@@ -379,7 +413,9 @@
     "syncing": "กำลังซิงค์กับ Nia-Hub…",
     "liveRecords": "เรียลไทม์ • {count, plural, one {# รายการ} other {# รายการ}} จาก Nia-Hub",
     "demoData": "ข้อมูลตัวอย่าง — ยังไม่มีกิจกรรมแบบเรียลไทม์",
-    "addressIndex": "ดัชนีที่อยู่: BANA-SECURE-ETH"
+    "addressIndex": "ดัชนีที่อยู่: BANA-SECURE-ETH",
+    "awaitingApproval": "กำลังรอผู้ดูแลอนุมัติ",
+    "loadError": "ไม่สามารถโหลดกิจกรรมได้"
   },
   "notifications": {
     "ariaLabel": "การแจ้งเตือน",
@@ -501,5 +537,116 @@
     "errorGeneric": "ไม่สามารถรีเซ็ตรหัสผ่านได้ โปรดลองอีกครั้ง",
     "missingToken": "ลิงก์รีเซ็ตนี้ไม่ถูกต้องหรือไม่สมบูรณ์",
     "requestNew": "ขอลิงก์รีเซ็ตใหม่"
+  },
+  "adminUsers": {
+    "pageTitle": "การจัดการผู้ใช้",
+    "pageSubtitle": "จัดการบัญชี บทบาท และการรีเซ็ตรหัสผ่าน",
+    "searchPlaceholder": "ค้นหาด้วยอีเมล…",
+    "refresh": "รีเฟรช",
+    "resetLinkNote": "ลิงก์รีเซ็ตแบบครั้งเดียว (ใช้ได้ 30 นาที) — ส่งให้ผู้ใช้:",
+    "colEmail": "ผู้ใช้",
+    "colRole": "บทบาท",
+    "colAuth": "การเข้าสู่ระบบ",
+    "colActions": "การดำเนินการ",
+    "roleUser": "ผู้ใช้",
+    "roleAdmin": "ผู้ดูแล",
+    "makeAdmin": "ตั้งเป็นผู้ดูแล",
+    "makeUser": "ตั้งเป็นผู้ใช้",
+    "resetLink": "ลิงก์รีเซ็ต",
+    "googleNoReset": "บัญชี Google — ไม่มีรหัสผ่านให้รีเซ็ต",
+    "authGoogle": "Google",
+    "authPassword": "รหัสผ่าน",
+    "loading": "กำลังโหลด…",
+    "noUsers": "ไม่พบผู้ใช้",
+    "total": "ผู้ใช้ {count} คน",
+    "disabledBadge": "ปิดใช้งาน",
+    "viewWallet": "ดูกระเป๋าเงิน",
+    "disable": "ปิดใช้งานบัญชี",
+    "enable": "เปิดใช้งานบัญชี",
+    "walletTitle": "กระเป๋าเงินผู้ใช้",
+    "balances": "ยอดคงเหลือ",
+    "noBalances": "ไม่มียอดคงเหลือ",
+    "deposits": "ฝาก",
+    "withdrawals": "ถอน",
+    "none": "ไม่มี"
+  },
+  "adminWithdrawals": {
+    "pageTitle": "การอนุมัติการถอน",
+    "pageSubtitle": "ตรวจสอบและอนุมัติการถอนก่อนที่เงินจะออก",
+    "refresh": "รีเฟรช",
+    "loading": "กำลังโหลด…",
+    "queueEmpty": "ยังไม่มีคำขอถอน",
+    "securityNote": "การถอนจะถูกพักไว้จนกว่าผู้ดูแลจะอนุมัติ — เงินจะออกจากแพลตฟอร์มเมื่อได้รับการอนุมัติเท่านั้น",
+    "colUser": "ผู้ใช้",
+    "colAmount": "จำนวน",
+    "colTo": "ที่อยู่ปลายทาง",
+    "colStatus": "สถานะ",
+    "colActions": "การดำเนินการ",
+    "approve": "อนุมัติ",
+    "reject": "ปฏิเสธ",
+    "confirmApprove": "อนุมัติการถอน {amount} {currency} หรือไม่? เงินจะถูกส่งทันที",
+    "rejectReasonPrompt": "เหตุผลในการปฏิเสธ (ไม่บังคับ):",
+    "pendingCount": "รอ {count} รายการ",
+    "statusPENDING": "รอดำเนินการ",
+    "statusAPPROVED": "อนุมัติแล้ว",
+    "statusREJECTED": "ปฏิเสธแล้ว",
+    "statusFAILED": "ล้มเหลว"
+  },
+  "adminDashboard": {
+    "pageTitle": "แดชบอร์ด",
+    "pageSubtitle": "ภาพรวมโบรกเกอร์ — ผู้ใช้ การถอน และกิจกรรมล่าสุด",
+    "refresh": "รีเฟรช",
+    "totalUsers": "ผู้ใช้ทั้งหมด",
+    "newThisWeek": "+{n} สัปดาห์นี้",
+    "pendingWithdrawals": "การถอนที่รออยู่",
+    "needsReview": "ต้องตรวจสอบ",
+    "approved": "การถอนที่อนุมัติแล้ว",
+    "rejectedN": "{n} ถูกปฏิเสธ",
+    "admins": "ผู้ดูแล",
+    "disabledN": "{n} ปิดใช้งาน",
+    "recentActivity": "กิจกรรมผู้ดูแลล่าสุด",
+    "noActivity": "ยังไม่มีกิจกรรม",
+    "loading": "กำลังโหลด…",
+    "actions": {
+      "USER_ROLE_CHANGE": "เปลี่ยนบทบาท",
+      "USER_DISABLE": "ปิดใช้งานบัญชี",
+      "USER_ENABLE": "เปิดใช้งานบัญชี",
+      "USER_RESET_LINK": "ออกลิงก์รีเซ็ตรหัสผ่าน",
+      "WITHDRAWAL_APPROVE": "อนุมัติการถอน",
+      "WITHDRAWAL_REJECT": "ปฏิเสธการถอน",
+      "POLICY_UPDATE": "อัปเดตนโยบายแล้ว"
+    },
+    "recentWithdrawals": "การถอนล่าสุด",
+    "recentDeposits": "การฝากล่าสุด",
+    "noWithdrawals": "ยังไม่มีการถอน",
+    "noDeposits": "ยังไม่มีการฝากล่าสุด จะแสดงที่นี่เมื่อมีการตั้งค่า webhook การฝากบนฮับ",
+    "viewAll": "ดูทั้งหมด"
+  },
+  "adminSettings": {
+    "pageTitle": "การตั้งค่าแพลตฟอร์ม",
+    "pageSubtitle": "นโยบายการถอนและการควบคุมทั่วทั้งแพลตฟอร์ม",
+    "saved": "บันทึกแล้ว",
+    "loading": "กำลังโหลด…",
+    "save": "บันทึก",
+    "whitelistTitle": "ถอนเฉพาะที่อยู่ในไวต์ลิสต์",
+    "whitelistBody": "เมื่อเปิด ผู้ใช้จะถอนได้เฉพาะที่อยู่ที่บันทึกในสมุดที่อยู่ บล็อกการถอนไปยังที่อยู่ใหม่",
+    "autoApproveTitle": "อนุมัติอัตโนมัติสำหรับการถอนเล็กน้อย",
+    "autoApproveBody": "การถอน Stablecoin ที่ต่ำกว่าจำนวนนี้จะข้ามคิวอนุมัติและส่งอัตโนมัติ จำนวนที่มากกว่า (และที่ไม่ใช่ Stablecoin ทั้งหมด) ยังต้องตรวจสอบด้วยตนเอง เว้นว่างเพื่อให้ทุกรายการต้องอนุมัติ",
+    "autoApprovePlaceholder": "เช่น 100",
+    "autoApproveOn": "อนุมัติอัตโนมัติการถอน Stablecoin ต่ำกว่า ${amount}",
+    "autoApproveOff": "ทุกการถอนต้องอนุมัติด้วยตนเอง",
+    "maintenanceTitle": "โหมดบำรุงรักษา",
+    "maintenanceBody": "หยุดการถอนทั้งแพลตฟอร์มชั่วคราวและแสดงแบนเนอร์ให้ผู้ใช้ ใช้ระหว่างเกิดเหตุหรือฮับขัดข้อง",
+    "signupsTitle": "การสมัครใหม่",
+    "signupsBody": "อนุญาตให้ผู้ใช้ใหม่ลงทะเบียน ปิดเพื่อหยุดการลงทะเบียน",
+    "dailyLimitTitle": "วงเงินถอนต่อวัน",
+    "dailyLimitBody": "จำนวนสูงสุดที่ผู้ใช้หนึ่งคนถอนได้ต่อ 24 ชั่วโมง (USD, stablecoin) จำกัดความเสียหายเมื่อบัญชีถูกบุกรุก เว้นว่างหากไม่จำกัด",
+    "dailyLimitOn": "จำกัด ${amount} ต่อผู้ใช้ต่อ 24 ชั่วโมง",
+    "dailyLimitOff": "ไม่มีวงเงินถอนต่อวัน",
+    "identityTitle": "ข้อมูลแพลตฟอร์ม",
+    "identityBody": "ชื่อที่แสดงและอีเมลฝ่ายสนับสนุนที่แสดงต่อผู้ใช้",
+    "displayNamePlaceholder": "ชื่อที่แสดง (เช่น BANA Wallet)",
+    "supportEmailPlaceholder": "support@yourdomain.com",
+    "amountPlaceholder": "เช่น 100"
   }
 }

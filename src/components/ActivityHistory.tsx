@@ -36,12 +36,16 @@ export default function ActivityHistory({ activities, settings, onNavigate }: Ac
   // even when empty (shows a real "no activity" state); demo data is only the
   // offline/error fallback so the UI is never blank in dev/preview.
   const [liveActs, setLiveActs] = useState<Activity[] | null>(null);
-  const [source, setSource] = useState<'loading' | 'live' | 'demo'>('loading');
+  const [source, setSource] = useState<'loading' | 'live' | 'error'>('loading');
 
   useEffect(() => {
     let cancelled = false;
-    const mapStatus = (s: string): Activity['status'] =>
-      s === 'COMPLETED' ? 'Completed' : s === 'PENDING' ? 'Pending' : s === 'FAILED' ? 'Failed' : 'Completed';
+    const mapStatus = (s: string): Activity['status'] => {
+      const u = String(s ?? '').toUpperCase();
+      if (u === 'PENDING') return 'Pending';
+      if (u === 'FAILED' || u === 'REJECTED') return 'Failed';
+      return 'Completed'; // COMPLETED, APPROVED, or anything else the hub returns
+    };
     const fmt = (v: unknown) => {
       try { return new Date(v as any).toISOString().replace('T', ' ').slice(0, 16) + ' UTC'; } catch { return ''; }
     };
@@ -80,7 +84,7 @@ export default function ActivityHistory({ activities, settings, onNavigate }: Ac
             act: {
               id: w.id || w.withdrawalId || `wd-${w.createdAt || ''}`,
               type: 'Send', title: `Withdrew ${w.amount} ${w.currency}`,
-              description: `${w.network || ''} network withdrawal`,
+              description: w.pendingApproval ? t('awaitingApproval') : `${w.network || ''} network withdrawal`,
               fromAmount: String(w.amount ?? ''), fromSymbol: w.currency || '', toAmount: '0', toSymbol: '',
               timestamp: fmt(w.createdAt ?? w.ts), status: mapStatus(w.status), txHash: w.txHash || w.withdrawalId || w.id || '', gasFee: '—',
             },
@@ -117,7 +121,7 @@ export default function ActivityHistory({ activities, settings, onNavigate }: Ac
         setLiveActs(rows.map((r) => r.act));
         setSource('live'); // successful fetch → live, even when empty
       } catch {
-        if (!cancelled) { setLiveActs(null); setSource('demo'); }
+        if (!cancelled) { setLiveActs(null); setSource('error'); }
       }
     })();
     return () => { cancelled = true; };
@@ -130,8 +134,8 @@ export default function ActivityHistory({ activities, settings, onNavigate }: Ac
   };
 
   // On a successful fetch use the live records (even if empty); fall back to the
-  // demo list only while loading or when the fetch failed (offline/not configured).
-  const sourceActs = source === 'live' ? (liveActs ?? []) : activities;
+  // Only ever show real data — never mock. Empty while loading or on error.
+  const sourceActs = source === 'live' ? (liveActs ?? []) : [];
   const filteredActivities = sourceActs.filter((act) => {
     if (filter === 'All') return true;
     return act.status === filter;
@@ -354,8 +358,8 @@ export default function ActivityHistory({ activities, settings, onNavigate }: Ac
               </>
             ) : (
               <>
-                <RefreshCw className="h-3.5 w-3.5 text-slate-500" />
-                {t('demoData')}
+                <RefreshCw className="h-3.5 w-3.5 text-rose-400" />
+                {t('loadError')}
               </>
             )}
           </span>

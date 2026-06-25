@@ -15,7 +15,8 @@ import {
   Info,
   Copy,
   Check,
-  Loader2
+  Loader2,
+  Search
 } from 'lucide-react';
 
 interface DepositProps {
@@ -40,6 +41,7 @@ export default function Deposit({ onNavigate }: DepositProps) {
   const [marketsLoading, setMarketsLoading] = useState(true);
   const [selectedAsset, setSelectedAsset] = useState<string>('');
   const [selectedNetwork, setSelectedNetwork] = useState<string>('');
+  const [assetQuery, setAssetQuery] = useState('');
 
   // Deposit address state for the selected asset + network.
   const [address, setAddress] = useState<string>('');
@@ -54,6 +56,19 @@ export default function Deposit({ onNavigate }: DepositProps) {
 
   const assetNetworks =
     currencies.find((c) => c.symbol === selectedAsset)?.networks ?? [];
+
+  // Common assets float to the top so they're easy to find; the rest follow.
+  const POPULAR = ['USDT', 'USDC', 'BTC', 'ETH'];
+  const q = assetQuery.trim().toUpperCase();
+  const displayCurrencies = currencies
+    .filter((c) => !q || c.symbol.toUpperCase().includes(q))
+    .slice()
+    .sort((a, b) => {
+      const pa = POPULAR.indexOf(a.symbol);
+      const pb = POPULAR.indexOf(b.symbol);
+      if (pa !== -1 || pb !== -1) return (pa === -1 ? 99 : pa) - (pb === -1 ? 99 : pb);
+      return a.symbol.localeCompare(b.symbol);
+    });
 
   // Load the supported deposit currencies/networks from markets on mount.
   useEffect(() => {
@@ -195,20 +210,36 @@ export default function Deposit({ onNavigate }: DepositProps) {
             ) : currencies.length === 0 ? (
               <p className="text-xs font-mono text-[#8c90a0] py-2">{t('addressError')}</p>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                {currencies.map((c) => (
-                  <button
-                    key={c.symbol}
-                    onClick={() => setSelectedAsset(c.symbol)}
-                    className={`py-2.5 px-3 rounded-xl border text-sm font-bold font-mono transition-all cursor-pointer ${
-                      selectedAsset === c.symbol
-                        ? 'bg-[#2E7DFF]/10 border-[#528dff]/50 text-white'
-                        : 'bg-[#020d24]/50 border-[#1E3559] text-[#8c90a0] hover:text-white'
-                    }`}
-                  >
-                    {c.symbol}
-                  </button>
-                ))}
+              <div className="flex flex-col gap-3">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8c90a0] pointer-events-none" />
+                  <input
+                    value={assetQuery}
+                    onChange={(e) => setAssetQuery(e.target.value)}
+                    placeholder={t('searchAsset')}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#020d24]/60 border border-[#1E3559] text-sm text-[#d8e2ff] placeholder-[#8c90a0] focus:outline-none focus:border-[#528dff]/60 transition-colors"
+                  />
+                </div>
+                {displayCurrencies.length === 0 ? (
+                  <p className="text-xs font-mono text-[#8c90a0] py-2">{t('noAssetMatch', { q: assetQuery })}</p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-h-64 overflow-y-auto pr-1">
+                    {displayCurrencies.map((c) => (
+                      <button
+                        key={c.symbol}
+                        onClick={() => setSelectedAsset(c.symbol)}
+                        className={`py-2.5 px-3 rounded-xl border text-sm font-bold font-mono transition-all cursor-pointer ${
+                          selectedAsset === c.symbol
+                            ? 'bg-[#2E7DFF]/10 border-[#528dff]/50 text-white'
+                            : 'bg-[#020d24]/50 border-[#1E3559] text-[#8c90a0] hover:text-white'
+                        }`}
+                      >
+                        {c.symbol}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

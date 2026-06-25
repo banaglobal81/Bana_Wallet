@@ -62,3 +62,44 @@ export async function resetPassword(token: string, password: string): Promise<vo
     throw new Error(body?.error || `Request failed (${res.status})`);
   }
 }
+
+// ---- Withdrawal address book ----
+
+export interface SavedAddress {
+  id: string;
+  label: string;
+  network: string;
+  address: string;
+  createdAt: string;
+}
+
+/** List the current user's saved withdrawal addresses. */
+export async function listSavedAddresses(): Promise<SavedAddress[]> {
+  try {
+    const res = await fetch('/api/user/withdrawal-addresses', { headers: { Accept: 'application/json' } });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || body?.ok === false) return [];
+    return Array.isArray(body.data) ? body.data : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Save a new withdrawal address. Throws with the server message on failure. */
+export async function addSavedAddress(input: { label: string; network: string; address: string }): Promise<SavedAddress> {
+  const res = await fetch('/api/user/withdrawal-addresses', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(input),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || body?.ok === false) throw new Error(body?.error || `Request failed (${res.status})`);
+  return body.data as SavedAddress;
+}
+
+/** Delete a saved withdrawal address. */
+export async function deleteSavedAddress(id: string): Promise<void> {
+  const res = await fetch(`/api/user/withdrawal-addresses/${id}`, { method: 'DELETE', headers: { Accept: 'application/json' } });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || body?.ok === false) throw new Error(body?.error || `Request failed (${res.status})`);
+}

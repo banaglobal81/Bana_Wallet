@@ -208,19 +208,19 @@ export default function Sidebar({
             {nav('settings')}
           </a>
 
-          {/* Settlement — admin-only entry */}
+          {/* Admin console — admin-only entry */}
           {isAdmin && (
             <Link
-              href="/admin/settlement"
+              href="/admin/dashboard"
               onClick={onCloseMobile}
               className={`flex items-center gap-4 px-4 py-3.5 rounded-xl font-sans text-[15px] font-semibold transition-all duration-300 ${
-                pathname === '/admin/settlement'
+                pathname.startsWith('/admin')
                   ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)] font-bold'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 border border-transparent'
               }`}
             >
-              <Building2 className={`h-5 w-5 ${pathname === '/admin/settlement' ? 'text-amber-400' : 'text-slate-400'}`} />
-              {nav('settlement')}
+              <Building2 className={`h-5 w-5 ${pathname.startsWith('/admin') ? 'text-amber-400' : 'text-slate-400'}`} />
+              {nav('adminConsole')}
             </Link>
           )}
         </nav>
@@ -250,11 +250,13 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* Vault address (static, informational) */}
-        <div className="w-full py-3 rounded-xl bg-slate-800/40 border border-slate-700/50 flex flex-col items-center select-none">
-          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{sb('vaultAddress')}</span>
-          <span className="font-mono text-sm text-slate-200 tracking-wide mt-0.5">{truncateAddress(settings.connectedWallet)}</span>
-        </div>
+        {/* Signed-in account (real identity from the session) */}
+        {session?.user?.email && (
+          <div className="w-full py-3 px-3 rounded-xl bg-slate-800/40 border border-slate-700/50 flex flex-col items-center select-none">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{sb('account')}</span>
+            <span className="font-mono text-xs text-slate-200 tracking-wide mt-0.5 truncate max-w-full">{session.user.email}</span>
+          </div>
+        )}
       </div>
       </aside>
     </>

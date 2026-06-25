@@ -1,7 +1,8 @@
 {
   "common": {
     "backToWallet": "Back to Wallet",
-    "logOut": "Log out"
+    "logOut": "Log out",
+    "maintenanceBanner": "Withdrawals are paused for maintenance. We'll be back shortly."
   },
   "nav": {
     "portfolio": "Portfolio",
@@ -10,7 +11,11 @@
     "staking": "Staking",
     "activity": "Activity",
     "settings": "Settings",
-    "settlement": "Settlement"
+    "settlement": "Settlement",
+    "users": "Users",
+    "withdrawals": "Withdrawals",
+    "dashboard": "Dashboard",
+    "adminConsole": "Admin Console"
   },
   "login": {
     "title": "Sign in",
@@ -55,7 +60,8 @@
     "secureMev": "Secure MEV",
     "mevActive": "ACTIVE",
     "mevInactive": "INACTIVE",
-    "vaultAddress": "Vault Ref"
+    "vaultAddress": "Vault Ref",
+    "account": "Account"
   },
   "profileMenu": {
     "profileButton": "Profile menu",
@@ -98,7 +104,7 @@
   "dashboard": {
     "pageTitle": "Portfolio Dashboard",
     "securedBadge": "SECURED WITH BENTO",
-    "vaultSubtitle": "Vault Router v3.4 • Verified Address: {address}",
+    "vaultSubtitle": "Secure custody account · {account}",
     "receive": "Receive",
     "send": "Send",
     "totalPortfolioValue": "Total Portfolio Value",
@@ -134,7 +140,15 @@
     "goToSwap": "Go to Swap",
     "footerTitle": "Hardware Wallet Integration Guard Active",
     "footerBody": "Secure private keys remain strictly off-network. High-precision hardware consensus algorithms verified.",
-    "consensusSecure": "Consensus: SECURE"
+    "consensusSecure": "Consensus: SECURE",
+    "getStartedTitle": "Welcome to BANA Wallet",
+    "getStartedBody": "Your account is ready. Fund it to start trading and earning.",
+    "stepDeposit": "Deposit crypto",
+    "stepSwap": "Swap or trade",
+    "stepTrack": "Track your portfolio",
+    "getStartedCta": "Make your first deposit",
+    "hideBalance": "Hide balance",
+    "showBalance": "Show balance"
   },
   "swap": {
     "pageTitle": "Swap Assets",
@@ -171,7 +185,10 @@
     "routeSafeGuard": "Safe Guard",
     "routeRouted": "Routed",
     "loadingBalance": "Loading balance…",
-    "noBalanceHint": "No {asset} to swap — deposit first."
+    "noBalanceHint": "No {asset} to swap — deposit first.",
+    "comingSoonTitle": "Swap is coming soon",
+    "comingSoonBody": "Swap between assets right inside your wallet. We're putting the finishing touches on it — coming soon.",
+    "backToPortfolio": "Back to Portfolio"
   },
   "staking": {
     "pageTitle": "Staking",
@@ -202,7 +219,10 @@
     "walletAvailable": "{amount} {symbol} available",
     "amountExceedsBalance": "Amount exceeds your wallet balance.",
     "max": "MAX",
-    "balance": "Balance: {amount} {asset}"
+    "balance": "Balance: {amount} {asset}",
+    "comingSoonTitle": "Staking is coming soon",
+    "comingSoonBody": "Earn rewards on your crypto. We're putting the finishing touches on staking — it'll be live here soon.",
+    "backToPortfolio": "Back to Portfolio"
   },
   "deposit": {
     "backAria": "Back",
@@ -227,7 +247,9 @@
     "copied": "Copied to clipboard",
     "memoLabel": "Memo / Tag (required)",
     "memoWarning": "You MUST include this memo with your deposit. Deposits sent without it cannot be credited to your account.",
-    "networkUnavailable": "Deposits on {network} aren't available yet — please choose another network."
+    "networkUnavailable": "Deposits on {network} aren't available yet — please choose another network.",
+    "searchAsset": "Search asset…",
+    "noAssetMatch": "No asset matches “{q}”"
   },
   "walletPage": {
     "title": "Wallet",
@@ -248,7 +270,9 @@
     "tableAvailable": "Available",
     "tableLocked": "Locked",
     "transactionHistory": "Transaction history",
-    "transactionHistorySubtitle": "Deposits, withdrawals & trades"
+    "transactionHistorySubtitle": "Deposits, withdrawals & trades",
+    "depositNow": "Deposit now",
+    "depositWallet": "Deposit"
   },
   "withdraw": {
     "backAria": "Back",
@@ -256,7 +280,7 @@
     "pageSubtitle": "Send assets from your Nia custody account to an external address.",
     "niaSecured": "NIA SECURED",
     "withdrawalRequested": "Withdrawal Requested",
-    "withdrawalRequestedBody": "Your request to withdraw <b>{amount} {asset}</b> has been submitted to Nia-Hub for processing.",
+    "withdrawalRequestedBody": "Your request to withdraw <b>{amount} {asset}</b> has been submitted and is pending admin approval. You'll see it update in your activity.",
     "idLabel": "ID:",
     "viewInHistory": "View in History",
     "reviewTitle": "Review Withdrawal",
@@ -279,16 +303,19 @@
     "youWillSend": "You will send",
     "irreversibleWarning": "Withdrawals are irreversible. Double-check the destination address — funds sent to a wrong address cannot be recovered.",
     "loadingBalance": "Loading balance…",
-    "noBalanceHint": "No {asset} available to withdraw — deposit first."
+    "noBalanceHint": "No {asset} available to withdraw — deposit first.",
+    "networkLabel": "Network",
+    "belowMin": "Minimum withdrawal is {min} {asset}.",
+    "addressPlaceholder": "Recipient address"
   },
   "settings": {
-    "breadcrumbRegistry": "NODE MANIFEST REGISTRY:",
+    "breadcrumbRegistry": "Quick links:",
     "breadcrumbPortfolio": "Portfolio",
     "breadcrumbSwap": "Swap",
     "breadcrumbActivity": "Activity",
-    "pageTitle": "Security & Node Settings",
-    "pageSubtitle": "Adjust private routing nodes, consensus gas speed thresholds, and MEV front-run firewalls.",
-    "clientBadge": "Client v1.9 • SECURE",
+    "pageTitle": "Settings",
+    "pageSubtitle": "Manage your account, security, and notifications.",
+    "clientBadge": "Secured",
     "accountTitle": "Account",
     "loadingAccount": "Loading account…",
     "signedInWith": "Signed in with {method}",
@@ -354,7 +381,14 @@
     "slippageInvalid": "Enter a valid number.",
     "notificationsTitle": "Notifications",
     "notificationsBody": "Choose which activity appears in your notification feed.",
-    "toggleCategory": "Toggle {label}"
+    "toggleCategory": "Toggle {label}",
+    "addressBookTitle": "Withdrawal Address Book",
+    "addressBookBody": "Save trusted withdrawal addresses to pick from quickly — fewer typos, safer withdrawals.",
+    "deleteAddress": "Delete address",
+    "addressLabelPlaceholder": "Label (e.g. My Binance)",
+    "addressNetworkPlaceholder": "Network (e.g. ETH)",
+    "addressValuePlaceholder": "Address",
+    "addAddress": "Add"
   },
   "activity": {
     "breadcrumbRegistry": "NODE MANIFEST REGISTRY:",
@@ -379,7 +413,9 @@
     "syncing": "Syncing with Nia-Hub…",
     "liveRecords": "Live • {count, plural, one {# record} other {# records}} from Nia-Hub",
     "demoData": "Demo data — no live activity yet",
-    "addressIndex": "Address Index: BANA-SECURE-ETH"
+    "addressIndex": "Address Index: BANA-SECURE-ETH",
+    "awaitingApproval": "Awaiting admin approval",
+    "loadError": "Couldn't load activity"
   },
   "notifications": {
     "ariaLabel": "Notifications",
@@ -501,5 +537,116 @@
     "errorGeneric": "Could not reset your password. Please try again.",
     "missingToken": "This reset link is invalid or incomplete.",
     "requestNew": "Request a new reset link"
+  },
+  "adminUsers": {
+    "pageTitle": "User Management",
+    "pageSubtitle": "Manage accounts, roles, and password resets.",
+    "searchPlaceholder": "Search by email…",
+    "refresh": "Refresh",
+    "resetLinkNote": "One-time reset link (valid 30 min) — share it with the user:",
+    "colEmail": "User",
+    "colRole": "Role",
+    "colAuth": "Sign-in",
+    "colActions": "Actions",
+    "roleUser": "User",
+    "roleAdmin": "Admin",
+    "makeAdmin": "Make admin",
+    "makeUser": "Make user",
+    "resetLink": "Reset link",
+    "googleNoReset": "Google account — no password to reset",
+    "authGoogle": "Google",
+    "authPassword": "Password",
+    "loading": "Loading…",
+    "noUsers": "No users found.",
+    "total": "{count} users",
+    "disabledBadge": "Disabled",
+    "viewWallet": "View wallet",
+    "disable": "Disable account",
+    "enable": "Enable account",
+    "walletTitle": "User wallet",
+    "balances": "Balances",
+    "noBalances": "No balances",
+    "deposits": "Deposits",
+    "withdrawals": "Withdrawals",
+    "none": "None"
+  },
+  "adminWithdrawals": {
+    "pageTitle": "Withdrawal Approvals",
+    "pageSubtitle": "Review and approve outgoing withdrawals before funds leave.",
+    "refresh": "Refresh",
+    "loading": "Loading…",
+    "queueEmpty": "No withdrawal requests yet.",
+    "securityNote": "Withdrawals are held here until an admin approves them — funds only leave the platform on approval.",
+    "colUser": "User",
+    "colAmount": "Amount",
+    "colTo": "To address",
+    "colStatus": "Status",
+    "colActions": "Actions",
+    "approve": "Approve",
+    "reject": "Reject",
+    "confirmApprove": "Approve withdrawal of {amount} {currency}? Funds will be sent now.",
+    "rejectReasonPrompt": "Reason for rejecting (optional):",
+    "pendingCount": "{count} pending",
+    "statusPENDING": "Pending",
+    "statusAPPROVED": "Approved",
+    "statusREJECTED": "Rejected",
+    "statusFAILED": "Failed"
+  },
+  "adminDashboard": {
+    "pageTitle": "Dashboard",
+    "pageSubtitle": "Broker overview — users, withdrawals, and recent activity.",
+    "refresh": "Refresh",
+    "totalUsers": "Total users",
+    "newThisWeek": "+{n} this week",
+    "pendingWithdrawals": "Pending withdrawals",
+    "needsReview": "Needs review",
+    "approved": "Approved withdrawals",
+    "rejectedN": "{n} rejected",
+    "admins": "Admins",
+    "disabledN": "{n} disabled",
+    "recentActivity": "Recent admin activity",
+    "noActivity": "No activity yet.",
+    "loading": "Loading…",
+    "actions": {
+      "USER_ROLE_CHANGE": "Role changed",
+      "USER_DISABLE": "Account disabled",
+      "USER_ENABLE": "Account enabled",
+      "USER_RESET_LINK": "Password reset link issued",
+      "WITHDRAWAL_APPROVE": "Withdrawal approved",
+      "WITHDRAWAL_REJECT": "Withdrawal rejected",
+      "POLICY_UPDATE": "Policy updated"
+    },
+    "recentWithdrawals": "Recent withdrawals",
+    "recentDeposits": "Recent deposits",
+    "noWithdrawals": "No withdrawals yet.",
+    "noDeposits": "No recent deposits. Deposits appear here once deposit webhooks are configured on the hub.",
+    "viewAll": "View all"
+  },
+  "adminSettings": {
+    "pageTitle": "Platform Settings",
+    "pageSubtitle": "Withdrawal policy and platform-wide controls.",
+    "saved": "Saved",
+    "loading": "Loading…",
+    "save": "Save",
+    "whitelistTitle": "Whitelist-only withdrawals",
+    "whitelistBody": "When on, users can only withdraw to addresses saved in their address book. Blocks withdrawals to brand-new addresses.",
+    "autoApproveTitle": "Auto-approve small withdrawals",
+    "autoApproveBody": "Stablecoin withdrawals valued under this amount skip the approval queue and send automatically. Larger amounts (and all non-stablecoins) still require manual review. Leave blank to require approval for everything.",
+    "autoApprovePlaceholder": "e.g. 100",
+    "autoApproveOn": "Auto-approving stablecoin withdrawals under ${amount}.",
+    "autoApproveOff": "Every withdrawal requires manual approval.",
+    "maintenanceTitle": "Maintenance mode",
+    "maintenanceBody": "Pause all withdrawals platform-wide and show users a banner. Use during incidents or hub outages.",
+    "signupsTitle": "New signups",
+    "signupsBody": "Allow new users to register. Turn off to close registration.",
+    "dailyLimitTitle": "Daily withdrawal limit",
+    "dailyLimitBody": "Maximum total a single user can withdraw per 24 hours (USD, stablecoins). Limits damage from a compromised account. Leave blank for no limit.",
+    "dailyLimitOn": "Limited to ${amount} per user per 24h.",
+    "dailyLimitOff": "No daily withdrawal limit.",
+    "identityTitle": "Platform identity",
+    "identityBody": "Display name and support email shown to users.",
+    "displayNamePlaceholder": "Display name (e.g. BANA Wallet)",
+    "supportEmailPlaceholder": "support@yourdomain.com",
+    "amountPlaceholder": "e.g. 100"
   }
 }

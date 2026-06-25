@@ -3,7 +3,7 @@
 import { Link, usePathname } from '@/i18n/navigation';
 import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
-import { Building2, ArrowLeft, Lock, Coins } from 'lucide-react';
+import { Building2, ArrowLeft, Lock, Coins, Users, ArrowUpRight, LayoutDashboard, SlidersHorizontal } from 'lucide-react';
 import { useApp } from '@/app/providers';
 import { useScreenNav } from '@/lib/useScreenNav';
 import BanaLogo from '@/components/BanaLogo';
@@ -23,7 +23,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // Admin navigation entries (extend as the admin area grows).
   const ADMIN_NAV = [
+    { href: '/admin/dashboard', label: nav('dashboard'), icon: LayoutDashboard },
+    { href: '/admin/withdrawals', label: nav('withdrawals'), icon: ArrowUpRight },
     { href: '/admin/settlement', label: nav('settlement'), icon: Coins },
+    { href: '/admin/users', label: nav('users'), icon: Users },
+    { href: '/admin/settings', label: nav('settings'), icon: SlidersHorizontal },
   ];
 
   // While the session is loading, render nothing to avoid flash
@@ -105,8 +109,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </Link>
       </nav>
 
-      {/* Admin content */}
-      <main className="flex-1 min-w-0 relative overflow-hidden bg-[#06132a]">{children}</main>
+      {/* Admin content — min-h-0 + overflow-y-auto so tall pages (e.g. Settings) scroll */}
+      <main className="flex-1 min-h-0 min-w-0 relative overflow-y-auto bg-[#06132a]">{children}</main>
     </div>
   );
 }

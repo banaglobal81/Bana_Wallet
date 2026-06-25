@@ -1,81 +1,42 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from '@/i18n/navigation';
-import { useApp } from '@/app/providers';
+import { useTranslations } from 'next-intl';
 import { useScreenNav } from '@/lib/useScreenNav';
-import Swap from '@/components/Swap';
-import Simulate from '@/components/Simulate';
-import ScamWarning from '@/components/ScamWarning';
-import type { Screen } from '@/types';
+import { ArrowLeftRight, Clock, ChevronRight } from 'lucide-react';
 
-type Step = 'form' | 'simulate' | 'scam';
-
+// Swap previously ran on a mock in-memory ledger (no real trade execution). Until it's
+// wired to the real Nia-Hub orders API, we show an honest "coming soon" state — no mock.
 export default function SwapPage() {
-  const { assets, settings, preparedSwap, prepareSwap, confirmSwapExec } = useApp();
-  const [step, setStep] = useState<Step>('form');
-  const router = useRouter();
-
-  // Nav adapter for the Swap form — intercepts modal screens, routes the rest.
-  const swapNavAdapter = useScreenNav({
-    TRANSACTION_SIMULATION: () => setStep('simulate'),
-    SCAM_WARNING_MODAL: () => setStep('scam'),
-  });
-
-  // Nav adapter for Simulate: confirm → portfolio, reject → back to form.
-  const simulateNavAdapter = (screen: Screen, _direction?: string) => {
-    if (screen === 'SWAP_INTERFACE') { setStep('form'); return; }
-    if (screen === 'SCAM_WARNING_MODAL') { setStep('scam'); return; }
-    // PORTFOLIO_DASHBOARD or ACTIVITY_HISTORY after confirm
-    const paths: Partial<Record<Screen, string>> = {
-      PORTFOLIO_DASHBOARD: '/portfolio',
-      ACTIVITY_HISTORY: '/activity',
-    };
-    const path = paths[screen];
-    if (path) { router.push(path); return; }
-    // Fallback: use generic nav
-    swapNavAdapter(screen, _direction);
-  };
-
-  // Nav adapter for ScamWarning: reject → back to form, confirm → portfolio.
-  const scamNavAdapter = (screen: Screen, _direction?: string) => {
-    if (screen === 'SWAP_INTERFACE') { setStep('form'); return; }
-    const paths: Partial<Record<Screen, string>> = {
-      PORTFOLIO_DASHBOARD: '/portfolio',
-      ACTIVITY_HISTORY: '/activity',
-    };
-    const path = paths[screen];
-    if (path) { router.push(path); return; }
-    swapNavAdapter(screen, _direction);
-  };
-
-  if (step === 'simulate') {
-    return (
-      <Simulate
-        settings={settings}
-        onNavigate={simulateNavAdapter}
-        preparedSwap={preparedSwap}
-        onConfirmSwap={confirmSwapExec}
-      />
-    );
-  }
-
-  if (step === 'scam') {
-    return (
-      <ScamWarning
-        preparedSwap={preparedSwap}
-        onNavigate={scamNavAdapter}
-        onConfirmSwap={confirmSwapExec}
-      />
-    );
-  }
+  const t = useTranslations('swap');
+  const navigate = useScreenNav();
 
   return (
-    <Swap
-      assets={assets}
-      settings={settings}
-      onNavigate={swapNavAdapter}
-      onPrepareSwap={prepareSwap}
-    />
+    <div className="flex-1 min-h-full bg-[#06132a] text-[#d8e2ff] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
+      <header className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center pb-2 border-b border-[#1E3559]/40">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
+            <ArrowLeftRight className="h-7 w-7 text-[#528dff]" />
+            {t('pageTitle')}
+          </h1>
+          <p className="text-xs sm:text-sm text-[#8c90a0] mt-1 font-mono">{t('pageSubtitle')}</p>
+        </div>
+      </header>
+
+      <div className="flex-1 flex items-center justify-center py-12">
+        <div className="max-w-md w-full p-8 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col items-center gap-4 text-center">
+          <div className="p-4 rounded-full bg-[#528dff]/10 border border-[#528dff]/20">
+            <Clock className="h-8 w-8 text-[#528dff]" />
+          </div>
+          <h2 className="text-xl font-extrabold text-white">{t('comingSoonTitle')}</h2>
+          <p className="text-sm text-[#8c90a0] leading-relaxed">{t('comingSoonBody')}</p>
+          <button
+            onClick={() => navigate('PORTFOLIO_DASHBOARD', 'push_back')}
+            className="mt-1 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#112643] hover:bg-[#1e3459] border border-[#1E3559] text-white text-sm font-bold transition-colors cursor-pointer"
+          >
+            {t('backToPortfolio')} <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

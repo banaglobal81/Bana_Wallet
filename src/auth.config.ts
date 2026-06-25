@@ -40,7 +40,7 @@ export const authConfig = {
       const isAuthPage = rest === '/login' || rest === '/signup';
       if (isAuthPage) {
         if (isLoggedIn) {
-          const dest = role === 'ADMIN' ? '/admin/settlement' : '/portfolio';
+          const dest = role === 'ADMIN' ? '/admin/dashboard' : '/portfolio';
           return Response.redirect(p(dest));
         }
         return true;

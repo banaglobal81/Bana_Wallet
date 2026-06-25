@@ -1,7 +1,8 @@
 {
   "common": {
     "backToWallet": "返回钱包",
-    "logOut": "退出登录"
+    "logOut": "退出登录",
+    "maintenanceBanner": "提现因维护暂停，我们将很快恢复。"
   },
   "nav": {
     "portfolio": "投资组合",
@@ -10,7 +11,11 @@
     "staking": "质押",
     "activity": "活动",
     "settings": "设置",
-    "settlement": "结算"
+    "settlement": "结算",
+    "users": "用户",
+    "withdrawals": "提现",
+    "dashboard": "仪表板",
+    "adminConsole": "管理控制台"
   },
   "login": {
     "title": "登录",
@@ -55,7 +60,8 @@
     "secureMev": "安全 MEV",
     "mevActive": "已启用",
     "mevInactive": "已禁用",
-    "vaultAddress": "金库引用"
+    "vaultAddress": "金库引用",
+    "account": "账户"
   },
   "profileMenu": {
     "profileButton": "个人菜单",
@@ -98,7 +104,7 @@
   "dashboard": {
     "pageTitle": "投资组合仪表盘",
     "securedBadge": "由 BENTO 保护",
-    "vaultSubtitle": "金库路由器 v3.4 • 已验证地址：{address}",
+    "vaultSubtitle": "安全托管账户 · {account}",
     "receive": "收款",
     "send": "发送",
     "totalPortfolioValue": "投资组合总价值",
@@ -134,7 +140,15 @@
     "goToSwap": "前往兑换",
     "footerTitle": "硬件钱包集成防护已启用",
     "footerBody": "安全私钥严格保持离线状态。高精度硬件共识算法已通过验证。",
-    "consensusSecure": "共识：安全"
+    "consensusSecure": "共识：安全",
+    "getStartedTitle": "欢迎使用 BANA 钱包",
+    "getStartedBody": "您的账户已就绪。充值即可开始交易和赚取收益。",
+    "stepDeposit": "充值加密货币",
+    "stepSwap": "兑换或交易",
+    "stepTrack": "追踪您的投资组合",
+    "getStartedCta": "进行首次充值",
+    "hideBalance": "隐藏余额",
+    "showBalance": "显示余额"
   },
   "swap": {
     "pageTitle": "兑换资产",
@@ -171,7 +185,10 @@
     "routeSafeGuard": "安全防护",
     "routeRouted": "已路由",
     "loadingBalance": "正在加载余额…",
-    "noBalanceHint": "没有可兑换的 {asset} — 请先入金。"
+    "noBalanceHint": "没有可兑换的 {asset} — 请先入金。",
+    "comingSoonTitle": "兑换即将推出",
+    "comingSoonBody": "在钱包内直接兑换资产。功能正在完善中，即将推出。",
+    "backToPortfolio": "返回投资组合"
   },
   "staking": {
     "pageTitle": "质押",
@@ -202,7 +219,10 @@
     "walletAvailable": "可用 {amount} {symbol}",
     "amountExceedsBalance": "数量超过您的钱包余额。",
     "max": "最大",
-    "balance": "余额：{amount} {asset}"
+    "balance": "余额：{amount} {asset}",
+    "comingSoonTitle": "质押即将推出",
+    "comingSoonBody": "用您的加密资产赚取收益。质押功能正在完善中，即将在此上线。",
+    "backToPortfolio": "返回投资组合"
   },
   "deposit": {
     "backAria": "返回",
@@ -227,7 +247,9 @@
     "copied": "已复制到剪贴板",
     "memoLabel": "备注 / 标签（必填）",
     "memoWarning": "充值时必须填写此备注。未填写备注的充值将无法记入您的账户。",
-    "networkUnavailable": "{network} 网络的充值暂未开放 — 请选择其他网络。"
+    "networkUnavailable": "{network} 网络的充值暂未开放 — 请选择其他网络。",
+    "searchAsset": "搜索资产…",
+    "noAssetMatch": "没有匹配“{q}”的资产"
   },
   "walletPage": {
     "title": "钱包",
@@ -248,7 +270,9 @@
     "tableAvailable": "可用",
     "tableLocked": "锁定",
     "transactionHistory": "交易记录",
-    "transactionHistorySubtitle": "入金、提现与交易"
+    "transactionHistorySubtitle": "入金、提现与交易",
+    "depositNow": "立即充值",
+    "depositWallet": "充值"
   },
   "withdraw": {
     "backAria": "返回",
@@ -256,7 +280,7 @@
     "pageSubtitle": "将资产从您的 Nia 托管账户发送至外部地址。",
     "niaSecured": "NIA 安全",
     "withdrawalRequested": "提现请求已提交",
-    "withdrawalRequestedBody": "您提现 <b>{amount} {asset}</b> 的请求已提交至 Nia-Hub 进行处理。",
+    "withdrawalRequestedBody": "您提取 <b>{amount} {asset}</b> 的请求已提交，正在等待管理员审批。您可以在活动记录中查看状态。",
     "idLabel": "ID：",
     "viewInHistory": "在历史记录中查看",
     "reviewTitle": "审核提现",
@@ -279,16 +303,19 @@
     "youWillSend": "您将发送",
     "irreversibleWarning": "提现不可逆。请仔细核对目标地址 — 发送至错误地址的资金无法找回。",
     "loadingBalance": "正在加载余额…",
-    "noBalanceHint": "没有可提现的 {asset} — 请先入金。"
+    "noBalanceHint": "没有可提现的 {asset} — 请先入金。",
+    "networkLabel": "网络",
+    "belowMin": "最低提现金额为 {min} {asset}。",
+    "addressPlaceholder": "收款地址"
   },
   "settings": {
-    "breadcrumbRegistry": "节点清单注册表：",
+    "breadcrumbRegistry": "快速链接：",
     "breadcrumbPortfolio": "投资组合",
     "breadcrumbSwap": "兑换",
     "breadcrumbActivity": "活动",
-    "pageTitle": "安全与节点设置",
-    "pageSubtitle": "调整私有路由节点、共识 gas 速度阈值以及 MEV 抢跑防火墙。",
-    "clientBadge": "客户端 v1.9 • 安全",
+    "pageTitle": "设置",
+    "pageSubtitle": "管理您的账户、安全和通知。",
+    "clientBadge": "已保护",
     "accountTitle": "账户",
     "loadingAccount": "正在加载账户…",
     "signedInWith": "通过 {method} 登录",
@@ -354,7 +381,14 @@
     "slippageInvalid": "请输入有效的数字。",
     "notificationsTitle": "通知",
     "notificationsBody": "选择哪些活动显示在您的通知动态中。",
-    "toggleCategory": "切换 {label}"
+    "toggleCategory": "切换 {label}",
+    "addressBookTitle": "提现地址簿",
+    "addressBookBody": "保存可信的提现地址以便快速选择——减少输入错误，提现更安全。",
+    "deleteAddress": "删除地址",
+    "addressLabelPlaceholder": "标签（如：我的币安）",
+    "addressNetworkPlaceholder": "网络（如：ETH）",
+    "addressValuePlaceholder": "地址",
+    "addAddress": "添加"
   },
   "activity": {
     "breadcrumbRegistry": "节点清单注册表：",
@@ -379,7 +413,9 @@
     "syncing": "正在与 Nia-Hub 同步…",
     "liveRecords": "实时 • 来自 Nia-Hub 的 {count, plural, one {# 条记录} other {# 条记录}}",
     "demoData": "演示数据 — 暂无实时活动",
-    "addressIndex": "地址索引：BANA-SECURE-ETH"
+    "addressIndex": "地址索引：BANA-SECURE-ETH",
+    "awaitingApproval": "等待管理员审批",
+    "loadError": "无法加载活动"
   },
   "notifications": {
     "ariaLabel": "通知",
@@ -501,5 +537,116 @@
     "errorGeneric": "无法重置密码，请重试。",
     "missingToken": "此重置链接无效或不完整。",
     "requestNew": "请求新的重置链接"
+  },
+  "adminUsers": {
+    "pageTitle": "用户管理",
+    "pageSubtitle": "管理账户、角色和密码重置。",
+    "searchPlaceholder": "按邮箱搜索…",
+    "refresh": "刷新",
+    "resetLinkNote": "一次性重置链接（30分钟内有效）— 请发送给用户：",
+    "colEmail": "用户",
+    "colRole": "角色",
+    "colAuth": "登录方式",
+    "colActions": "操作",
+    "roleUser": "用户",
+    "roleAdmin": "管理员",
+    "makeAdmin": "设为管理员",
+    "makeUser": "设为用户",
+    "resetLink": "重置链接",
+    "googleNoReset": "Google 账户 — 无密码可重置",
+    "authGoogle": "Google",
+    "authPassword": "密码",
+    "loading": "加载中…",
+    "noUsers": "未找到用户。",
+    "total": "{count} 位用户",
+    "disabledBadge": "已禁用",
+    "viewWallet": "查看钱包",
+    "disable": "禁用账户",
+    "enable": "启用账户",
+    "walletTitle": "用户钱包",
+    "balances": "余额",
+    "noBalances": "无余额",
+    "deposits": "充值",
+    "withdrawals": "提现",
+    "none": "无"
+  },
+  "adminWithdrawals": {
+    "pageTitle": "提现审批",
+    "pageSubtitle": "在资金转出前审核并批准提现。",
+    "refresh": "刷新",
+    "loading": "加载中…",
+    "queueEmpty": "暂无提现请求。",
+    "securityNote": "提现将在此保留，直到管理员批准——仅在批准后资金才会离开平台。",
+    "colUser": "用户",
+    "colAmount": "金额",
+    "colTo": "收款地址",
+    "colStatus": "状态",
+    "colActions": "操作",
+    "approve": "批准",
+    "reject": "拒绝",
+    "confirmApprove": "批准提现 {amount} {currency}？资金将立即发送。",
+    "rejectReasonPrompt": "拒绝原因（可选）：",
+    "pendingCount": "{count} 待处理",
+    "statusPENDING": "待处理",
+    "statusAPPROVED": "已批准",
+    "statusREJECTED": "已拒绝",
+    "statusFAILED": "失败"
+  },
+  "adminDashboard": {
+    "pageTitle": "仪表板",
+    "pageSubtitle": "经纪商概览 — 用户、提现和最近活动。",
+    "refresh": "刷新",
+    "totalUsers": "用户总数",
+    "newThisWeek": "本周 +{n}",
+    "pendingWithdrawals": "待处理提现",
+    "needsReview": "需审核",
+    "approved": "已批准提现",
+    "rejectedN": "{n} 已拒绝",
+    "admins": "管理员",
+    "disabledN": "{n} 已禁用",
+    "recentActivity": "最近管理员活动",
+    "noActivity": "暂无活动。",
+    "loading": "加载中…",
+    "actions": {
+      "USER_ROLE_CHANGE": "角色变更",
+      "USER_DISABLE": "账户已禁用",
+      "USER_ENABLE": "账户已启用",
+      "USER_RESET_LINK": "已生成密码重置链接",
+      "WITHDRAWAL_APPROVE": "提现已批准",
+      "WITHDRAWAL_REJECT": "提现已拒绝",
+      "POLICY_UPDATE": "政策已更新"
+    },
+    "recentWithdrawals": "最近提现",
+    "recentDeposits": "最近充值",
+    "noWithdrawals": "暂无提现。",
+    "noDeposits": "暂无最近充值。在枢纽配置充值 Webhook 后将在此显示。",
+    "viewAll": "查看全部"
+  },
+  "adminSettings": {
+    "pageTitle": "平台设置",
+    "pageSubtitle": "提现政策和平台范围控制。",
+    "saved": "已保存",
+    "loading": "加载中…",
+    "save": "保存",
+    "whitelistTitle": "仅白名单提现",
+    "whitelistBody": "开启后，用户只能提现到地址簿中保存的地址，阻止向全新地址提现。",
+    "autoApproveTitle": "自动批准小额提现",
+    "autoApproveBody": "低于此金额的稳定币提现将跳过审批队列并自动发送。更大金额（及所有非稳定币）仍需人工审核。留空则所有提现都需审批。",
+    "autoApprovePlaceholder": "例如 100",
+    "autoApproveOn": "自动批准低于 ${amount} 的稳定币提现。",
+    "autoApproveOff": "每笔提现都需人工批准。",
+    "maintenanceTitle": "维护模式",
+    "maintenanceBody": "暂停全平台提现并向用户显示横幅。用于事故或枢纽中断期间。",
+    "signupsTitle": "新用户注册",
+    "signupsBody": "允许新用户注册。关闭则停止注册。",
+    "dailyLimitTitle": "每日提现限额",
+    "dailyLimitBody": "单个用户每24小时可提现的最高总额（美元，稳定币）。限制账户被盗的损失。留空表示无限额。",
+    "dailyLimitOn": "每位用户每24小时限额 ${amount}。",
+    "dailyLimitOff": "无每日提现限额。",
+    "identityTitle": "平台信息",
+    "identityBody": "向用户显示的名称和支持邮箱。",
+    "displayNamePlaceholder": "显示名称（如 BANA Wallet）",
+    "supportEmailPlaceholder": "support@yourdomain.com",
+    "amountPlaceholder": "例如 100"
   }
 }

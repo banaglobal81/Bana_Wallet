@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { SystemSettings } from '../types';
 import {
   TrendingUp,
@@ -11,6 +12,8 @@ import {
   Upload,
   Layers,
   Sparkles,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import Decimal from 'decimal.js';
 import { useTranslations } from 'next-intl';
@@ -114,6 +117,22 @@ interface DashboardProps {
 
 export default function Dashboard({ settings, onNavigate }: DashboardProps) {
   const t = useTranslations('dashboard');
+  const { data: session } = useSession();
+
+  // Privacy toggle — hide balances (persisted) so amounts aren't visible over the shoulder.
+  const [hideBalance, setHideBalance] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined') setHideBalance(localStorage.getItem('bana_hideBalance') === '1');
+  }, []);
+  const toggleHideBalance = () => {
+    setHideBalance((prev) => {
+      const next = !prev;
+      try { localStorage.setItem('bana_hideBalance', next ? '1' : '0'); } catch { /* ignore */ }
+      return next;
+    });
+  };
+  // Replace any value with dots when balances are hidden.
+  const mask = (v: string) => (hideBalance ? '••••••' : v);
   // ---- UI state -----------------------------------------------------------
   const [hoveredAsset, setHoveredAsset] = useState<string | null>(null);
   const [showAllocInfo, setShowAllocInfo] = useState(false);
@@ -468,7 +487,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
             </span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 font-mono break-all">
-            {t('vaultSubtitle', { address: `${settings.connectedWallet.slice(0, 10)}...${settings.connectedWallet.slice(-6)}` })}
+            {t('vaultSubtitle', { account: session?.user?.email ?? '' })}
           </p>
         </div>
 
@@ -492,6 +511,29 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
         </div>
       </header>
 
+      {/* Get-started strip — shown only to new users with no assets yet */}
+      {!loading && portfolioAssets.length === 0 && (
+        <section className="shrink-0 p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-indigo-600/15 via-indigo-600/5 to-transparent border border-indigo-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col gap-1.5">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-indigo-400" /> {t('getStartedTitle')}
+            </h3>
+            <p className="text-xs text-slate-400 max-w-md">{t('getStartedBody')}</p>
+            <div className="flex flex-wrap gap-x-5 gap-y-1 mt-1 text-[11px] font-mono text-slate-400">
+              <span><span className="text-indigo-400 font-bold">1.</span> {t('stepDeposit')}</span>
+              <span><span className="text-indigo-400 font-bold">2.</span> {t('stepSwap')}</span>
+              <span><span className="text-indigo-400 font-bold">3.</span> {t('stepTrack')}</span>
+            </div>
+          </div>
+          <button
+            onClick={() => onNavigate('DEPOSIT_INTERFACE', 'slide_up')}
+            className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition-colors cursor-pointer shadow-[0_0_15px_rgba(99,102,241,0.25)]"
+          >
+            <Download className="h-4 w-4" /> {t('getStartedCta')}
+          </button>
+        </section>
+      )}
+
       {/* 2. Top Summary Metrics Card */}
       <section className="shrink-0 p-5 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 relative overflow-hidden shadow-xl bento-hover">
         <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-indigo-500/5 via-transparent to-transparent pointer-events-none" />
@@ -499,8 +541,16 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
           {/* Total portfolio value */}
           <div>
-            <span className="text-xs font-mono text-slate-400 uppercase tracking-widest font-bold">
+            <span className="text-xs font-mono text-slate-400 uppercase tracking-widest font-bold flex items-center gap-2">
               {t('totalPortfolioValue')}
+              <button
+                onClick={toggleHideBalance}
+                aria-label={hideBalance ? t('showBalance') : t('hideBalance')}
+                title={hideBalance ? t('showBalance') : t('hideBalance')}
+                className="text-slate-500 hover:text-slate-200 transition-colors cursor-pointer"
+              >
+                {hideBalance ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              </button>
             </span>
             <div className="flex items-baseline gap-2 mt-2">
               {loading ? (
@@ -508,7 +558,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
               ) : (
                 <>
                   <h2 className="text-3xl sm:text-4xl xl:text-5xl font-black font-sans tracking-tight text-white whitespace-nowrap">
-                    ${totalValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    {hideBalance ? '••••••' : `$${totalValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`}
                   </h2>
                   <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${
                     headlineIsPositive
@@ -721,13 +771,13 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
 
                           <td className="py-3.5 px-2 text-right font-mono text-xs text-white">
                             {/* Show enough precision without trailing zeros */}
-                            {asset.amount.toSignificantDigits(6).toString()}
+                            {mask(asset.amount.toSignificantDigits(6).toString())}
                             <div className="text-[10px] text-slate-400">{asset.currency}</div>
                           </td>
 
                           <td className="py-3.5 px-2 text-right font-mono text-xs font-bold text-white">
                             {asset.hasPrice
-                              ? `$${assetUsdValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`
+                              ? mask(`$${assetUsdValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`)
                               : <span className="text-slate-500 text-[10px]">n/a</span>}
                           </td>
 

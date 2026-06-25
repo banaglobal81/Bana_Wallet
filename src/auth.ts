@@ -30,6 +30,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         if (!user.passwordHash) return null;
         const ok = await bcrypt.compare(password, user.passwordHash);
         if (!ok) return null;
+        // Disabled accounts cannot sign in (admin-locked).
+        if (user.disabled) return null;
         return { id: user.id, email: user.email, role: user.role, niaUserId: user.niaUserId };
       },
     }),
@@ -51,13 +53,15 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         if (!email) return false;
         // Upsert: create a USER-role record if this Google email is new,
         // otherwise leave the existing record untouched (update:{}).
-        await prisma.user.upsert({
+        const record = await prisma.user.upsert({
           where: { email },
           // Mint a Nia-Hub end-user id for brand-new Google accounts. `update: {}`
           // leaves existing accounts (and their existing niaUserId) untouched.
           update: {},
           create: { email, role: 'USER', niaUserId: newNiaUserId() },
         });
+        // Disabled accounts cannot sign in (admin-locked).
+        if (record.disabled) return false;
         return true;
       }
       // Credentials path — authorize() already validated, just allow through.

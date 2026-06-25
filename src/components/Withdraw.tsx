@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Decimal from 'decimal.js';
 import { useTranslations } from 'next-intl';
 import { Screen, Asset, SystemSettings } from '../types';
-import { requestNiaWithdrawal, getNiaBalance } from '../utils/niaApi';
+import { requestNiaWithdrawal, getNiaBalance, getNiaMarkets } from '../utils/niaApi';
+import { listSavedAddresses, type SavedAddress } from '../utils/accountApi';
 
 // ---------------------------------------------------------------------------
 // Balance shape parser (defensive — accepts array OR object with array props).
@@ -33,16 +34,19 @@ function flattenBalanceData(raw: unknown): RawBalanceRow[] {
   return [];
 }
 
-/** Aggregate real wallet balances (balance + locked) per currency, with decimal.js. */
+/**
+ * Aggregate the *available* (withdrawable) balance per currency with decimal.js.
+ * Only the free `balance` counts — `locked` funds are reserved (e.g. in orders /
+ * pending) and cannot be withdrawn, so they are excluded.
+ */
 function aggregateBalances(raw: unknown): Map<string, Decimal> {
   const rows = flattenBalanceData(raw);
   const bySymbol = new Map<string, Decimal>();
   for (const row of rows) {
     if (!row.currency) continue;
-    const bal = new Decimal(row.balance ?? '0');
-    const lkd = new Decimal(row.locked ?? '0');
+    const bal = new Decimal(row.balance ?? '0'); // available only — exclude locked
     const prev = bySymbol.get(row.currency) ?? new Decimal(0);
-    bySymbol.set(row.currency, prev.plus(bal).plus(lkd));
+    bySymbol.set(row.currency, prev.plus(bal));
   }
   return bySymbol;
 }
@@ -52,7 +56,9 @@ import {
   ShieldCheck,
   AlertTriangle,
   Wallet,
-  ChevronRight
+  ChevronRight,
+  Loader2,
+  BookMarked
 } from 'lucide-react';
 
 interface WithdrawProps {
@@ -61,9 +67,19 @@ interface WithdrawProps {
   onNavigate: (toScreen: Screen, direction: 'push' | 'push_back' | 'slide_up' | 'none') => void;
 }
 
-export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps) {
+// Withdraw-enabled currency/network, sourced live from Nia-Hub markets — so the
+// asset list, networks, and fees are all real (no hardcoded values).
+interface Wd_Network { code: string; chainType: string; fee: string; min: string }
+interface Wd_Currency { symbol: string; networks: Wd_Network[] }
+
+const EVM_CHAINS = new Set(['EVM']);
+
+export default function Withdraw({ onNavigate }: WithdrawProps) {
   const t = useTranslations('withdraw');
-  const [selectedAsset, setSelectedAsset] = useState<string>('ETH');
+  const [currencies, setCurrencies] = useState<Wd_Currency[]>([]);
+  const [marketsLoading, setMarketsLoading] = useState(true);
+  const [selectedAsset, setSelectedAsset] = useState<string>('');
+  const [selectedNetwork, setSelectedNetwork] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
   const [destination, setDestination] = useState<string>('');
   const [stage, setStage] = useState<'form' | 'review' | 'done'>('form');
@@ -74,6 +90,10 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
   // Real per-asset available balances fetched from Nia on mount.
   const [balances, setBalances] = useState<Map<string, Decimal>>(new Map());
   const [balanceLoading, setBalanceLoading] = useState(true);
+
+  // Saved withdrawal addresses (address book) for quick-pick.
+  const [savedAddrs, setSavedAddrs] = useState<SavedAddress[]>([]);
+  useEffect(() => { listSavedAddresses().then(setSavedAddrs).catch(() => {}); }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,14 +113,55 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
     return () => { cancelled = true; };
   }, []);
 
-  // Submit a real withdrawal to Nia-Hub via the backend.
+  // Load withdraw-enabled currencies/networks (with real fees) from markets.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await getNiaMarkets();
+        const list: Wd_Currency[] = (data?.currencies ?? [])
+          .map((c: any) => ({
+            symbol: c.symbol as string,
+            networks: (c.networks ?? [])
+              .filter((n: any) => n.withdrawEnabled)
+              .map((n: any) => ({
+                code: n.networkCode as string,
+                chainType: n.chainType as string,
+                fee: String(n.withdrawFee ?? '0'),
+                min: String(n.minWithdrawAmount ?? '0'),
+              })),
+          }))
+          .filter((c: Wd_Currency) => c.networks.length > 0);
+        if (cancelled) return;
+        setCurrencies(list);
+        if (list.length) {
+          setSelectedAsset(list[0].symbol);
+          setSelectedNetwork(list[0].networks[0].code);
+        }
+      } catch { /* leave empty — UI shows no assets */ }
+      finally { if (!cancelled) setMarketsLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const assetNetworks = currencies.find((c) => c.symbol === selectedAsset)?.networks ?? [];
+  const netObj = assetNetworks.find((n) => n.code === selectedNetwork) ?? assetNetworks[0];
+
+  // Keep the selected network valid when the asset changes.
+  useEffect(() => {
+    if (assetNetworks.length && !assetNetworks.some((n) => n.code === selectedNetwork)) {
+      setSelectedNetwork(assetNetworks[0].code);
+    }
+  }, [selectedAsset, currencies]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Submit a real withdrawal to Nia-Hub via the backend (held for admin approval).
   const handleConfirm = async () => {
     setSubmitting(true);
     setApiError(null);
     try {
       const r = await requestNiaWithdrawal({
         currency: selectedAsset,
-        network: 'EVM',
+        network: selectedNetwork, // real network code from markets
         amount: amountDec.toFixed(), // canonical decimal string, no float drift
         toAddress: destination.trim(),
       });
@@ -125,15 +186,21 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
     amountDec = new Decimal(0);
   }
 
-  const networkFee = new Decimal('0.0008'); // mock; comes from Nia in the real call
-  const addressLooksValid = /^0x[a-fA-F0-9]{40}$/.test(destination.trim());
+  // Real network fee + minimum from the hub's markets config.
+  const networkFee = new Decimal(netObj?.fee ?? '0');
+  const minAmount = new Decimal(netObj?.min ?? '0');
+  const isEvm = EVM_CHAINS.has(netObj?.chainType ?? '');
+  // Address validation is network-aware: strict 0x… for EVM, non-empty otherwise.
+  const dest = destination.trim();
+  const addressLooksValid = isEvm ? /^0x[a-fA-F0-9]{40}$/.test(dest) : dest.length >= 16;
   const amountIsPositive = amountDec.gt(0);
   const overBalance = amountDec.gt(balance);
+  const belowMin = amountIsPositive && minAmount.gt(0) && amountDec.lt(minAmount);
   const hasNoBalance = !balanceLoading && balance.lte(0);
   const canReview =
-    amountIsPositive && !overBalance && addressLooksValid && !hasNoBalance;
-  // BUG #9: only fold the network fee into the "you will send" total once a real
-  // positive amount is entered. At amount 0 the total must read 0, not the fee.
+    amountIsPositive && !overBalance && !belowMin && addressLooksValid && !hasNoBalance;
+  // Only fold the network fee into the "you will send" total once a real positive
+  // amount is entered. At amount 0 the total must read 0, not the fee.
   const totalSend = amountIsPositive ? amountDec.plus(networkFee) : new Decimal(0);
 
   const handleMax = () => setAmount(balance.toFixed());
@@ -212,23 +279,55 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
                   {stage === 'review' ? t('reviewTitle') : t('detailsTitle')}
                 </h3>
 
-                {/* Asset selector */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {assets.map((a) => (
-                    <button
-                      key={a.id}
-                      disabled={stage === 'review'}
-                      onClick={() => setSelectedAsset(a.symbol)}
-                      className={`py-2.5 px-3 rounded-xl border text-sm font-bold font-mono transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-                        selectedAsset === a.symbol
-                          ? 'bg-[#2E7DFF]/10 border-[#528dff]/50 text-white'
-                          : 'bg-[#020d24]/50 border-[#1E3559] text-[#8c90a0] hover:text-white'
-                      }`}
-                    >
-                      {a.symbol}
-                    </button>
-                  ))}
-                </div>
+                {/* Asset selector — withdraw-enabled assets, live from Nia-Hub markets */}
+                {marketsLoading ? (
+                  <div className="flex items-center gap-2.5 py-2">
+                    <Loader2 className="h-4 w-4 text-[#528dff] shrink-0 animate-spin" />
+                    <p className="text-xs font-mono text-[#8c90a0]">{t('loadingBalance')}</p>
+                  </div>
+                ) : currencies.length === 0 ? (
+                  <p className="text-xs font-mono text-[#8c90a0] py-2">{t('noBalanceHint', { asset: '' })}</p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-h-44 overflow-y-auto pr-1">
+                    {currencies.map((c) => (
+                      <button
+                        key={c.symbol}
+                        disabled={stage === 'review'}
+                        onClick={() => setSelectedAsset(c.symbol)}
+                        className={`py-2.5 px-3 rounded-xl border text-sm font-bold font-mono transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                          selectedAsset === c.symbol
+                            ? 'bg-[#2E7DFF]/10 border-[#528dff]/50 text-white'
+                            : 'bg-[#020d24]/50 border-[#1E3559] text-[#8c90a0] hover:text-white'
+                        }`}
+                      >
+                        {c.symbol}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Network selector (shown when the asset supports more than one) */}
+                {assetNetworks.length > 1 && (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs font-mono text-[#8c90a0] uppercase tracking-wider">{t('networkLabel')}</span>
+                    <div className="flex flex-wrap gap-2.5">
+                      {assetNetworks.map((n) => (
+                        <button
+                          key={n.code}
+                          disabled={stage === 'review'}
+                          onClick={() => setSelectedNetwork(n.code)}
+                          className={`py-2 px-4 rounded-xl border text-xs font-bold font-mono transition-all cursor-pointer disabled:opacity-50 ${
+                            selectedNetwork === n.code
+                              ? 'bg-[#2E7DFF]/10 border-[#528dff]/50 text-white'
+                              : 'bg-[#020d24]/50 border-[#1E3559] text-[#8c90a0] hover:text-white'
+                          }`}
+                        >
+                          {n.code}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Amount */}
                 <div className="p-4 rounded-xl bg-[#020d24]/80 border border-[#1E3559] flex flex-col gap-2">
@@ -264,6 +363,9 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
                   {overBalance && (
                     <span className="text-[11px] text-rose-400 font-mono">{t('amountExceedsBalance')}</span>
                   )}
+                  {belowMin && (
+                    <span className="text-[11px] text-amber-400 font-mono">{t('belowMin', { min: minAmount.toString(), asset: selectedAsset })}</span>
+                  )}
                   {hasNoBalance && (
                     <span className="text-[11px] text-amber-400 font-mono">{t('noBalanceHint', { asset: selectedAsset })}</span>
                   )}
@@ -272,13 +374,29 @@ export default function Withdraw({ assets, settings, onNavigate }: WithdrawProps
                 {/* Destination */}
                 <div className="p-4 rounded-xl bg-[#020d24]/80 border border-[#1E3559] flex flex-col gap-2">
                   <span className="text-xs font-mono text-[#8c90a0]">{t('destinationAddress')}</span>
+
+                  {/* Saved addresses (address book) matching this network */}
+                  {stage === 'form' && savedAddrs.filter((a) => a.network === selectedNetwork).length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {savedAddrs.filter((a) => a.network === selectedNetwork).map((a) => (
+                        <button
+                          key={a.id}
+                          onClick={() => setDestination(a.address)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[#1E3559] bg-[#112643]/60 text-[#afc6ff] hover:bg-[#1e3459] hover:text-white text-[11px] font-mono transition-colors cursor-pointer"
+                        >
+                          <BookMarked className="h-3 w-3" /> {a.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   <input
                     type="text"
                     value={destination}
                     disabled={stage === 'review'}
                     onChange={(e) => setDestination(e.target.value)}
                     className="bg-transparent text-sm font-mono text-white focus:outline-none w-full min-w-0 disabled:opacity-70 placeholder-[#3d5278]"
-                    placeholder="0x..."
+                    placeholder={isEvm ? '0x…' : t('addressPlaceholder')}
                   />
                   {destination.length > 0 && !addressLooksValid && (
                     <span className="text-[11px] text-rose-400 font-mono">{t('invalidAddress')}</span>

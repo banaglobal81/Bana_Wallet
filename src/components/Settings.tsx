@@ -6,7 +6,8 @@ import Decimal from 'decimal.js';
 import { Screen, SystemSettings } from '../types';
 import { copyToClipboard } from '../utils/clipboard';
 import { getNiaStatus, getNiaBalance, NiaStatus } from '../utils/niaApi';
-import { getAccount, changePassword, AccountInfo } from '../utils/accountApi';
+import { getAccount, changePassword, AccountInfo,
+  listSavedAddresses, addSavedAddress, deleteSavedAddress, type SavedAddress } from '../utils/accountApi';
 import { getNotifPrefs, setNotifPref, onNotifPrefsChange, NOTIF_CATEGORIES, type NotifPrefs } from '../utils/notifPrefs';
 import {
   ShieldCheck,
@@ -21,7 +22,10 @@ import {
   Link2Off,
   User,
   Mail,
-  Bell
+  Bell,
+  BookMarked,
+  Plus,
+  Trash2
 } from 'lucide-react';
 
 interface SettingsProps {
@@ -32,7 +36,6 @@ interface SettingsProps {
 
 export default function Settings({ settings, onUpdateSettings, onNavigate }: SettingsProps) {
   const t = useTranslations('settings');
-  const [copied, setCopied] = useState(false);
   const [rpcInput, setRpcInput] = useState(settings.rpcUrl);
   const [rpcSaved, setRpcSaved] = useState(false);
 
@@ -79,6 +82,37 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
   // ---- Account info (email / role / auth method) ----
   const [account, setAccount] = useState<AccountInfo | null>(null);
   const [accountError, setAccountError] = useState<string | null>(null);
+
+  // ---- Withdrawal address book ----
+  const [savedAddrs, setSavedAddrs] = useState<SavedAddress[]>([]);
+  const [abLabel, setAbLabel] = useState('');
+  const [abNetwork, setAbNetwork] = useState('');
+  const [abAddress, setAbAddress] = useState('');
+  const [abError, setAbError] = useState<string | null>(null);
+  const [abBusy, setAbBusy] = useState(false);
+
+  const loadAddrs = async () => setSavedAddrs(await listSavedAddresses());
+  useEffect(() => { loadAddrs(); }, []);
+
+  const handleAddAddr = async () => {
+    setAbError(null);
+    setAbBusy(true);
+    try {
+      await addSavedAddress({ label: abLabel.trim(), network: abNetwork.trim().toUpperCase(), address: abAddress.trim() });
+      setAbLabel(''); setAbNetwork(''); setAbAddress('');
+      await loadAddrs();
+    } catch (e) {
+      setAbError((e as Error).message);
+    } finally {
+      setAbBusy(false);
+    }
+  };
+
+  const handleDeleteAddr = async (id: string) => {
+    setAbError(null);
+    try { await deleteSavedAddress(id); await loadAddrs(); }
+    catch (e) { setAbError((e as Error).message); }
+  };
 
   // ---- Change password form ----
   const [curPw, setCurPw] = useState('');
@@ -136,11 +170,6 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
     if (niaConnected) checkFunded();
   }, [niaConnected]);
 
-  const handleCopyAddress = async () => {
-    await copyToClipboard(settings.connectedWallet);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   const handleUpdateRpc = () => {
     onUpdateSettings({ rpcUrl: rpcInput });
@@ -403,32 +432,78 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
             )}
           </div>
 
-          {/* Section A: Vault Address Copy Box */}
+          {/* Section: Withdrawal Address Book */}
           <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 bento-hover shadow-lg">
-            <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider">
-              {t('walletTitle')}
+            <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider flex items-center gap-2">
+              <BookMarked className="h-4 w-4 text-indigo-400" />
+              {t('addressBookTitle')}
             </h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              {t('walletBody')}
-            </p>
+            <p className="text-xs text-slate-400 leading-relaxed">{t('addressBookBody')}</p>
 
-            <div className="flex items-center justify-between gap-3 p-3.5 bg-slate-950 border border-slate-800 rounded-xl mt-1">
-              <span className="font-mono text-xs tracking-wide text-indigo-300 truncate font-semibold">
-                {settings.connectedWallet}
-              </span>
-              
-              <button 
-                onClick={handleCopyAddress}
-                className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition-all flex items-center justify-center gap-1.5 cursor-pointer text-xs font-sans font-bold shadow-md shrink-0"
-              >
-                {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
-                {copied ? t('copied') : t('copy')}
-              </button>
+            {abError && (
+              <div className="px-3.5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">{abError}</div>
+            )}
+
+            {/* Saved list */}
+            {savedAddrs.length > 0 && (
+              <div className="flex flex-col gap-2 mt-1">
+                {savedAddrs.map((a) => (
+                  <div key={a.id} className="flex items-center justify-between gap-3 p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-semibold text-slate-200 flex items-center gap-2">
+                        {a.label}
+                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">{a.network}</span>
+                      </div>
+                      <div className="text-[10px] font-mono text-slate-500 truncate">{a.address}</div>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteAddr(a.id)}
+                      aria-label={t('deleteAddress')}
+                      className="shrink-0 p-2 rounded-lg border border-slate-700 bg-slate-800/60 text-slate-400 hover:text-rose-400 hover:border-rose-500/30 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add form */}
+            <div className="flex flex-col gap-2 mt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  value={abLabel}
+                  onChange={(e) => setAbLabel(e.target.value)}
+                  placeholder={t('addressLabelPlaceholder')}
+                  className="p-3 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs font-sans focus:outline-none text-slate-200 placeholder-slate-600 transition-colors"
+                />
+                <input
+                  value={abNetwork}
+                  onChange={(e) => setAbNetwork(e.target.value)}
+                  placeholder={t('addressNetworkPlaceholder')}
+                  className="p-3 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs font-mono uppercase focus:outline-none text-slate-200 placeholder-slate-600 transition-colors"
+                />
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={abAddress}
+                  onChange={(e) => setAbAddress(e.target.value)}
+                  placeholder={t('addressValuePlaceholder')}
+                  className="flex-1 min-w-0 p-3 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs font-mono focus:outline-none text-slate-200 placeholder-slate-600 transition-colors"
+                />
+                <button
+                  onClick={handleAddAddr}
+                  disabled={abBusy || !abLabel.trim() || !abNetwork.trim() || abAddress.trim().length < 16}
+                  className="shrink-0 inline-flex items-center gap-1.5 px-4 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold text-xs transition-colors cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" /> {t('addAddress')}
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Section B: Custom RPC Connection */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 bento-hover shadow-lg">
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 bento-hover shadow-lg" hidden>
             <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider">
               {t('rpcTitle')}
             </h3>
@@ -462,8 +537,8 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
             </div>
           </div>
 
-          {/* Section C: MEV Protection & Front-Run Isolation */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-4 bento-hover shadow-lg">
+          {/* Section C: MEV Protection — not applicable to custody (hidden) */}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-4 bento-hover shadow-lg" hidden>
             <div className="flex justify-between items-center pb-2 border-b border-slate-800/60">
               <div>
                 <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider">
@@ -506,8 +581,8 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
         {/* Right Details Info Column - Width 2/5 */}
         <div className="lg:col-span-2 min-w-0 flex flex-col gap-6">
           
-          {/* Section D: Consensus Gas Threshold Speed */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 font-mono text-xs bento-hover shadow-lg">
+          {/* Section D: Gas speed — not applicable to custody (hidden) */}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 font-mono text-xs bento-hover shadow-lg" hidden>
             <h3 className="font-sans font-bold text-slate-100 text-[14px] uppercase tracking-wider mb-1">
               {t('gasTitle')}
             </h3>
@@ -540,8 +615,8 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
             </div>
           </div>
 
-          {/* Section E: Default Slippage Settings */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 font-mono text-xs bento-hover shadow-lg">
+          {/* Section E: Slippage — only relevant to (simulated) swap (hidden) */}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 font-mono text-xs bento-hover shadow-lg" hidden>
             <h3 className="font-sans font-bold text-slate-100 text-[14px] uppercase tracking-wider mb-1">
               {t('slippageTitle')}
             </h3>

@@ -4,8 +4,15 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/db';
 import { newNiaUserId } from '@/lib/nia/identity';
+import { getPlatformSettings } from '@/lib/platformSettings';
 
 export async function POST(req: Request) {
+  // Respect the platform "new signups" toggle.
+  const policy = await getPlatformSettings().catch(() => null);
+  if (policy && !policy.signupsEnabled) {
+    return NextResponse.json({ ok: false, error: 'New registrations are currently closed.' }, { status: 403 });
+  }
+
   let body: any = {};
   try { body = await req.json(); } catch {}
   const email = String(body.email ?? '').toLowerCase().trim();

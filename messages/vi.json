@@ -1,7 +1,8 @@
 {
   "common": {
     "backToWallet": "Quay lại ví",
-    "logOut": "Đăng xuất"
+    "logOut": "Đăng xuất",
+    "maintenanceBanner": "Việc rút tiền tạm dừng để bảo trì. Chúng tôi sẽ sớm trở lại."
   },
   "nav": {
     "portfolio": "Danh mục",
@@ -10,7 +11,11 @@
     "staking": "Staking",
     "activity": "Hoạt động",
     "settings": "Cài đặt",
-    "settlement": "Thanh toán bù trừ"
+    "settlement": "Thanh toán bù trừ",
+    "users": "Người dùng",
+    "withdrawals": "Rút tiền",
+    "dashboard": "Bảng điều khiển",
+    "adminConsole": "Bảng quản trị"
   },
   "login": {
     "title": "Đăng nhập",
@@ -55,7 +60,8 @@
     "secureMev": "Bảo vệ MEV",
     "mevActive": "BẬT",
     "mevInactive": "TẮT",
-    "vaultAddress": "Mã kho"
+    "vaultAddress": "Mã kho",
+    "account": "Tài khoản"
   },
   "profileMenu": {
     "profileButton": "Menu hồ sơ",
@@ -98,7 +104,7 @@
   "dashboard": {
     "pageTitle": "Bảng điều khiển danh mục",
     "securedBadge": "BẢO MẬT BỞI BENTO",
-    "vaultSubtitle": "Vault Router v3.4 • Địa chỉ đã xác minh: {address}",
+    "vaultSubtitle": "Tài khoản lưu ký an toàn · {account}",
     "receive": "Nhận",
     "send": "Gửi",
     "totalPortfolioValue": "Tổng giá trị danh mục",
@@ -134,7 +140,15 @@
     "goToSwap": "Đến Hoán đổi",
     "footerTitle": "Bảo vệ tích hợp ví cứng đang hoạt động",
     "footerBody": "Khóa riêng tư bảo mật luôn nằm ngoài mạng. Thuật toán đồng thuận phần cứng độ chính xác cao đã được xác minh.",
-    "consensusSecure": "Đồng thuận: BẢO MẬT"
+    "consensusSecure": "Đồng thuận: BẢO MẬT",
+    "getStartedTitle": "Chào mừng đến với BANA Wallet",
+    "getStartedBody": "Tài khoản của bạn đã sẵn sàng. Nạp tiền để bắt đầu giao dịch và kiếm lời.",
+    "stepDeposit": "Nạp tiền mã hóa",
+    "stepSwap": "Hoán đổi hoặc giao dịch",
+    "stepTrack": "Theo dõi danh mục",
+    "getStartedCta": "Nạp tiền lần đầu",
+    "hideBalance": "Ẩn số dư",
+    "showBalance": "Hiện số dư"
   },
   "swap": {
     "pageTitle": "Hoán đổi tài sản",
@@ -171,7 +185,10 @@
     "routeSafeGuard": "Bảo vệ an toàn",
     "routeRouted": "Đã định tuyến",
     "loadingBalance": "Đang tải số dư…",
-    "noBalanceHint": "Không có {asset} để hoán đổi — hãy nạp trước."
+    "noBalanceHint": "Không có {asset} để hoán đổi — hãy nạp trước.",
+    "comingSoonTitle": "Swap sắp ra mắt",
+    "comingSoonBody": "Hoán đổi tài sản ngay trong ví của bạn. Chúng tôi đang hoàn thiện — sắp ra mắt.",
+    "backToPortfolio": "Quay lại Danh mục"
   },
   "staking": {
     "pageTitle": "Staking",
@@ -202,7 +219,10 @@
     "walletAvailable": "{amount} {symbol} khả dụng",
     "amountExceedsBalance": "Số lượng vượt quá số dư ví của bạn.",
     "max": "TỐI ĐA",
-    "balance": "Số dư: {amount} {asset}"
+    "balance": "Số dư: {amount} {asset}",
+    "comingSoonTitle": "Staking sắp ra mắt",
+    "comingSoonBody": "Nhận thưởng từ tài sản của bạn. Chúng tôi đang hoàn thiện staking — sẽ sớm có tại đây.",
+    "backToPortfolio": "Quay lại Danh mục"
   },
   "deposit": {
     "backAria": "Quay lại",
@@ -227,7 +247,9 @@
     "copied": "Đã sao chép vào bộ nhớ tạm",
     "memoLabel": "Memo / Tag (bắt buộc)",
     "memoWarning": "Bạn PHẢI kèm memo này khi nạp. Khoản nạp không có memo sẽ không được ghi có vào tài khoản của bạn.",
-    "networkUnavailable": "Nạp qua mạng {network} hiện chưa khả dụng — vui lòng chọn mạng khác."
+    "networkUnavailable": "Nạp qua mạng {network} hiện chưa khả dụng — vui lòng chọn mạng khác.",
+    "searchAsset": "Tìm tài sản…",
+    "noAssetMatch": "Không có tài sản khớp “{q}”"
   },
   "walletPage": {
     "title": "Ví",
@@ -248,7 +270,9 @@
     "tableAvailable": "Khả dụng",
     "tableLocked": "Đang khóa",
     "transactionHistory": "Lịch sử giao dịch",
-    "transactionHistorySubtitle": "Nạp, rút & giao dịch"
+    "transactionHistorySubtitle": "Nạp, rút & giao dịch",
+    "depositNow": "Nạp ngay",
+    "depositWallet": "Nạp"
   },
   "withdraw": {
     "backAria": "Quay lại",
@@ -256,7 +280,7 @@
     "pageSubtitle": "Gửi tài sản từ tài khoản lưu ký Nia của bạn đến địa chỉ bên ngoài.",
     "niaSecured": "NIA BẢO MẬT",
     "withdrawalRequested": "Đã yêu cầu rút tiền",
-    "withdrawalRequestedBody": "Yêu cầu rút <b>{amount} {asset}</b> của bạn đã được gửi đến Nia-Hub để xử lý.",
+    "withdrawalRequestedBody": "Yêu cầu rút <b>{amount} {asset}</b> đã được gửi và đang chờ quản trị viên phê duyệt. Bạn có thể xem trạng thái trong hoạt động.",
     "idLabel": "ID:",
     "viewInHistory": "Xem trong lịch sử",
     "reviewTitle": "Xem lại lệnh rút",
@@ -279,16 +303,19 @@
     "youWillSend": "Bạn sẽ gửi",
     "irreversibleWarning": "Các giao dịch rút tiền là không thể đảo ngược. Hãy kiểm tra kỹ địa chỉ đích — tiền gửi đến địa chỉ sai không thể khôi phục.",
     "loadingBalance": "Đang tải số dư…",
-    "noBalanceHint": "Không có {asset} để rút — hãy nạp trước."
+    "noBalanceHint": "Không có {asset} để rút — hãy nạp trước.",
+    "networkLabel": "Mạng",
+    "belowMin": "Mức rút tối thiểu là {min} {asset}.",
+    "addressPlaceholder": "Địa chỉ nhận"
   },
   "settings": {
-    "breadcrumbRegistry": "SỔ ĐĂNG KÝ MANIFEST NÚT:",
+    "breadcrumbRegistry": "Liên kết nhanh:",
     "breadcrumbPortfolio": "Danh mục",
     "breadcrumbSwap": "Hoán đổi",
     "breadcrumbActivity": "Hoạt động",
-    "pageTitle": "Cài đặt bảo mật & nút",
-    "pageSubtitle": "Điều chỉnh các nút định tuyến riêng tư, ngưỡng tốc độ gas đồng thuận và tường lửa chống frontrun MEV.",
-    "clientBadge": "Client v1.9 • BẢO MẬT",
+    "pageTitle": "Cài đặt",
+    "pageSubtitle": "Quản lý tài khoản, bảo mật và thông báo.",
+    "clientBadge": "Đã bảo mật",
     "accountTitle": "Tài khoản",
     "loadingAccount": "Đang tải tài khoản…",
     "signedInWith": "Đã đăng nhập bằng {method}",
@@ -354,7 +381,14 @@
     "slippageInvalid": "Nhập một số hợp lệ.",
     "notificationsTitle": "Thông báo",
     "notificationsBody": "Chọn hoạt động nào sẽ xuất hiện trong nguồn cấp thông báo của bạn.",
-    "toggleCategory": "Bật/tắt {label}"
+    "toggleCategory": "Bật/tắt {label}",
+    "addressBookTitle": "Sổ địa chỉ rút tiền",
+    "addressBookBody": "Lưu các địa chỉ rút tin cậy để chọn nhanh — ít gõ sai, rút an toàn hơn.",
+    "deleteAddress": "Xóa địa chỉ",
+    "addressLabelPlaceholder": "Nhãn (vd: Binance của tôi)",
+    "addressNetworkPlaceholder": "Mạng (vd: ETH)",
+    "addressValuePlaceholder": "Địa chỉ",
+    "addAddress": "Thêm"
   },
   "activity": {
     "breadcrumbRegistry": "SỔ ĐĂNG KÝ MANIFEST NÚT:",
@@ -379,7 +413,9 @@
     "syncing": "Đang đồng bộ với Nia-Hub…",
     "liveRecords": "Trực tiếp • {count, plural, other {# bản ghi}} từ Nia-Hub",
     "demoData": "Dữ liệu demo — chưa có hoạt động trực tiếp",
-    "addressIndex": "Chỉ mục địa chỉ: BANA-SECURE-ETH"
+    "addressIndex": "Chỉ mục địa chỉ: BANA-SECURE-ETH",
+    "awaitingApproval": "Đang chờ quản trị viên phê duyệt",
+    "loadError": "Không thể tải hoạt động"
   },
   "notifications": {
     "ariaLabel": "Thông báo",
@@ -501,5 +537,116 @@
     "errorGeneric": "Không thể đặt lại mật khẩu. Vui lòng thử lại.",
     "missingToken": "Liên kết đặt lại này không hợp lệ hoặc không đầy đủ.",
     "requestNew": "Yêu cầu liên kết đặt lại mới"
+  },
+  "adminUsers": {
+    "pageTitle": "Quản lý người dùng",
+    "pageSubtitle": "Quản lý tài khoản, vai trò và đặt lại mật khẩu.",
+    "searchPlaceholder": "Tìm theo email…",
+    "refresh": "Làm mới",
+    "resetLinkNote": "Liên kết đặt lại một lần (hiệu lực 30 phút) — chia sẻ với người dùng:",
+    "colEmail": "Người dùng",
+    "colRole": "Vai trò",
+    "colAuth": "Đăng nhập",
+    "colActions": "Thao tác",
+    "roleUser": "Người dùng",
+    "roleAdmin": "Quản trị",
+    "makeAdmin": "Đặt làm quản trị",
+    "makeUser": "Đặt làm người dùng",
+    "resetLink": "Liên kết đặt lại",
+    "googleNoReset": "Tài khoản Google — không có mật khẩu để đặt lại",
+    "authGoogle": "Google",
+    "authPassword": "Mật khẩu",
+    "loading": "Đang tải…",
+    "noUsers": "Không tìm thấy người dùng.",
+    "total": "{count} người dùng",
+    "disabledBadge": "Đã khóa",
+    "viewWallet": "Xem ví",
+    "disable": "Khóa tài khoản",
+    "enable": "Mở khóa tài khoản",
+    "walletTitle": "Ví người dùng",
+    "balances": "Số dư",
+    "noBalances": "Không có số dư",
+    "deposits": "Nạp",
+    "withdrawals": "Rút",
+    "none": "Không có"
+  },
+  "adminWithdrawals": {
+    "pageTitle": "Phê duyệt rút tiền",
+    "pageSubtitle": "Xem xét và phê duyệt các khoản rút trước khi tiền rời đi.",
+    "refresh": "Làm mới",
+    "loading": "Đang tải…",
+    "queueEmpty": "Chưa có yêu cầu rút tiền.",
+    "securityNote": "Các khoản rút được giữ tại đây cho đến khi quản trị viên phê duyệt — tiền chỉ rời nền tảng khi được duyệt.",
+    "colUser": "Người dùng",
+    "colAmount": "Số tiền",
+    "colTo": "Địa chỉ nhận",
+    "colStatus": "Trạng thái",
+    "colActions": "Thao tác",
+    "approve": "Duyệt",
+    "reject": "Từ chối",
+    "confirmApprove": "Duyệt rút {amount} {currency}? Tiền sẽ được gửi ngay.",
+    "rejectReasonPrompt": "Lý do từ chối (tùy chọn):",
+    "pendingCount": "{count} đang chờ",
+    "statusPENDING": "Đang chờ",
+    "statusAPPROVED": "Đã duyệt",
+    "statusREJECTED": "Đã từ chối",
+    "statusFAILED": "Thất bại"
+  },
+  "adminDashboard": {
+    "pageTitle": "Bảng điều khiển",
+    "pageSubtitle": "Tổng quan broker — người dùng, rút tiền và hoạt động gần đây.",
+    "refresh": "Làm mới",
+    "totalUsers": "Tổng người dùng",
+    "newThisWeek": "+{n} tuần này",
+    "pendingWithdrawals": "Rút tiền đang chờ",
+    "needsReview": "Cần xem xét",
+    "approved": "Rút tiền đã duyệt",
+    "rejectedN": "{n} đã từ chối",
+    "admins": "Quản trị viên",
+    "disabledN": "{n} đã khóa",
+    "recentActivity": "Hoạt động quản trị gần đây",
+    "noActivity": "Chưa có hoạt động.",
+    "loading": "Đang tải…",
+    "actions": {
+      "USER_ROLE_CHANGE": "Đã đổi vai trò",
+      "USER_DISABLE": "Đã khóa tài khoản",
+      "USER_ENABLE": "Đã mở khóa tài khoản",
+      "USER_RESET_LINK": "Đã cấp liên kết đặt lại mật khẩu",
+      "WITHDRAWAL_APPROVE": "Đã duyệt rút tiền",
+      "WITHDRAWAL_REJECT": "Đã từ chối rút tiền",
+      "POLICY_UPDATE": "Đã cập nhật chính sách"
+    },
+    "recentWithdrawals": "Rút tiền gần đây",
+    "recentDeposits": "Nạp tiền gần đây",
+    "noWithdrawals": "Chưa có khoản rút.",
+    "noDeposits": "Chưa có khoản nạp gần đây. Sẽ hiển thị khi webhook nạp tiền được cấu hình trên hub.",
+    "viewAll": "Xem tất cả"
+  },
+  "adminSettings": {
+    "pageTitle": "Cài đặt nền tảng",
+    "pageSubtitle": "Chính sách rút tiền và kiểm soát toàn nền tảng.",
+    "saved": "Đã lưu",
+    "loading": "Đang tải…",
+    "save": "Lưu",
+    "whitelistTitle": "Chỉ rút vào danh sách trắng",
+    "whitelistBody": "Khi bật, người dùng chỉ có thể rút về địa chỉ đã lưu trong sổ địa chỉ. Chặn rút về địa chỉ mới.",
+    "autoApproveTitle": "Tự duyệt rút nhỏ",
+    "autoApproveBody": "Khoản rút stablecoin dưới mức này sẽ bỏ qua hàng đợi duyệt và gửi tự động. Khoản lớn hơn (và mọi loại không phải stablecoin) vẫn cần duyệt thủ công. Để trống nếu muốn duyệt tất cả.",
+    "autoApprovePlaceholder": "vd: 100",
+    "autoApproveOn": "Tự duyệt rút stablecoin dưới ${amount}.",
+    "autoApproveOff": "Mọi khoản rút đều cần duyệt thủ công.",
+    "maintenanceTitle": "Chế độ bảo trì",
+    "maintenanceBody": "Tạm dừng mọi khoản rút trên toàn nền tảng và hiển thị banner cho người dùng. Dùng khi có sự cố hoặc hub gián đoạn.",
+    "signupsTitle": "Đăng ký mới",
+    "signupsBody": "Cho phép người dùng mới đăng ký. Tắt để đóng đăng ký.",
+    "dailyLimitTitle": "Hạn mức rút hằng ngày",
+    "dailyLimitBody": "Tổng tối đa mỗi người dùng có thể rút trong 24 giờ (USD, stablecoin). Giới hạn thiệt hại khi tài khoản bị xâm phạm. Để trống nếu không giới hạn.",
+    "dailyLimitOn": "Giới hạn ${amount} mỗi người dùng mỗi 24 giờ.",
+    "dailyLimitOff": "Không có hạn mức rút hằng ngày.",
+    "identityTitle": "Nhận diện nền tảng",
+    "identityBody": "Tên hiển thị và email hỗ trợ hiển thị cho người dùng.",
+    "displayNamePlaceholder": "Tên hiển thị (vd: BANA Wallet)",
+    "supportEmailPlaceholder": "support@yourdomain.com",
+    "amountPlaceholder": "vd: 100"
   }
 }

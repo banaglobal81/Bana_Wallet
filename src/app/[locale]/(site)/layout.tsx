@@ -11,6 +11,7 @@ import Notifications from '@/components/Notifications';
 import ProfileMenu from '@/components/ProfileMenu';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
+import MaintenanceBanner from '@/components/MaintenanceBanner';
 import type { Screen } from '@/types';
 
 // Reverse-map path → Screen for sidebar highlighting.
@@ -49,6 +50,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Content column: top bar (mobile + desktop) + routed children */}
       <div className="flex-1 min-w-0 h-full flex flex-col">
+        <MaintenanceBanner />
         {/* Mobile-only top bar: brand + chrome + hamburger */}
         <header className="lg:hidden flex items-center justify-between gap-3 h-16 px-4 shrink-0 border-b border-slate-800 bg-[#06132a]/95 backdrop-blur z-20">
           <BanaLogo size="sm" />

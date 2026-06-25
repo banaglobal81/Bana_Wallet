@@ -106,10 +106,16 @@ export default function Wallet({ onNavigate }: WalletProps) {
             ) : balState === 'error' ? (
               <p className="text-xs font-mono text-rose-300 py-6 text-center">{t('backendUnreachable')}</p>
             ) : rows.length === 0 ? (
-              <div className="py-8 text-center flex flex-col items-center gap-2">
+              <div className="py-8 text-center flex flex-col items-center gap-3">
                 <div className="p-3 bg-[#020d24]/60 rounded-full border border-[#1E3559]"><WalletIcon className="h-6 w-6 text-[#8c90a0]" /></div>
                 <p className="text-sm font-bold text-white">{t('noBalances')}</p>
                 <p className="text-xs text-[#8c90a0] max-w-xs">{t('noBalancesBody')}</p>
+                <button
+                  onClick={() => onNavigate('DEPOSIT_INTERFACE', 'slide_up')}
+                  className="mt-1 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-bold transition-colors cursor-pointer"
+                >
+                  <Download className="h-4 w-4" /> {t('depositNow')}
+                </button>
               </div>
             ) : (
               <div className="overflow-x-auto -mx-2 px-2">
@@ -125,7 +131,7 @@ export default function Wallet({ onNavigate }: WalletProps) {
                   <tbody className="divide-y divide-[#1E3559]/40">
                     {rows.map((r, i) => (
                       <tr key={i} className="hover:bg-[#020d24]/40 transition-colors">
-                        <td className="py-3.5 font-mono text-xs text-[#afc6ff]">{r.walletType}</td>
+                        <td className="py-3.5 font-mono text-xs text-[#afc6ff]">{r.walletType || t('depositWallet')}</td>
                         <td className="py-3.5 font-sans text-sm font-bold text-white">{r.currency}</td>
                         <td className="py-3.5 text-right font-mono text-sm text-white">{r.balance}</td>
                         <td className="py-3.5 text-right font-mono text-xs text-[#8c90a0]">{r.locked ?? '0'}</td>

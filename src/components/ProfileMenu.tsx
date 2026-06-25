@@ -2,17 +2,16 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Screen, SystemSettings } from '../types';
-import { copyToClipboard } from '../utils/clipboard';
 import { useSession, signOut } from 'next-auth/react';
 import { useLocale, useTranslations } from 'next-intl';
+import { Link, usePathname } from '@/i18n/navigation';
 import {
   Settings as SettingsIcon,
   Activity as ActivityIcon,
-  Copy,
-  Check,
   ShieldCheck,
   Coins,
   Building2,
+  Users as UsersIcon,
   LogOut,
 } from 'lucide-react';
 
@@ -36,12 +35,15 @@ const Avatar = ({ className = '' }: { className?: string }) => (
 export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === 'ADMIN';
+  const pathname = usePathname();
+  // Which app are we in? The menu offers admin nav inside /admin, user nav elsewhere —
+  // so an admin never gets bounced out of the admin area by these links.
+  const isAdminArea = pathname.startsWith('/admin');
   const locale = useLocale();
   const t = useTranslations('profileMenu');
   const nav = useTranslations('nav');
   const common = useTranslations('common');
   const [open, setOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,14 +59,6 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
       document.removeEventListener('keydown', onKey);
     };
   }, [open]);
-
-  const truncate = (a: string) => (a ? `${a.slice(0, 6)}...${a.slice(-4)}` : '');
-
-  const handleCopy = async () => {
-    await copyToClipboard(settings.connectedWallet);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   const go = (s: Screen) => {
     setOpen(false);
@@ -97,7 +91,6 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
               {session?.user?.email && (
                 <div className="text-[11px] text-slate-400 truncate">{session.user.email}</div>
               )}
-              <div className="text-[11px] font-mono text-slate-400 truncate">{truncate(settings.connectedWallet)}</div>
             </div>
           </div>
 
@@ -124,19 +117,33 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
 
           {/* Menu items */}
           <div className="py-1.5">
-            <button onClick={handleCopy} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
-              {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4 text-slate-400" />}
-              {copied ? t('addressCopied') : t('copyAddress')}
-            </button>
-            <button onClick={() => go('ACTIVITY_HISTORY')} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
-              <ActivityIcon className="h-4 w-4 text-slate-400" /> {nav('activity')}
-            </button>
-            <button onClick={() => go('STAKING_INTERFACE')} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
-              <Coins className="h-4 w-4 text-slate-400" /> {nav('staking')}
-            </button>
-            <button onClick={() => go('SETTINGS_INTERFACE')} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
-              <SettingsIcon className="h-4 w-4 text-slate-400" /> {nav('settings')}
-            </button>
+            {isAdminArea ? (
+              <>
+                {/* Admin-area nav — stays within the admin section */}
+                <Link href="/admin/settlement" onClick={() => setOpen(false)} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
+                  <Coins className="h-4 w-4 text-slate-400" /> {nav('settlement')}
+                </Link>
+                <Link href="/admin/users" onClick={() => setOpen(false)} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
+                  <UsersIcon className="h-4 w-4 text-slate-400" /> {nav('users')}
+                </Link>
+                <Link href="/portfolio" onClick={() => setOpen(false)} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
+                  <ActivityIcon className="h-4 w-4 text-slate-400" /> {common('backToWallet')}
+                </Link>
+              </>
+            ) : (
+              <>
+                {/* User-app nav */}
+                <button onClick={() => go('ACTIVITY_HISTORY')} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
+                  <ActivityIcon className="h-4 w-4 text-slate-400" /> {nav('activity')}
+                </button>
+                <button onClick={() => go('STAKING_INTERFACE')} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
+                  <Coins className="h-4 w-4 text-slate-400" /> {nav('staking')}
+                </button>
+                <button onClick={() => go('SETTINGS_INTERFACE')} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
+                  <SettingsIcon className="h-4 w-4 text-slate-400" /> {nav('settings')}
+                </button>
+              </>
+            )}
 
             {/* Divider + Log out */}
             <div className="my-1 border-t border-slate-800" />
