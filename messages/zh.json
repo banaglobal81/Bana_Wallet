@@ -249,7 +249,19 @@
     "memoWarning": "充值时必须填写此备注。未填写备注的充值将无法记入您的账户。",
     "networkUnavailable": "{network} 网络的充值暂未开放 — 请选择其他网络。",
     "searchAsset": "搜索资产…",
-    "noAssetMatch": "没有匹配“{q}”的资产"
+    "noAssetMatch": "没有匹配“{q}”的资产",
+    "selectCoinTitle": "选择币种",
+    "selectCoin": "选择币种",
+    "searchCoin": "搜索币种",
+    "selectNetworkTitle": "选择网络",
+    "selectNetwork": "选择网络",
+    "networkHint": "请选择与发送方相同的网络。使用错误的网络可能导致资金损失。",
+    "depositAddressTitle": "充值地址",
+    "addressLabel": "地址",
+    "copyBtn": "复制",
+    "sendOnlyWarning": "请仅向此地址发送 <b>{network}</b> 网络上的 <b>{coin}</b>。",
+    "confirmationsNote": "网络确认后将到账。",
+    "selectCoinFirst": "请在上方选择币种和网络以查看充值地址。"
   },
   "walletPage": {
     "title": "钱包",
@@ -306,7 +318,15 @@
     "noBalanceHint": "没有可提现的 {asset} — 请先入金。",
     "networkLabel": "网络",
     "belowMin": "最低提现金额为 {min} {asset}。",
-    "addressPlaceholder": "收款地址"
+    "addressPlaceholder": "收款地址",
+    "selectCoinTitle": "选择币种",
+    "selectCoin": "选择币种",
+    "searchCoin": "搜索币种",
+    "selectNetworkTitle": "选择网络",
+    "selectNetwork": "选择网络",
+    "networkHint": "请确保选择与接收平台相同的网络。",
+    "amountDestTitle": "金额与地址",
+    "selectCoinFirst": "请在上方选择币种以输入金额。"
   },
   "settings": {
     "breadcrumbRegistry": "快速链接：",
@@ -648,5 +668,12 @@
     "displayNamePlaceholder": "显示名称（如 BANA Wallet）",
     "supportEmailPlaceholder": "support@yourdomain.com",
     "amountPlaceholder": "例如 100"
+  },
+  "walletFlow": {
+    "depositCrypto": "数字货币充值",
+    "withdrawCrypto": "数字货币提现",
+    "depositFiat": "法币充值",
+    "withdrawFiat": "法币提现",
+    "soon": "即将推出"
   }
 }

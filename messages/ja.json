@@ -249,7 +249,19 @@
     "memoWarning": "入金時には必ずこのメモを含めてください。メモのない入金はアカウントに反映されません。",
     "networkUnavailable": "{network} ネットワークでの入金はまだ利用できません — 別のネットワークを選択してください。",
     "searchAsset": "資産を検索…",
-    "noAssetMatch": "「{q}」に一致する資産がありません"
+    "noAssetMatch": "「{q}」に一致する資産がありません",
+    "selectCoinTitle": "コインを選択",
+    "selectCoin": "コインを選択",
+    "searchCoin": "コインを検索",
+    "selectNetworkTitle": "ネットワークを選択",
+    "selectNetwork": "ネットワークを選択",
+    "networkHint": "送金元と同じネットワークを選択してください。誤ったネットワークを使うと資金を失う可能性があります。",
+    "depositAddressTitle": "入金アドレス",
+    "addressLabel": "アドレス",
+    "copyBtn": "コピー",
+    "sendOnlyWarning": "このアドレスには<b>{network}</b>ネットワークの<b>{coin}</b>のみを送金してください。",
+    "confirmationsNote": "ネットワークの承認後に入金が反映されます。",
+    "selectCoinFirst": "上でコインとネットワークを選択すると入金アドレスが表示されます。"
   },
   "walletPage": {
     "title": "ウォレット",
@@ -306,7 +318,15 @@
     "noBalanceHint": "出金できる {asset} がありません — 先に入金してください。",
     "networkLabel": "ネットワーク",
     "belowMin": "最低出金額は {min} {asset} です。",
-    "addressPlaceholder": "送金先アドレス"
+    "addressPlaceholder": "送金先アドレス",
+    "selectCoinTitle": "コインを選択",
+    "selectCoin": "コインを選択",
+    "searchCoin": "コインを検索",
+    "selectNetworkTitle": "ネットワークを選択",
+    "selectNetwork": "ネットワークを選択",
+    "networkHint": "受取先プラットフォームと同じネットワークを選択してください。",
+    "amountDestTitle": "金額と送金先",
+    "selectCoinFirst": "上でコインを選択すると金額を入力できます。"
   },
   "settings": {
     "breadcrumbRegistry": "クイックリンク:",
@@ -648,5 +668,12 @@
     "displayNamePlaceholder": "表示名（例：BANA Wallet）",
     "supportEmailPlaceholder": "support@yourdomain.com",
     "amountPlaceholder": "例: 100"
+  },
+  "walletFlow": {
+    "depositCrypto": "暗号資産の入金",
+    "withdrawCrypto": "暗号資産の出金",
+    "depositFiat": "法定通貨の入金",
+    "withdrawFiat": "法定通貨の出金",
+    "soon": "近日"
   }
 }

@@ -249,7 +249,19 @@
     "memoWarning": "You MUST include this memo with your deposit. Deposits sent without it cannot be credited to your account.",
     "networkUnavailable": "Deposits on {network} aren't available yet — please choose another network.",
     "searchAsset": "Search asset…",
-    "noAssetMatch": "No asset matches “{q}”"
+    "noAssetMatch": "No asset matches “{q}”",
+    "selectCoinTitle": "Select Coin",
+    "selectCoin": "Select Coin",
+    "searchCoin": "Search coin",
+    "selectNetworkTitle": "Select Network",
+    "selectNetwork": "Select Network",
+    "networkHint": "Choose the same network the sender is using. Using the wrong network can lose your funds.",
+    "depositAddressTitle": "Deposit Address",
+    "addressLabel": "Address",
+    "copyBtn": "Copy",
+    "sendOnlyWarning": "Send only <b>{coin}</b> on the <b>{network}</b> network to this address.",
+    "confirmationsNote": "Your deposit is credited after the network confirms it.",
+    "selectCoinFirst": "Choose a coin and network above to see your deposit address."
   },
   "walletPage": {
     "title": "Wallet",
@@ -306,7 +318,15 @@
     "noBalanceHint": "No {asset} available to withdraw — deposit first.",
     "networkLabel": "Network",
     "belowMin": "Minimum withdrawal is {min} {asset}.",
-    "addressPlaceholder": "Recipient address"
+    "addressPlaceholder": "Recipient address",
+    "selectCoinTitle": "Select Coin",
+    "selectCoin": "Select Coin",
+    "searchCoin": "Search coin",
+    "selectNetworkTitle": "Select Network",
+    "selectNetwork": "Select Network",
+    "networkHint": "Ensure you select the same network as the receiving platform.",
+    "amountDestTitle": "Amount & Destination",
+    "selectCoinFirst": "Choose a coin above to enter an amount."
   },
   "settings": {
     "breadcrumbRegistry": "Quick links:",
@@ -648,5 +668,12 @@
     "displayNamePlaceholder": "Display name (e.g. BANA Wallet)",
     "supportEmailPlaceholder": "support@yourdomain.com",
     "amountPlaceholder": "e.g. 100"
+  },
+  "walletFlow": {
+    "depositCrypto": "Deposit Crypto",
+    "withdrawCrypto": "Withdraw Crypto",
+    "depositFiat": "Deposit Fiat",
+    "withdrawFiat": "Withdraw Fiat",
+    "soon": "Soon"
   }
 }

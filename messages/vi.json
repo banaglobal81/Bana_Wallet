@@ -249,7 +249,19 @@
     "memoWarning": "Bạn PHẢI kèm memo này khi nạp. Khoản nạp không có memo sẽ không được ghi có vào tài khoản của bạn.",
     "networkUnavailable": "Nạp qua mạng {network} hiện chưa khả dụng — vui lòng chọn mạng khác.",
     "searchAsset": "Tìm tài sản…",
-    "noAssetMatch": "Không có tài sản khớp “{q}”"
+    "noAssetMatch": "Không có tài sản khớp “{q}”",
+    "selectCoinTitle": "Chọn đồng coin",
+    "selectCoin": "Chọn đồng coin",
+    "searchCoin": "Tìm coin",
+    "selectNetworkTitle": "Chọn mạng lưới",
+    "selectNetwork": "Chọn mạng lưới",
+    "networkHint": "Hãy chọn đúng mạng lưới mà bên gửi đang dùng. Chọn sai mạng có thể mất tiền.",
+    "depositAddressTitle": "Địa chỉ nạp",
+    "addressLabel": "Địa chỉ",
+    "copyBtn": "Sao chép",
+    "sendOnlyWarning": "Chỉ gửi <b>{coin}</b> trên mạng <b>{network}</b> tới địa chỉ này.",
+    "confirmationsNote": "Khoản nạp sẽ được ghi có sau khi mạng xác nhận.",
+    "selectCoinFirst": "Chọn coin và mạng lưới ở trên để xem địa chỉ nạp."
   },
   "walletPage": {
     "title": "Ví",
@@ -306,7 +318,15 @@
     "noBalanceHint": "Không có {asset} để rút — hãy nạp trước.",
     "networkLabel": "Mạng",
     "belowMin": "Mức rút tối thiểu là {min} {asset}.",
-    "addressPlaceholder": "Địa chỉ nhận"
+    "addressPlaceholder": "Địa chỉ nhận",
+    "selectCoinTitle": "Chọn đồng coin",
+    "selectCoin": "Chọn đồng coin",
+    "searchCoin": "Tìm coin",
+    "selectNetworkTitle": "Chọn mạng lưới",
+    "selectNetwork": "Chọn mạng lưới",
+    "networkHint": "Đảm bảo chọn đúng mạng lưới của nền tảng nhận.",
+    "amountDestTitle": "Số tiền & Địa chỉ",
+    "selectCoinFirst": "Chọn coin ở trên để nhập số tiền."
   },
   "settings": {
     "breadcrumbRegistry": "Liên kết nhanh:",
@@ -648,5 +668,12 @@
     "displayNamePlaceholder": "Tên hiển thị (vd: BANA Wallet)",
     "supportEmailPlaceholder": "support@yourdomain.com",
     "amountPlaceholder": "vd: 100"
+  },
+  "walletFlow": {
+    "depositCrypto": "Nạp tiền mã hóa",
+    "withdrawCrypto": "Rút tiền mã hóa",
+    "depositFiat": "Nạp tiền pháp định",
+    "withdrawFiat": "Rút tiền pháp định",
+    "soon": "Sắp có"
   }
 }

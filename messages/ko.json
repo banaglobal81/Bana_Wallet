@@ -249,7 +249,19 @@
     "memoWarning": "입금 시 반드시 이 메모를 포함해야 합니다. 메모 없이 보낸 입금은 계정에 반영되지 않습니다.",
     "networkUnavailable": "{network} 네트워크 입금은 아직 지원되지 않습니다 — 다른 네트워크를 선택해 주세요.",
     "searchAsset": "자산 검색…",
-    "noAssetMatch": "“{q}”와 일치하는 자산이 없습니다"
+    "noAssetMatch": "“{q}”와 일치하는 자산이 없습니다",
+    "selectCoinTitle": "코인 선택",
+    "selectCoin": "코인 선택",
+    "searchCoin": "코인 검색",
+    "selectNetworkTitle": "네트워크 선택",
+    "selectNetwork": "네트워크 선택",
+    "networkHint": "보내는 쪽과 동일한 네트워크를 선택하세요. 잘못된 네트워크를 사용하면 자금을 잃을 수 있습니다.",
+    "depositAddressTitle": "입금 주소",
+    "addressLabel": "주소",
+    "copyBtn": "복사",
+    "sendOnlyWarning": "이 주소로는 <b>{network}</b> 네트워크의 <b>{coin}</b>만 보내세요.",
+    "confirmationsNote": "네트워크 확인 후 입금이 반영됩니다.",
+    "selectCoinFirst": "위에서 코인과 네트워크를 선택하면 입금 주소가 표시됩니다."
   },
   "walletPage": {
     "title": "지갑",
@@ -306,7 +318,15 @@
     "noBalanceHint": "출금할 {asset}이(가) 없습니다 — 먼저 입금하세요.",
     "networkLabel": "네트워크",
     "belowMin": "최소 출금액은 {min} {asset}입니다.",
-    "addressPlaceholder": "받는 주소"
+    "addressPlaceholder": "받는 주소",
+    "selectCoinTitle": "코인 선택",
+    "selectCoin": "코인 선택",
+    "searchCoin": "코인 검색",
+    "selectNetworkTitle": "네트워크 선택",
+    "selectNetwork": "네트워크 선택",
+    "networkHint": "받는 플랫폼과 동일한 네트워크를 선택하세요.",
+    "amountDestTitle": "금액 및 주소",
+    "selectCoinFirst": "위에서 코인을 선택하면 금액을 입력할 수 있습니다."
   },
   "settings": {
     "breadcrumbRegistry": "바로가기:",
@@ -648,5 +668,12 @@
     "displayNamePlaceholder": "표시 이름 (예: BANA Wallet)",
     "supportEmailPlaceholder": "support@yourdomain.com",
     "amountPlaceholder": "예: 100"
+  },
+  "walletFlow": {
+    "depositCrypto": "암호화폐 입금",
+    "withdrawCrypto": "암호화폐 출금",
+    "depositFiat": "법정화폐 입금",
+    "withdrawFiat": "법정화폐 출금",
+    "soon": "준비중"
   }
 }

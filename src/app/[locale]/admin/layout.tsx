@@ -1,9 +1,10 @@
 'use client';
 
-import { Link, usePathname } from '@/i18n/navigation';
+import { useState } from 'react';
+import { Link } from '@/i18n/navigation';
 import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
-import { Building2, ArrowLeft, Lock, Coins, Users, ArrowUpRight, LayoutDashboard, SlidersHorizontal } from 'lucide-react';
+import { Building2, ArrowLeft, Lock, Menu } from 'lucide-react';
 import { useApp } from '@/app/providers';
 import { useScreenNav } from '@/lib/useScreenNav';
 import BanaLogo from '@/components/BanaLogo';
@@ -11,24 +12,15 @@ import Notifications from '@/components/Notifications';
 import ProfileMenu from '@/components/ProfileMenu';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
+import AdminSidebar from '@/components/admin/AdminSidebar';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
   const { data: session, status } = useSession();
   const { settings } = useApp();
   const navigate = useScreenNav();
   const t = useTranslations('admin');
-  const nav = useTranslations('nav');
   const common = useTranslations('common');
-
-  // Admin navigation entries (extend as the admin area grows).
-  const ADMIN_NAV = [
-    { href: '/admin/dashboard', label: nav('dashboard'), icon: LayoutDashboard },
-    { href: '/admin/withdrawals', label: nav('withdrawals'), icon: ArrowUpRight },
-    { href: '/admin/settlement', label: nav('settlement'), icon: Coins },
-    { href: '/admin/users', label: nav('users'), icon: Users },
-    { href: '/admin/settings', label: nav('settings'), icon: SlidersHorizontal },
-  ];
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // While the session is loading, render nothing to avoid flash
   if (status === 'loading') {
@@ -66,51 +58,46 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="flex flex-col w-screen h-screen bg-[#06132a] text-[#d8e2ff] overflow-hidden font-sans antialiased selection:bg-amber-500/30 selection:text-white">
-      {/* Admin top bar — visually distinct (amber) from the user app */}
-      <header className="flex items-center justify-between gap-3 h-16 px-4 sm:px-6 shrink-0 border-b border-amber-500/20 bg-[#0a0f1e]/95 backdrop-blur z-20">
-        <div className="flex items-center gap-3">
-          <BanaLogo size="sm" />
-          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 font-bold text-[11px] font-mono tracking-wider select-none">
-            <Building2 className="h-3.5 w-3.5" /> {t('badge')}
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
+    <div className="flex w-screen h-screen bg-[#06132a] text-[#d8e2ff] overflow-hidden font-sans antialiased selection:bg-amber-500/30 selection:text-white">
+      {/* Vertical admin sidebar — static on desktop, off-canvas drawer on mobile */}
+      <AdminSidebar mobileOpen={mobileNavOpen} onCloseMobile={() => setMobileNavOpen(false)} />
+
+      {/* Content column: top chrome bar + routed children */}
+      <div className="flex-1 min-w-0 h-full flex flex-col">
+        {/* Mobile-only top bar: brand + ADMIN badge + chrome + hamburger */}
+        <header className="lg:hidden flex items-center justify-between gap-3 h-16 px-4 shrink-0 border-b border-amber-500/20 bg-[#0a0f1e]/95 backdrop-blur z-20">
+          <div className="flex items-center gap-2">
+            <BanaLogo size="sm" />
+            <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded text-amber-400 font-bold text-[10px] font-mono tracking-wider">
+              <Building2 className="h-3 w-3" /> {t('badge')}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <ThemeToggle />
+            <Notifications />
+            <ProfileMenu settings={settings} onNavigate={navigate} />
+            <button
+              onClick={() => setMobileNavOpen(true)}
+              aria-label="Open navigation menu"
+              className="p-2.5 rounded-xl border border-slate-700 bg-slate-800/50 text-slate-200 hover:bg-slate-700 active:scale-95 transition-all cursor-pointer"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          </div>
+        </header>
+
+        {/* Desktop-only top bar: persistent chrome, right-aligned */}
+        <header className="hidden lg:flex items-center justify-end gap-3 h-14 px-6 shrink-0 border-b border-amber-500/15 bg-[#0a0f1e]/60 backdrop-blur z-20">
           <LanguageSwitcher />
           <ThemeToggle />
           <Notifications />
           <ProfileMenu settings={settings} onNavigate={navigate} />
-        </div>
-      </header>
+        </header>
 
-      {/* Admin nav row */}
-      <nav className="flex items-center gap-1.5 px-4 sm:px-6 h-12 shrink-0 border-b border-[#1E3559]/60 bg-[#06132a]/80">
-        {ADMIN_NAV.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href;
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition-colors ${
-                active
-                  ? 'bg-amber-500/10 border border-amber-500/25 text-amber-400'
-                  : 'border border-transparent text-[#8c90a0] hover:text-white hover:bg-[#112643]/60'
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" /> {label}
-            </Link>
-          );
-        })}
-        <Link
-          href="/portfolio"
-          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold font-mono text-[#8c90a0] hover:text-white hover:bg-[#112643]/60 border border-transparent transition-colors"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" /> {common('backToWallet')}
-        </Link>
-      </nav>
-
-      {/* Admin content — min-h-0 + overflow-y-auto so tall pages (e.g. Settings) scroll */}
-      <main className="flex-1 min-h-0 min-w-0 relative overflow-y-auto bg-[#06132a]">{children}</main>
+        {/* Admin content — min-h-0 + overflow-y-auto so tall pages (e.g. Settings) scroll */}
+        <main className="flex-1 min-h-0 min-w-0 relative overflow-y-auto bg-[#06132a]">{children}</main>
+      </div>
     </div>
   );
 }

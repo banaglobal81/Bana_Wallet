@@ -249,7 +249,19 @@
     "memoWarning": "คุณต้องใส่ memo นี้เมื่อฝากเงิน การฝากที่ไม่มี memo จะไม่สามารถเข้าบัญชีของคุณได้",
     "networkUnavailable": "ยังไม่รองรับการฝากผ่านเครือข่าย {network} — โปรดเลือกเครือข่ายอื่น",
     "searchAsset": "ค้นหาสินทรัพย์…",
-    "noAssetMatch": "ไม่มีสินทรัพย์ที่ตรงกับ “{q}”"
+    "noAssetMatch": "ไม่มีสินทรัพย์ที่ตรงกับ “{q}”",
+    "selectCoinTitle": "เลือกเหรียญ",
+    "selectCoin": "เลือกเหรียญ",
+    "searchCoin": "ค้นหาเหรียญ",
+    "selectNetworkTitle": "เลือกเครือข่าย",
+    "selectNetwork": "เลือกเครือข่าย",
+    "networkHint": "โปรดเลือกเครือข่ายเดียวกับผู้ส่ง การใช้เครือข่ายผิดอาจทำให้สูญเสียเงิน",
+    "depositAddressTitle": "ที่อยู่ฝาก",
+    "addressLabel": "ที่อยู่",
+    "copyBtn": "คัดลอก",
+    "sendOnlyWarning": "ส่งเฉพาะ <b>{coin}</b> บนเครือข่าย <b>{network}</b> มายังที่อยู่นี้เท่านั้น",
+    "confirmationsNote": "ยอดฝากจะเข้าหลังเครือข่ายยืนยัน",
+    "selectCoinFirst": "เลือกเหรียญและเครือข่ายด้านบนเพื่อดูที่อยู่ฝาก"
   },
   "walletPage": {
     "title": "กระเป๋าเงิน",
@@ -306,7 +318,15 @@
     "noBalanceHint": "ไม่มี {asset} ให้ถอน — กรุณาฝากก่อน",
     "networkLabel": "เครือข่าย",
     "belowMin": "ยอดถอนขั้นต่ำคือ {min} {asset}",
-    "addressPlaceholder": "ที่อยู่ผู้รับ"
+    "addressPlaceholder": "ที่อยู่ผู้รับ",
+    "selectCoinTitle": "เลือกเหรียญ",
+    "selectCoin": "เลือกเหรียญ",
+    "searchCoin": "ค้นหาเหรียญ",
+    "selectNetworkTitle": "เลือกเครือข่าย",
+    "selectNetwork": "เลือกเครือข่าย",
+    "networkHint": "ตรวจสอบว่าเลือกเครือข่ายเดียวกับแพลตฟอร์มผู้รับ",
+    "amountDestTitle": "จำนวนและที่อยู่",
+    "selectCoinFirst": "เลือกเหรียญด้านบนเพื่อกรอกจำนวน"
   },
   "settings": {
     "breadcrumbRegistry": "ลิงก์ด่วน:",
@@ -648,5 +668,12 @@
     "displayNamePlaceholder": "ชื่อที่แสดง (เช่น BANA Wallet)",
     "supportEmailPlaceholder": "support@yourdomain.com",
     "amountPlaceholder": "เช่น 100"
+  },
+  "walletFlow": {
+    "depositCrypto": "ฝากคริปโต",
+    "withdrawCrypto": "ถอนคริปโต",
+    "depositFiat": "ฝากเงินสด",
+    "withdrawFiat": "ถอนเงินสด",
+    "soon": "เร็วๆ นี้"
   }
 }
