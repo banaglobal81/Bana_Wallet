@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, Search, Check } from 'lucide-react';
 import CoinAvatar from './CoinAvatar';
+import NetworkAvatar from './NetworkAvatar';
 
 function useOutsideClose(onClose: () => void) {
   const ref = useRef<HTMLDivElement>(null);
@@ -120,7 +121,14 @@ export function NetworkSelect({
         className={`${triggerCls}`}
         style={{ borderColor: open ? '#528dff' : '#1E3559' }}
       >
-        <span className={value ? 'font-bold text-white' : 'text-[#8c90a0]'}>{value || placeholder}</span>
+        {value ? (
+          <span className="flex items-center gap-3 min-w-0">
+            <NetworkAvatar code={value} />
+            <span className="font-bold text-white truncate">{value}</span>
+          </span>
+        ) : (
+          <span className="text-[#8c90a0]">{placeholder}</span>
+        )}
         <ChevronDown className={`h-4 w-4 text-[#8c90a0] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
@@ -136,7 +144,10 @@ export function NetworkSelect({
                   c === value ? 'bg-[#16325c]' : 'hover:bg-[#112643]'
                 }`}
               >
-                <span className="text-sm font-bold text-white">{c}</span>
+                <span className="flex items-center gap-3 min-w-0">
+                  <NetworkAvatar code={c} />
+                  <span className="text-sm font-bold text-white truncate">{c}</span>
+                </span>
                 {c === value && <Check className="h-4 w-4 text-[#528dff] shrink-0" />}
               </button>
             ))}

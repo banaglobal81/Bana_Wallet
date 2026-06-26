@@ -1,8 +1,10 @@
 'use client';
 
-// Brand-colored round coin badge. No external icon library / network images
-// (those can fail or render fake) — a deterministic colored disc with the coin's
-// initial, using known brand colors where we have them.
+import { useEffect, useState } from 'react';
+
+// Real coin logos live in /public/coins/<ticker>.svg (CC0 cryptocurrency-icons set).
+// For any coin without an icon (e.g. newer ones), we fall back to a deterministic
+// colored disc with the coin's initial — using known brand colors where we have them.
 const BRAND: Record<string, string> = {
   USDT: '#26A17B', USDC: '#2775CA', USD1: '#1A8FE3', FDUSD: '#16A34A', DAI: '#F5AC37',
   RLUSD: '#0E76FD', BTC: '#F7931A', ETH: '#627EEA', TRX: '#EF0027', ADA: '#0033AD',
@@ -20,11 +22,30 @@ function colorFor(symbol: string): string {
 }
 
 export default function CoinAvatar({ symbol, size = 28 }: { symbol: string; size?: number }) {
-  const bg = colorFor(symbol);
+  const [failed, setFailed] = useState(false);
+  // Reset when the symbol changes (the trigger reuses one instance for the selected coin).
+  useEffect(() => { setFailed(false); }, [symbol]);
+
+  if (!failed) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={`/coins/${symbol.toLowerCase()}.svg`}
+        alt={symbol}
+        width={size}
+        height={size}
+        onError={() => setFailed(true)}
+        className="rounded-full shrink-0 select-none object-contain bg-[#0a1b33]"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+
+  // Fallback: colored disc with the coin's initial.
   return (
     <span
       className="inline-flex items-center justify-center rounded-full font-bold text-white shrink-0 select-none"
-      style={{ width: size, height: size, background: bg, fontSize: size * 0.42 }}
+      style={{ width: size, height: size, background: colorFor(symbol), fontSize: size * 0.42 }}
       aria-hidden
     >
       {symbol.slice(0, 1)}
