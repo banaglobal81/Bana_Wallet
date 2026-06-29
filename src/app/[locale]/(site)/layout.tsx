@@ -2,16 +2,16 @@
 
 import { useState } from 'react';
 import { usePathname } from '@/i18n/navigation';
-import { Menu } from 'lucide-react';
 import { useApp } from '@/app/providers';
 import { useScreenNav, SCREEN_TO_PATH } from '@/lib/useScreenNav';
 import Sidebar from '@/components/Sidebar';
-import BanaLogo from '@/components/BanaLogo';
+import BottomNav from '@/components/BottomNav';
 import Notifications from '@/components/Notifications';
 import ProfileMenu from '@/components/ProfileMenu';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
 import MaintenanceBanner from '@/components/MaintenanceBanner';
+import BanaLogo from '@/components/BanaLogo';
 import type { Screen } from '@/types';
 
 // Reverse-map path → Screen for sidebar highlighting.
@@ -51,7 +51,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Content column: top bar (mobile + desktop) + routed children */}
       <div className="flex-1 min-w-0 h-full flex flex-col">
         <MaintenanceBanner />
-        {/* Mobile-only top bar: brand + chrome + hamburger */}
+        {/* Mobile-only top bar: brand + chrome (navigation is the bottom bar) */}
         <header className="lg:hidden flex items-center justify-between gap-3 h-16 px-4 shrink-0 border-b border-slate-800 bg-[#06132a]/95 backdrop-blur z-20">
           <BanaLogo size="sm" />
           <div className="flex items-center gap-3">
@@ -59,13 +59,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <ThemeToggle />
             <Notifications />
             <ProfileMenu settings={settings} onNavigate={navigateAndClose} />
-            <button
-              onClick={() => setMobileNavOpen(true)}
-              aria-label="Open navigation menu"
-              className="p-2.5 rounded-xl border border-slate-700 bg-slate-800/50 text-slate-200 hover:bg-slate-700 active:scale-95 transition-all cursor-pointer"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
           </div>
         </header>
 
@@ -78,11 +71,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <ProfileMenu settings={settings} onNavigate={navigateAndClose} />
         </header>
 
-        {/* Main content area */}
-        <main className="flex-1 min-w-0 relative overflow-hidden bg-[#06132a]">
+        {/* Main content area — extra bottom space on mobile for the fixed nav bar */}
+        <main className="flex-1 min-w-0 relative overflow-hidden bg-[#06132a] pb-16 lg:pb-0">
           {children}
         </main>
       </div>
+
+      {/* Mobile bottom navigation (replaces the hamburger drawer) */}
+      <BottomNav currentScreen={currentScreen} onNavigate={navigate} />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
-import { Building2, ArrowLeft, Lock, Menu } from 'lucide-react';
+import { Building2, ArrowLeft, Lock } from 'lucide-react';
 import { useApp } from '@/app/providers';
 import { useScreenNav } from '@/lib/useScreenNav';
 import BanaLogo from '@/components/BanaLogo';
@@ -13,6 +13,7 @@ import ProfileMenu from '@/components/ProfileMenu';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
 import AdminSidebar from '@/components/admin/AdminSidebar';
+import AdminBottomNav from '@/components/admin/AdminBottomNav';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
@@ -77,13 +78,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <ThemeToggle />
             <Notifications />
             <ProfileMenu settings={settings} onNavigate={navigate} />
-            <button
-              onClick={() => setMobileNavOpen(true)}
-              aria-label="Open navigation menu"
-              className="p-2.5 rounded-xl border border-slate-700 bg-slate-800/50 text-slate-200 hover:bg-slate-700 active:scale-95 transition-all cursor-pointer"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
           </div>
         </header>
 
@@ -95,9 +89,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <ProfileMenu settings={settings} onNavigate={navigate} />
         </header>
 
-        {/* Admin content — min-h-0 + overflow-y-auto so tall pages (e.g. Settings) scroll */}
-        <main className="flex-1 min-h-0 min-w-0 relative overflow-y-auto bg-[#06132a]">{children}</main>
+        {/* Admin content — min-h-0 + overflow-y-auto so tall pages (e.g. Settings) scroll;
+            extra bottom space on mobile for the fixed nav bar */}
+        <main className="flex-1 min-h-0 min-w-0 relative overflow-y-auto bg-[#06132a] pb-16 lg:pb-0">{children}</main>
       </div>
+
+      {/* Mobile bottom navigation (replaces the hamburger drawer) */}
+      <AdminBottomNav />
     </div>
   );
 }

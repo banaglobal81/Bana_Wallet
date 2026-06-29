@@ -8,10 +8,10 @@ interface BanaLogoProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-// Chrome / brushed-silver gradient to match the metallic emblem.
+// Polished silver gradient — bright, neutral metallic (no blue tint).
 const chrome: React.CSSProperties = {
   backgroundImage:
-    'linear-gradient(180deg,#f4f7fb 0%,#cfd8e4 38%,#8c99ab 52%,#b9c4d2 60%,#eef2f8 100%)',
+    'linear-gradient(180deg,#ffffff 0%,#e4e6ea 30%,#b4b8c0 50%,#9a9ea7 58%,#cfd2d8 74%,#f6f7f9 100%)',
   WebkitBackgroundClip: 'text',
   backgroundClip: 'text',
   color: 'transparent',

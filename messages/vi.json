@@ -5,7 +5,7 @@
     "maintenanceBanner": "Việc rút tiền tạm dừng để bảo trì. Chúng tôi sẽ sớm trở lại."
   },
   "nav": {
-    "portfolio": "Danh mục",
+    "portfolio": "Bảng điều khiển",
     "wallet": "Ví",
     "swap": "Hoán đổi",
     "staking": "Staking",
@@ -98,11 +98,11 @@
     "adminNoteBody": "Với vai trò <highlight>quản trị / nhà môi giới</highlight>, bạn quản lý người dùng và thu hoa hồng. Ví và nạp tiền của người dùng cuối được tạo ở phía Nia-Hub; bảng này phản ánh dữ liệu thanh toán thực của đại lý qua khóa API.",
     "accessDeniedTitle": "Chỉ dành cho quản trị",
     "accessDeniedBody": "Bảng thanh toán chỉ dành cho <highlight>tài khoản quản trị</highlight>. Vui lòng đăng nhập bằng tài khoản quản trị để truy cập dữ liệu hoa hồng và thanh toán.",
-    "backToPortfolio": "Quay lại danh mục",
+    "backToPortfolio": "Quay lại Bảng điều khiển",
     "tenantIdMissing": "Nia-Hub không cung cấp"
   },
   "dashboard": {
-    "pageTitle": "Bảng điều khiển danh mục",
+    "pageTitle": "Bảng điều khiển",
     "securedBadge": "BẢO MẬT BỞI BENTO",
     "vaultSubtitle": "Tài khoản lưu ký an toàn · {account}",
     "receive": "Nhận",
@@ -188,7 +188,7 @@
     "noBalanceHint": "Không có {asset} để hoán đổi — hãy nạp trước.",
     "comingSoonTitle": "Swap sắp ra mắt",
     "comingSoonBody": "Hoán đổi tài sản ngay trong ví của bạn. Chúng tôi đang hoàn thiện — sắp ra mắt.",
-    "backToPortfolio": "Quay lại Danh mục"
+    "backToPortfolio": "Quay lại Bảng điều khiển"
   },
   "staking": {
     "pageTitle": "Staking",
@@ -222,7 +222,7 @@
     "balance": "Số dư: {amount} {asset}",
     "comingSoonTitle": "Staking sắp ra mắt",
     "comingSoonBody": "Nhận thưởng từ tài sản của bạn. Chúng tôi đang hoàn thiện staking — sẽ sớm có tại đây.",
-    "backToPortfolio": "Quay lại Danh mục"
+    "backToPortfolio": "Quay lại Bảng điều khiển"
   },
   "deposit": {
     "backAria": "Quay lại",
@@ -330,7 +330,7 @@
   },
   "settings": {
     "breadcrumbRegistry": "Liên kết nhanh:",
-    "breadcrumbPortfolio": "Danh mục",
+    "breadcrumbPortfolio": "Bảng điều khiển",
     "breadcrumbSwap": "Hoán đổi",
     "breadcrumbActivity": "Hoạt động",
     "pageTitle": "Cài đặt",
@@ -412,7 +412,7 @@
   },
   "activity": {
     "breadcrumbRegistry": "SỔ ĐĂNG KÝ MANIFEST NÚT:",
-    "breadcrumbPortfolio": "Danh mục",
+    "breadcrumbPortfolio": "Bảng điều khiển",
     "breadcrumbSwap": "Hoán đổi",
     "breadcrumbSettings": "Cài đặt",
     "pageTitle": "Nhật ký hoạt động hệ thống",

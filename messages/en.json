@@ -5,7 +5,7 @@
     "maintenanceBanner": "Withdrawals are paused for maintenance. We'll be back shortly."
   },
   "nav": {
-    "portfolio": "Portfolio",
+    "portfolio": "Dashboard",
     "wallet": "Wallet",
     "swap": "Swap",
     "staking": "Staking",
@@ -98,11 +98,11 @@
     "adminNoteBody": "As the <highlight>admin / broker</highlight>, you manage users and collect commissions. End-user wallets and funding are created on the Nia-Hub side; this panel reflects your tenant’s real settlement data via the API key.",
     "accessDeniedTitle": "Admin access only",
     "accessDeniedBody": "The Settlement panel is only available to <highlight>Admin accounts</highlight>. Sign in with an admin account to access commission and settlement data.",
-    "backToPortfolio": "Back to Portfolio",
+    "backToPortfolio": "Back to Dashboard",
     "tenantIdMissing": "Not provided by Nia-Hub"
   },
   "dashboard": {
-    "pageTitle": "Portfolio Dashboard",
+    "pageTitle": "Dashboard",
     "securedBadge": "SECURED WITH BENTO",
     "vaultSubtitle": "Secure custody account · {account}",
     "receive": "Receive",
@@ -188,7 +188,7 @@
     "noBalanceHint": "No {asset} to swap — deposit first.",
     "comingSoonTitle": "Swap is coming soon",
     "comingSoonBody": "Swap between assets right inside your wallet. We're putting the finishing touches on it — coming soon.",
-    "backToPortfolio": "Back to Portfolio"
+    "backToPortfolio": "Back to Dashboard"
   },
   "staking": {
     "pageTitle": "Staking",
@@ -222,7 +222,7 @@
     "balance": "Balance: {amount} {asset}",
     "comingSoonTitle": "Staking is coming soon",
     "comingSoonBody": "Earn rewards on your crypto. We're putting the finishing touches on staking — it'll be live here soon.",
-    "backToPortfolio": "Back to Portfolio"
+    "backToPortfolio": "Back to Dashboard"
   },
   "deposit": {
     "backAria": "Back",
@@ -330,7 +330,7 @@
   },
   "settings": {
     "breadcrumbRegistry": "Quick links:",
-    "breadcrumbPortfolio": "Portfolio",
+    "breadcrumbPortfolio": "Dashboard",
     "breadcrumbSwap": "Swap",
     "breadcrumbActivity": "Activity",
     "pageTitle": "Settings",
@@ -412,7 +412,7 @@
   },
   "activity": {
     "breadcrumbRegistry": "NODE MANIFEST REGISTRY:",
-    "breadcrumbPortfolio": "Portfolio",
+    "breadcrumbPortfolio": "Dashboard",
     "breadcrumbSwap": "Swap",
     "breadcrumbSettings": "Settings",
     "pageTitle": "System Activity Log",

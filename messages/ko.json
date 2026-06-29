@@ -5,7 +5,7 @@
     "maintenanceBanner": "유지보수로 출금이 일시 중지되었습니다. 곧 돌아오겠습니다."
   },
   "nav": {
-    "portfolio": "포트폴리오",
+    "portfolio": "대시보드",
     "wallet": "지갑",
     "swap": "스왑",
     "staking": "스테이킹",
@@ -98,11 +98,11 @@
     "adminNoteBody": "<highlight>관리자 / 브로커</highlight>로서 사용자를 관리하고 수수료를 수취합니다. 최종 사용자 지갑과 입금은 Nia-Hub 측에서 생성되며, 이 패널은 API 키를 통해 테넌트의 실제 정산 데이터를 반영합니다.",
     "accessDeniedTitle": "관리자 전용 접근",
     "accessDeniedBody": "정산 패널은 <highlight>관리자 계정</highlight>만 이용할 수 있습니다. 관리자 계정으로 로그인하여 수수료 및 정산 데이터에 접근하세요.",
-    "backToPortfolio": "포트폴리오로 돌아가기",
+    "backToPortfolio": "대시보드로 돌아가기",
     "tenantIdMissing": "Nia-Hub에서 제공되지 않음"
   },
   "dashboard": {
-    "pageTitle": "포트폴리오 대시보드",
+    "pageTitle": "대시보드",
     "securedBadge": "BENTO 보안 적용",
     "vaultSubtitle": "안전한 커스터디 계정 · {account}",
     "receive": "받기",
@@ -188,7 +188,7 @@
     "noBalanceHint": "스왑할 {asset}이(가) 없습니다 — 먼저 입금하세요.",
     "comingSoonTitle": "스왑 출시 예정",
     "comingSoonBody": "지갑 안에서 바로 자산을 교환하세요. 마무리 작업 중이며 곧 제공됩니다.",
-    "backToPortfolio": "포트폴리오로 돌아가기"
+    "backToPortfolio": "대시보드로 돌아가기"
   },
   "staking": {
     "pageTitle": "스테이킹",
@@ -222,7 +222,7 @@
     "balance": "잔액: {amount} {asset}",
     "comingSoonTitle": "스테이킹 출시 예정",
     "comingSoonBody": "암호화폐로 보상을 받으세요. 스테이킹을 마무리하고 있으며 곧 여기에서 제공됩니다.",
-    "backToPortfolio": "포트폴리오로 돌아가기"
+    "backToPortfolio": "대시보드로 돌아가기"
   },
   "deposit": {
     "backAria": "뒤로",
@@ -330,7 +330,7 @@
   },
   "settings": {
     "breadcrumbRegistry": "바로가기:",
-    "breadcrumbPortfolio": "포트폴리오",
+    "breadcrumbPortfolio": "대시보드",
     "breadcrumbSwap": "스왑",
     "breadcrumbActivity": "활동",
     "pageTitle": "설정",
@@ -412,7 +412,7 @@
   },
   "activity": {
     "breadcrumbRegistry": "노드 매니페스트 레지스트리:",
-    "breadcrumbPortfolio": "포트폴리오",
+    "breadcrumbPortfolio": "대시보드",
     "breadcrumbSwap": "스왑",
     "breadcrumbSettings": "설정",
     "pageTitle": "시스템 활동 로그",

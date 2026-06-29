@@ -5,7 +5,7 @@
     "maintenanceBanner": "メンテナンスのため出金を一時停止しています。まもなく再開します。"
   },
   "nav": {
-    "portfolio": "ポートフォリオ",
+    "portfolio": "ダッシュボード",
     "wallet": "ウォレット",
     "swap": "スワップ",
     "staking": "ステーキング",
@@ -98,11 +98,11 @@
     "adminNoteBody": "<highlight>管理者 / ブローカー</highlight>として、ユーザーを管理し手数料を回収します。エンドユーザーのウォレットと入金は Nia-Hub 側で作成され、このパネルは API キーを通じてテナントの実際の精算データを反映します。",
     "accessDeniedTitle": "管理者専用アクセス",
     "accessDeniedBody": "精算パネルは<highlight>管理者アカウント</highlight>のみ利用できます。管理者アカウントでログインして手数料および精算データにアクセスしてください。",
-    "backToPortfolio": "ポートフォリオに戻る",
+    "backToPortfolio": "ダッシュボードに戻る",
     "tenantIdMissing": "Nia-Hubから提供されていません"
   },
   "dashboard": {
-    "pageTitle": "ポートフォリオダッシュボード",
+    "pageTitle": "ダッシュボード",
     "securedBadge": "BENTO で保護",
     "vaultSubtitle": "セキュアなカストディ口座 · {account}",
     "receive": "受け取る",
@@ -188,7 +188,7 @@
     "noBalanceHint": "スワップできる {asset} がありません — 先に入金してください。",
     "comingSoonTitle": "スワップは近日公開",
     "comingSoonBody": "ウォレット内で資産を直接スワップ。最終調整中で、まもなく公開します。",
-    "backToPortfolio": "ポートフォリオに戻る"
+    "backToPortfolio": "ダッシュボードに戻る"
   },
   "staking": {
     "pageTitle": "ステーキング",
@@ -222,7 +222,7 @@
     "balance": "残高: {amount} {asset}",
     "comingSoonTitle": "ステーキングは近日公開",
     "comingSoonBody": "暗号資産で報酬を獲得。ステーキングは最終調整中で、まもなくここで利用できます。",
-    "backToPortfolio": "ポートフォリオに戻る"
+    "backToPortfolio": "ダッシュボードに戻る"
   },
   "deposit": {
     "backAria": "戻る",
@@ -330,7 +330,7 @@
   },
   "settings": {
     "breadcrumbRegistry": "クイックリンク:",
-    "breadcrumbPortfolio": "ポートフォリオ",
+    "breadcrumbPortfolio": "ダッシュボード",
     "breadcrumbSwap": "スワップ",
     "breadcrumbActivity": "アクティビティ",
     "pageTitle": "設定",
@@ -412,7 +412,7 @@
   },
   "activity": {
     "breadcrumbRegistry": "ノードマニフェストレジストリ:",
-    "breadcrumbPortfolio": "ポートフォリオ",
+    "breadcrumbPortfolio": "ダッシュボード",
     "breadcrumbSwap": "スワップ",
     "breadcrumbSettings": "設定",
     "pageTitle": "システムアクティビティログ",

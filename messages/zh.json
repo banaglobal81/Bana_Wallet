@@ -5,7 +5,7 @@
     "maintenanceBanner": "提现因维护暂停，我们将很快恢复。"
   },
   "nav": {
-    "portfolio": "投资组合",
+    "portfolio": "仪表板",
     "wallet": "钱包",
     "swap": "兑换",
     "staking": "质押",
@@ -98,11 +98,11 @@
     "adminNoteBody": "作为<highlight>管理员 / 经纪商</highlight>，您负责管理用户并收取佣金。最终用户的钱包和入金在 Nia-Hub 端创建，此面板通过 API 密钥反映您租户的真实结算数据。",
     "accessDeniedTitle": "仅限管理员访问",
     "accessDeniedBody": "结算面板仅向<highlight>管理员账户</highlight>开放。请使用管理员账户登录以访问佣金和结算数据。",
-    "backToPortfolio": "返回投资组合",
+    "backToPortfolio": "返回仪表板",
     "tenantIdMissing": "Nia-Hub 未提供"
   },
   "dashboard": {
-    "pageTitle": "投资组合仪表盘",
+    "pageTitle": "仪表板",
     "securedBadge": "由 BENTO 保护",
     "vaultSubtitle": "安全托管账户 · {account}",
     "receive": "收款",
@@ -188,7 +188,7 @@
     "noBalanceHint": "没有可兑换的 {asset} — 请先入金。",
     "comingSoonTitle": "兑换即将推出",
     "comingSoonBody": "在钱包内直接兑换资产。功能正在完善中，即将推出。",
-    "backToPortfolio": "返回投资组合"
+    "backToPortfolio": "返回仪表板"
   },
   "staking": {
     "pageTitle": "质押",
@@ -222,7 +222,7 @@
     "balance": "余额：{amount} {asset}",
     "comingSoonTitle": "质押即将推出",
     "comingSoonBody": "用您的加密资产赚取收益。质押功能正在完善中，即将在此上线。",
-    "backToPortfolio": "返回投资组合"
+    "backToPortfolio": "返回仪表板"
   },
   "deposit": {
     "backAria": "返回",
@@ -330,7 +330,7 @@
   },
   "settings": {
     "breadcrumbRegistry": "快速链接：",
-    "breadcrumbPortfolio": "投资组合",
+    "breadcrumbPortfolio": "仪表板",
     "breadcrumbSwap": "兑换",
     "breadcrumbActivity": "活动",
     "pageTitle": "设置",
@@ -412,7 +412,7 @@
   },
   "activity": {
     "breadcrumbRegistry": "节点清单注册表：",
-    "breadcrumbPortfolio": "投资组合",
+    "breadcrumbPortfolio": "仪表板",
     "breadcrumbSwap": "兑换",
     "breadcrumbSettings": "设置",
     "pageTitle": "系统活动日志",

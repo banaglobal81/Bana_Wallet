@@ -5,7 +5,7 @@
     "maintenanceBanner": "การถอนถูกหยุดชั่วคราวเพื่อบำรุงรักษา เราจะกลับมาเร็วๆ นี้"
   },
   "nav": {
-    "portfolio": "พอร์ตโฟลิโอ",
+    "portfolio": "แดชบอร์ด",
     "wallet": "กระเป๋าเงิน",
     "swap": "สวอป",
     "staking": "สเตกกิ้ง",
@@ -98,11 +98,11 @@
     "adminNoteBody": "ในฐานะ<highlight>ผู้ดูแลระบบ / โบรกเกอร์</highlight> คุณจัดการผู้ใช้และเก็บค่าคอมมิชชัน กระเป๋าเงินและการฝากเงินของผู้ใช้ปลายทางถูกสร้างขึ้นที่ฝั่ง Nia-Hub แผงนี้แสดงข้อมูลการชำระบัญชีจริงของเทแนนต์ผ่านคีย์ API",
     "accessDeniedTitle": "เฉพาะผู้ดูแลระบบเท่านั้น",
     "accessDeniedBody": "แผงการชำระบัญชีใช้ได้เฉพาะ<highlight>บัญชีผู้ดูแลระบบ</highlight>เท่านั้น กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบเพื่อเข้าถึงข้อมูลค่าคอมมิชชันและการชำระบัญชี",
-    "backToPortfolio": "กลับไปที่พอร์ตโฟลิโอ",
+    "backToPortfolio": "กลับไปที่แดชบอร์ด",
     "tenantIdMissing": "Nia-Hub ไม่ได้ระบุ"
   },
   "dashboard": {
-    "pageTitle": "แดชบอร์ดพอร์ตโฟลิโอ",
+    "pageTitle": "แดชบอร์ด",
     "securedBadge": "ปกป้องด้วย BENTO",
     "vaultSubtitle": "บัญชีคัสโตดีที่ปลอดภัย · {account}",
     "receive": "รับ",
@@ -188,7 +188,7 @@
     "noBalanceHint": "ไม่มี {asset} ให้สวอป — กรุณาฝากก่อน",
     "comingSoonTitle": "Swap เร็วๆ นี้",
     "comingSoonBody": "สลับสินทรัพย์ได้ภายในกระเป๋าเงินของคุณ เรากำลังปรับแต่งขั้นสุดท้าย เร็วๆ นี้",
-    "backToPortfolio": "กลับไปที่พอร์ต"
+    "backToPortfolio": "กลับไปที่แดชบอร์ด"
   },
   "staking": {
     "pageTitle": "สเตกกิ้ง",
@@ -222,7 +222,7 @@
     "balance": "ยอดคงเหลือ: {amount} {asset}",
     "comingSoonTitle": "Staking เร็วๆ นี้",
     "comingSoonBody": "รับผลตอบแทนจากคริปโตของคุณ เรากำลังปรับแต่ง Staking ขั้นสุดท้าย และจะเปิดให้ใช้เร็วๆ นี้",
-    "backToPortfolio": "กลับไปที่พอร์ต"
+    "backToPortfolio": "กลับไปที่แดชบอร์ด"
   },
   "deposit": {
     "backAria": "กลับ",
@@ -330,7 +330,7 @@
   },
   "settings": {
     "breadcrumbRegistry": "ลิงก์ด่วน:",
-    "breadcrumbPortfolio": "พอร์ตโฟลิโอ",
+    "breadcrumbPortfolio": "แดชบอร์ด",
     "breadcrumbSwap": "สวอป",
     "breadcrumbActivity": "กิจกรรม",
     "pageTitle": "การตั้งค่า",
@@ -412,7 +412,7 @@
   },
   "activity": {
     "breadcrumbRegistry": "ทะเบียนรายการโหนด:",
-    "breadcrumbPortfolio": "พอร์ตโฟลิโอ",
+    "breadcrumbPortfolio": "แดชบอร์ด",
     "breadcrumbSwap": "สวอป",
     "breadcrumbSettings": "การตั้งค่า",
     "pageTitle": "บันทึกกิจกรรมระบบ",
