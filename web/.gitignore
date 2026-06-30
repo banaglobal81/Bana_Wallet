@@ -1,0 +1,20 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.pids/
+.env*
+!.env.example
+
+# Next.js build output
+.next/
+out/
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Local-only credentials notes (never commit)
+*.local.md
+CREDENTIALS.local*

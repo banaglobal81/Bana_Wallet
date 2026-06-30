@@ -1,0 +1,186 @@
+// Prisma 7.x schema
+// generator: uses the default "prisma-client-js" provider.
+// In Prisma 7 the generator writes the client into node_modules/.prisma/client/,
+// which @prisma/client re-exports at its package root — so
+// `import { PrismaClient } from '@prisma/client'` works with no custom output path.
+//
+// PRISMA 7 BREAKING CHANGE: `url` is no longer valid in the datasource block.
+// The connection URL is declared in prisma.config.ts (datasource.url = env("DATABASE_URL")).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FAILED
+}
+
+enum StakingProductStatus {
+  OPEN
+  CLOSED
+}
+
+enum StakePositionStatus {
+  ACTIVE
+  MATURED
+  PAID
+}
+
+// Platform-wide policy, a single row (id = "singleton"). Admin-configurable.
+model PlatformSetting {
+  id                    String   @id @default("singleton")
+  // Only allow withdrawals to addresses saved in the user's address book.
+  whitelistOnly         Boolean  @default(false)
+  // Withdrawals valued under this USD amount auto-approve (skip the queue).
+  // null/empty = every withdrawal requires manual approval.
+  autoApproveUnderUsd   String?
+  // Pause all withdrawals (incident / hub outage). Users see a banner.
+  maintenanceMode       Boolean  @default(false)
+  // Max total a single user can withdraw per rolling 24h (USD, stablecoins).
+  dailyWithdrawalLimitUsd String?
+  // Allow new user registration.
+  signupsEnabled        Boolean  @default(true)
+  // Platform identity shown to users.
+  supportEmail          String?
+  displayName           String?
+  updatedAt             DateTime @updatedAt
+}
+
+// A user's saved/trusted withdrawal address (address book + whitelist).
+model WithdrawalAddress {
+  id        String   @id @default(cuid())
+  userId    String
+  label     String
+  network   String
+  address   String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// Immutable record of an admin action, for accountability / compliance.
+model AuditLog {
+  id         String   @id @default(cuid())
+  adminId    String?  // admin who performed the action
+  adminEmail String   // denormalized for display even if the admin is later removed
+  action     String   // e.g. WITHDRAWAL_APPROVE, USER_ROLE_CHANGE, USER_DISABLE
+  targetType String?  // e.g. user, withdrawal
+  targetId   String?
+  detail     String?  // short human-readable summary
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// A withdrawal held for admin review before it is forwarded to Nia-Hub.
+// Funds only leave once an admin APPROVES (which forwards it to the hub).
+model WithdrawalRequest {
+  id              String           @id @default(cuid())
+  userId          String           // BANA DB user id
+  niaUserId       String           // Nia-Hub end-user id (used when forwarding)
+  email           String           // denormalized for the admin queue
+  currency        String
+  network         String
+  amount          String           // canonical decimal string (never a float)
+  toAddress       String
+  idempotencyKey  String?
+  status          WithdrawalStatus @default(PENDING)
+  reviewedById    String?          // admin who approved/rejected
+  reviewedAt      DateTime?
+  rejectionReason String?
+  hubTxId         String?          // hub reference once forwarded
+  lastError       String?
+  createdAt       DateTime         @default(now())
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  role         Role     @default(USER)
+  niaUserId    String?  @unique
+  createdAt    DateTime @default(now())
+  // Password-reset (forgot password) — only a HASH of the token is stored, never
+  // the token itself, with a short expiry. Cleared on use.
+  resetTokenHash   String?
+  resetTokenExpiry DateTime?
+  // Admin can disable an account — blocks login (compromised/abusive accounts).
+  disabled     Boolean  @default(false)
+}
+
+// An admin-created staking offer: a coin + lock term + daily interest rate.
+// Platform-run, fixed-term savings (NOT on-chain yield) — the platform owes the
+// interest. CLOSED = no new stakes; existing positions keep running to maturity.
+model StakingProduct {
+  id           String   @id @default(cuid())
+  coin         String                                // e.g. "USDT"
+  name         String                                // admin label, e.g. "USDT 30-Day"
+  termDays     Int                                   // lock duration in days
+  dailyRatePct String                                // daily interest %, decimal string (e.g. "0.05")
+  minAmount    String?                               // optional per-stake minimum
+  maxAmount    String?                               // optional per-stake maximum
+  capacity     String?                               // optional total principal cap across all positions
+  status       StakingProductStatus @default(OPEN)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  positions    StakePosition[]
+
+  @@index([status])
+}
+
+// A single user's stake into a product. Principal is soft-locked (stays in the
+// Nia wallet but is non-withdrawable) until maturity; interest accrues daily and
+// is computed on read. PAID = principal+interest settled back to the wallet.
+model StakePosition {
+  id           String   @id @default(cuid())
+  userId       String                                // BANA DB user id (session-derived)
+  niaUserId    String                                // Nia-Hub end-user id (for payout)
+  email        String                                // denormalized for the admin view
+  productId    String
+  coin         String
+  principal    String                                // canonical decimal string
+  dailyRatePct String                                // snapshot at stake time (later rate changes don't apply)
+  termDays     Int                                   // snapshot
+  startAt      DateTime @default(now())
+  maturityAt   DateTime
+  status       StakePositionStatus @default(ACTIVE)
+  // Interest accrued so far, maintained by the daily worker (also computed live on read).
+  accruedInterest String @default("0")
+  lastAccrualAt   DateTime?
+  paidAt       DateTime?
+  createdAt    DateTime @default(now())
+  product      StakingProduct @relation(fields: [productId], references: [id])
+
+  @@index([userId, status])
+  @@index([status])
+}
+
+// An admin-managed coin shown in the user coin list. Custom EVM tokens are added
+// by contract address per network. Real deposits/withdrawals only work for coins
+// the Nia hub also supports (custom tokens are display-only until then).
+model ManagedCoin {
+  id        String   @id @default(cuid())
+  symbol    String   @unique                 // e.g. "USDT"
+  name      String                            // e.g. "Tether"
+  // networks: [{ code, contractAddress, decimals }] (decimals as a number; contractAddress is the EVM 0x… token id)
+  networks  Json
+  logoKey   String?                           // /coins/<key>.svg override, else fallback to the symbol/initial
+  visible   Boolean  @default(true)           // show in the user coin list
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
