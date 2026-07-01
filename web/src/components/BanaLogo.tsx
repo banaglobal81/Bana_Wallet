@@ -7,7 +7,11 @@ import React from 'react';
 // logo regardless of the image's aspect ratio — layout stays unchanged. The
 // intrinsic width/height attrs let the browser reserve the right box up front,
 // so there's no reflow/jump on load (smooth render).
-const LOGO_SRC = 'https://cdn.banawallet.com/brand/BANA_WALLET_oneline_transparent.png';
+// Cropped wordmark (padding trimmed off the original, which had ~26% empty
+// space above/below the letters — that's why it used to look small). The letters
+// now fill the frame, so a given width renders much bigger. ?v=2 dodges a stale
+// Cloudflare-cached 404 on the bare URL.
+const LOGO_SRC = 'https://cdn.banawallet.com/brand/BANA_WALLET_oneline_trim.png?v=2';
 
 interface BanaLogoProps {
   className?: string;
@@ -20,16 +24,19 @@ interface BanaLogoProps {
 export default function BanaLogo({ className = '', size = 'md' }: BanaLogoProps) {
   // lg (login hero) is a large ~96px (~577px wide) so it reads as a prominent
   // hero; sm/md scale down. `fill` uses full container width with auto height.
+  // Heights retuned for the cropped (padding-free) wordmark, aspect ~10.9:1.
+  // Because the letters now fill the frame, these render much larger than the
+  // same numbers did on the old padded image.
   const dims =
     size === 'fill'
       ? 'w-full h-auto'
-      : `${{ sm: 'h-[28px]', md: 'h-[40px]', lg: 'h-[96px]' }[size]} w-auto`;
+      : `${{ sm: 'h-[22px]', md: 'h-[26px]', lg: 'h-[54px]' }[size]} w-auto`;
   return (
     <img
       src={LOGO_SRC}
       alt="BANA Wallet"
-      width={2649}
-      height={441}
+      width={2471}
+      height={226}
       className={`${dims} max-w-full object-contain select-none pointer-events-none ${className}`}
       decoding="async"
       referrerPolicy="no-referrer"

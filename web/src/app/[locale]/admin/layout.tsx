@@ -66,14 +66,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Content column: top chrome bar + routed children */}
       <div className="flex-1 min-w-0 h-full flex flex-col">
         {/* Mobile-only top bar: brand + ADMIN badge + chrome + hamburger */}
-        <header className="lg:hidden flex items-center justify-between gap-3 h-16 px-4 shrink-0 border-b border-amber-500/20 bg-[#0a0f1e]/95 backdrop-blur z-20">
-          <div className="flex items-center gap-2">
-            <BanaLogo size="sm" />
-            <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded text-amber-400 font-bold text-[10px] font-mono tracking-wider">
+        <header className="lg:hidden flex items-center justify-between gap-2 h-16 px-3 shrink-0 border-b border-amber-500/20 bg-[#0a0f1e]/95 backdrop-blur z-20">
+          <div className="flex items-center gap-2 min-w-0">
+            {/* Width-sized (with the ADMIN badge alongside) so it grows but stays
+                within the bar; max-w keeps the badge + controls visible. */}
+            <div className="w-[230px] max-w-[52vw] min-w-0">
+              <BanaLogo size="fill" />
+            </div>
+            <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded text-amber-400 font-bold text-[10px] font-mono tracking-wider shrink-0">
               <Building2 className="h-3 w-3" /> {t('badge')}
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             <LanguageSwitcher />
             <ThemeToggle />
             <Notifications />

@@ -52,9 +52,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 min-w-0 h-full flex flex-col">
         <MaintenanceBanner />
         {/* Mobile-only top bar: brand + chrome (navigation is the bottom bar) */}
-        <header className="lg:hidden flex items-center justify-between gap-3 h-16 px-4 shrink-0 border-b border-slate-800 bg-[#06132a]/95 backdrop-blur z-20">
-          <BanaLogo size="sm" />
-          <div className="flex items-center gap-3">
+        <header className="lg:hidden flex items-center justify-between gap-2 h-16 px-3 shrink-0 border-b border-slate-800 bg-[#06132a]/95 backdrop-blur z-20">
+          {/* Width-sized so the wordmark is large on phones but capped (max-w)
+              so it never pushes the controls off-screen. */}
+          <div className="w-[300px] max-w-[66%] min-w-0">
+            <BanaLogo size="fill" />
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
             <LanguageSwitcher />
             <ThemeToggle />
             <Notifications />
