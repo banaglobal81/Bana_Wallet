@@ -25,7 +25,8 @@ import {
   Bell,
   BookMarked,
   Plus,
-  Trash2
+  Trash2,
+  Activity
 } from 'lucide-react';
 
 interface SettingsProps {
@@ -184,33 +185,6 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
   return (
     <div className="flex-1 min-h-full bg-[#020617] text-slate-100 p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
 
-      {/* Breadcrumbs Navigation List */}
-      <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-mono text-slate-400 bg-slate-900 p-3 rounded-2xl border border-slate-800 select-none">
-        <span className="text-indigo-400 font-bold">{t('breadcrumbRegistry')}</span>
-        <a
-          href="#portfolio"
-          onClick={(e) => { e.preventDefault(); handleNav('PORTFOLIO_DASHBOARD', 'push_back'); }}
-          className="hover:text-slate-200 hover:underline transition-all cursor-pointer font-semibold"
-        >
-          {t('breadcrumbPortfolio')}
-        </a>
-        <span>/</span>
-        <a
-          href="#swap"
-          onClick={(e) => { e.preventDefault(); handleNav('SWAP_INTERFACE', 'push'); }}
-          className="hover:text-slate-200 hover:underline transition-all cursor-pointer font-semibold"
-        >
-          {t('breadcrumbSwap')}
-        </a>
-        <span>/</span>
-        <a
-          href="#activity"
-          onClick={(e) => { e.preventDefault(); handleNav('ACTIVITY_HISTORY', 'push'); }}
-          className="hover:text-slate-200 hover:underline transition-all cursor-pointer font-semibold"
-        >
-          {t('breadcrumbActivity')}
-        </a>
-      </nav>
 
       {/* Primary Page Header */}
       <header className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center pb-3 border-b border-slate-800">
@@ -223,8 +197,17 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
           </p>
         </div>
 
-        <div className="self-start sm:self-auto flex items-center gap-1 text-[11px] font-mono font-bold bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-xl text-indigo-400 uppercase tracking-widest">
-          {t('clientBadge')}
+        <div className="self-start sm:self-auto flex items-center gap-2">
+          {/* Activity moved here from the mobile bottom bar — tap to view history. */}
+          <button
+            onClick={() => handleNav('ACTIVITY_HISTORY', 'push')}
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 hover:bg-indigo-500/20 hover:text-white text-xs font-bold transition-colors cursor-pointer"
+          >
+            <Activity className="h-4 w-4" /> {t('breadcrumbActivity')}
+          </button>
+          <div className="flex items-center gap-1 text-[11px] font-mono font-bold bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-xl text-indigo-400 uppercase tracking-widest">
+            {t('clientBadge')}
+          </div>
         </div>
       </header>
 

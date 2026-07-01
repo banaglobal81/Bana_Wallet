@@ -2,11 +2,13 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { SlidersHorizontal, ShieldCheck, Zap, Wrench, Gauge, UserPlus, AtSign, Check, Loader2 } from 'lucide-react';
+import { SlidersHorizontal, ShieldCheck, Zap, Wrench, Gauge, UserPlus, AtSign, Check, Loader2, Users, ArrowUpRight } from 'lucide-react';
+import { Link } from '@/i18n/navigation';
 import { getPlatformPolicy, setPlatformPolicy, type PlatformPolicy } from '@/utils/adminApi';
 
 export default function AdminSettingsPage() {
   const t = useTranslations('adminSettings');
+  const nav = useTranslations('nav');
   const [policy, setPolicy] = useState<PlatformPolicy | null>(null);
   const [threshold, setThreshold] = useState('');
   const [dailyLimit, setDailyLimit] = useState('');
@@ -66,11 +68,26 @@ export default function AdminSettingsPage() {
           </h1>
           <p className="text-xs sm:text-sm text-[#8c90a0] mt-1 font-mono">{t('pageSubtitle')}</p>
         </div>
-        {saved && (
-          <span className="self-start inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold">
-            <Check className="h-4 w-4" /> {t('saved')}
-          </span>
-        )}
+        <div className="self-start flex flex-wrap items-center gap-2">
+          {/* Withdrawals + Users moved here from the mobile bottom bar. */}
+          <Link
+            href="/admin/withdrawals"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#112643]/70 border border-[#1E3559] text-[#afc6ff] hover:text-white hover:bg-[#1e3459] text-sm font-bold transition-colors"
+          >
+            <ArrowUpRight className="h-4 w-4" /> {nav('withdrawals')}
+          </Link>
+          <Link
+            href="/admin/users"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#112643]/70 border border-[#1E3559] text-[#afc6ff] hover:text-white hover:bg-[#1e3459] text-sm font-bold transition-colors"
+          >
+            <Users className="h-4 w-4" /> {nav('users')}
+          </Link>
+          {saved && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold">
+              <Check className="h-4 w-4" /> {t('saved')}
+            </span>
+          )}
+        </div>
       </header>
 
       {error && <div className="px-4 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm">{error}</div>}

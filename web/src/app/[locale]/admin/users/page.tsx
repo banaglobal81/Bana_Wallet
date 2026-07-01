@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { Users, Search, ShieldCheck, KeyRound, Copy, Check, Loader2, RefreshCw, Wallet as WalletIcon, Ban, Unlock, X } from 'lucide-react';
+import { Users, Search, ShieldCheck, KeyRound, Copy, Check, Loader2, RefreshCw, Wallet as WalletIcon, Ban, Unlock, X, ArrowLeft } from 'lucide-react';
+import { Link } from '@/i18n/navigation';
 import {
   listUsers, setUserRole, createUserResetLink, setUserDisabled, getUserWallet,
   type AdminUser, type AdminUserWallet,
@@ -11,6 +12,7 @@ import { copyToClipboard } from '@/utils/clipboard';
 
 export default function AdminUsersPage() {
   const t = useTranslations('adminUsers');
+  const nav = useTranslations('nav');
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
@@ -102,6 +104,13 @@ export default function AdminUsersPage() {
 
   return (
     <div className="flex-1 min-h-full bg-[#06132a] text-[#d8e2ff] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
+      {/* Back to Settings — this page is opened from the Settings page. */}
+      <Link
+        href="/admin/settings"
+        className="self-start flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#112643]/70 border border-[#1E3559] text-[#afc6ff] hover:text-white hover:bg-[#1e3459] text-sm font-bold transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" /> {nav('settings')}
+      </Link>
       {/* Header */}
       <header className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center pb-2 border-b border-[#1E3559]/40">
         <div>

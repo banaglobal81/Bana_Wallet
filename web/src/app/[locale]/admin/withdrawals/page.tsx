@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowUpRight, RefreshCw, Check, X, Loader2, ShieldAlert } from 'lucide-react';
+import { ArrowUpRight, RefreshCw, Check, X, Loader2, ShieldAlert, ArrowLeft } from 'lucide-react';
+import { Link } from '@/i18n/navigation';
 import {
   listWithdrawals, approveWithdrawal, rejectWithdrawal,
   type WithdrawalRequest, type WithdrawalStatus,
@@ -17,6 +18,7 @@ const STATUS_STYLE: Record<WithdrawalStatus, string> = {
 
 export default function AdminWithdrawalsPage() {
   const t = useTranslations('adminWithdrawals');
+  const nav = useTranslations('nav');
   const [items, setItems] = useState<WithdrawalRequest[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -71,6 +73,13 @@ export default function AdminWithdrawalsPage() {
 
   return (
     <div className="flex-1 min-h-full bg-[#06132a] text-[#d8e2ff] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
+      {/* Back to Settings — this page is opened from the Settings page. */}
+      <Link
+        href="/admin/settings"
+        className="self-start flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#112643]/70 border border-[#1E3559] text-[#afc6ff] hover:text-white hover:bg-[#1e3459] text-sm font-bold transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" /> {nav('settings')}
+      </Link>
       <header className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center pb-2 border-b border-[#1E3559]/40">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">

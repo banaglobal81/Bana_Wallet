@@ -17,7 +17,8 @@ import {
   Cpu, 
   RefreshCw,
   ExternalLink,
-  Lock
+  Lock,
+  ArrowLeft
 } from 'lucide-react';
 
 interface ActivityHistoryProps {
@@ -163,33 +164,13 @@ export default function ActivityHistory({ activities, settings, onNavigate }: Ac
   return (
     <div className="flex-1 min-h-full bg-[#020617] text-slate-100 p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
 
-      {/* Safe Breadcrumbs Navigation List (Saves xpath lookups additionally!) */}
-      <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-mono text-slate-400 bg-slate-900 p-3 rounded-2xl border border-slate-800 select-none">
-        <span className="text-indigo-400 font-bold">{t('breadcrumbRegistry')}</span>
-        <a
-          href="#portfolio"
-          onClick={(e) => { e.preventDefault(); handleNav('PORTFOLIO_DASHBOARD', 'push_back'); }}
-          className="hover:text-slate-200 hover:underline transition-all cursor-pointer font-semibold"
-        >
-          {t('breadcrumbPortfolio')}
-        </a>
-        <span>/</span>
-        <a
-          href="#swap"
-          onClick={(e) => { e.preventDefault(); handleNav('SWAP_INTERFACE', 'push'); }}
-          className="hover:text-slate-200 hover:underline transition-all cursor-pointer font-semibold"
-        >
-          {t('breadcrumbSwap')}
-        </a>
-        <span>/</span>
-        <a
-          href="#settings"
-          onClick={(e) => { e.preventDefault(); handleNav('SETTINGS_INTERFACE', 'push'); }}
-          className="hover:text-slate-200 hover:underline transition-all cursor-pointer font-semibold"
-        >
-          {t('breadcrumbSettings')}
-        </a>
-      </nav>
+      {/* Back to Settings — Activity is opened from the Settings page. */}
+      <button
+        onClick={() => handleNav('SETTINGS_INTERFACE', 'push_back')}
+        className="self-start flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 text-sm font-semibold transition-colors cursor-pointer"
+      >
+        <ArrowLeft className="h-4 w-4" /> {t('breadcrumbSettings')}
+      </button>
 
       {/* Main Page Header */}
       <header className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center pb-3 border-b border-slate-800">

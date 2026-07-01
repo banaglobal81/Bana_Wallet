@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Wallet, ArrowLeftRight, LayoutDashboard, Activity, Settings as SettingsIcon, Coins } from 'lucide-react';
+import { Wallet, ArrowLeftRight, LayoutDashboard, Settings as SettingsIcon, Coins } from 'lucide-react';
 import type { Screen } from '../types';
 
 interface BottomNavProps {
@@ -12,12 +12,11 @@ interface BottomNavProps {
 // Mobile-only bottom navigation bar (replaces the hamburger drawer on small
 // screens). Dashboard sits in the centre. Uses the app's existing colors —
 // dark surface + indigo active state, matching the desktop sidebar.
-const ITEMS: { screen: Screen; icon: typeof Wallet; navKey: 'wallet' | 'swap' | 'portfolio' | 'staking' | 'activity' | 'settings' }[] = [
+const ITEMS: { screen: Screen; icon: typeof Wallet; navKey: 'wallet' | 'swap' | 'portfolio' | 'staking' | 'settings' }[] = [
   { screen: 'WALLET_INTERFACE', icon: Wallet, navKey: 'wallet' },
   { screen: 'SWAP_INTERFACE', icon: ArrowLeftRight, navKey: 'swap' },
   { screen: 'PORTFOLIO_DASHBOARD', icon: LayoutDashboard, navKey: 'portfolio' },
   { screen: 'STAKING_INTERFACE', icon: Coins, navKey: 'staking' },
-  { screen: 'ACTIVITY_HISTORY', icon: Activity, navKey: 'activity' },
   { screen: 'SETTINGS_INTERFACE', icon: SettingsIcon, navKey: 'settings' },
 ];
 

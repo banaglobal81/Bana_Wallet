@@ -54,10 +54,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Mobile-only top bar: brand + chrome (navigation is the bottom bar) */}
         <header className="lg:hidden flex items-center justify-between gap-2 h-16 px-3 shrink-0 border-b border-slate-800 bg-[#06132a]/95 backdrop-blur z-20">
           {/* Width-sized so the wordmark is large on phones but capped (max-w)
-              so it never pushes the controls off-screen. */}
-          <div className="w-[300px] max-w-[66%] min-w-0">
+              so it never pushes the controls off-screen. Tap → home. */}
+          <button
+            onClick={() => navigate('PORTFOLIO_DASHBOARD')}
+            aria-label="Home"
+            className="w-[300px] max-w-[66%] min-w-0 flex cursor-pointer"
+          >
             <BanaLogo size="fill" />
-          </div>
+          </button>
           <div className="flex items-center gap-1.5 shrink-0">
             <LanguageSwitcher />
             <ThemeToggle />

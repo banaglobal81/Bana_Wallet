@@ -104,7 +104,9 @@ export default function Sidebar({
             px-5 padding via -mx-3) so the long wordmark reads as large as fits. */}
         <div className="flex flex-col gap-4">
           <div className="flex justify-center">
-            <BanaLogo size="fill" />
+            <button onClick={() => navigateTo('PORTFOLIO_DASHBOARD')} aria-label="Home" className="flex cursor-pointer">
+              <BanaLogo size="fill" />
+            </button>
           </div>
 
         {/* Navigation Elements */}

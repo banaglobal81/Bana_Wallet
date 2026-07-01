@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
 import BanaLogo from '@/components/BanaLogo';
 import {
-  LayoutDashboard, ArrowUpRight, Coins, Users, SlidersHorizontal, Building2, ArrowLeft, X, Sprout, CircleDollarSign,
+  LayoutDashboard, ArrowUpRight, Coins, Users, SlidersHorizontal, Building2, X, Sprout, CircleDollarSign,
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -19,7 +19,6 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }: Admi
   const pathname = usePathname();
   const { data: session } = useSession();
   const nav = useTranslations('nav');
-  const common = useTranslations('common');
   const t = useTranslations('admin');
   const sb = useTranslations('sidebar');
 
@@ -61,7 +60,9 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }: Admi
         {/* Brand + ADMIN badge */}
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-3 items-center">
-            <BanaLogo size="fill" />
+            <Link href="/admin/dashboard" aria-label="Home" className="flex">
+              <BanaLogo size="fill" />
+            </Link>
             <span className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 font-bold text-[11px] font-mono tracking-wider">
               <Building2 className="h-3.5 w-3.5" /> {t('badge')}
             </span>
@@ -90,17 +91,8 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }: Admi
           </nav>
         </div>
 
-        {/* Bottom: back to wallet + signed-in account */}
+        {/* Bottom: signed-in account */}
         <div className="flex flex-col gap-4">
-          <Link
-            href="/portfolio"
-            onClick={onCloseMobile}
-            className="flex items-center gap-4 px-4 py-3 rounded-xl font-sans text-sm font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 border border-transparent transition-all"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            {common('backToWallet')}
-          </Link>
-
           {session?.user?.email && (
             <div className="w-full py-3 px-3 rounded-xl bg-slate-800/40 border border-slate-700/50 flex flex-col items-center select-none">
               <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{sb('account')}</span>

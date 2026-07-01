@@ -2,10 +2,9 @@
 
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
-import { Download, Upload, Banknote } from 'lucide-react';
+import { Download, Upload } from 'lucide-react';
 
-// Left sub-navigation for the deposit/withdraw flows. Crypto routes are live;
-// fiat is shown as "Soon" (disabled) to set expectations honestly.
+// Left sub-navigation for the deposit/withdraw flows (crypto only).
 export default function FlowNav() {
   const t = useTranslations('walletFlow');
   const pathname = usePathname();
@@ -13,8 +12,6 @@ export default function FlowNav() {
   const items = [
     { key: 'depositCrypto', href: '/deposit', icon: Download, enabled: true },
     { key: 'withdrawCrypto', href: '/withdraw', icon: Upload, enabled: true },
-    { key: 'depositFiat', href: '#', icon: Banknote, enabled: false },
-    { key: 'withdrawFiat', href: '#', icon: Banknote, enabled: false },
   ] as const;
 
   return (
