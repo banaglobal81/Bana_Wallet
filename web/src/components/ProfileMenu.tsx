@@ -148,7 +148,16 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
             {/* Divider + Log out */}
             <div className="my-1 border-t border-slate-800" />
             <button
-              onClick={() => signOut({ redirectTo: `/${locale}/login` })}
+              onClick={async () => {
+                // Clear the session, then redirect client-side with a relative
+                // path. We do NOT use signOut({ redirectTo }) because behind a
+                // proxy (Railway) Auth.js resolves the base URL from its internal
+                // host and sends the browser to localhost:8080 (its internal
+                // port), which is unreachable. A client-side relative redirect
+                // always uses the real origin the user is on.
+                await signOut({ redirect: false });
+                window.location.assign(`/${locale}/login`);
+              }}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
             >
               <LogOut className="h-4 w-4" /> {common('logOut')}
