@@ -94,8 +94,11 @@ html.light { color-scheme: light; }
 .light .bg-\[\#06132a\]\/80,
 .light .bg-\[\#06132a\]\/95,
 .light .bg-\[\#020617\],
-.light .bg-slate-950 { background-color: #eef2f8; }
-.light .bg-\[\#0a0f1e\]\/95 { background-color: #e6ecf5; }
+.light .bg-slate-950,
+/* Admin chrome (#0a0f1e) → same light shade as the user chrome (#06132a) so the
+   admin top bar / nav match the user side exactly in light mode. */
+.light .bg-\[\#0a0f1e\]\/95,
+.light .bg-\[\#0a0f1e\]\/60 { background-color: #eef2f8; }
 
 /* --- Surfaces: cards / panels / dropdowns (white) --- */
 .light .bg-\[\#112643\],
@@ -135,12 +138,26 @@ html.light { color-scheme: light; }
 .light .hover\:bg-slate-700:hover,
 .light .bg-slate-700 { background-color: #dbe2ec; }
 .light .hover\:bg-\[\#1e3459\]:hover { background-color: #d8e0ee; }
+/* Dark hover backgrounds (e.g. dropdown-item hover) → light hover tint so the
+   dark text stays readable on hover instead of going dark-on-dark. */
+.light .hover\:bg-\[\#112643\]:hover,
+.light .hover\:bg-\[\#112643\]\/40:hover,
+.light .hover\:bg-\[\#112643\]\/60:hover,
+.light .hover\:bg-\[\#020d24\]\/40:hover { background-color: #e3e9f3; }
 
 /* --- Accent tints (kept light, not solid) --- */
 .light .bg-\[\#2E7DFF\]\/10,
+.light .bg-\[\#2E7DFF\]\/20,
 .light .bg-\[\#2E7DFF\]\/30 { background-color: #dce8ff; }
+.light .bg-\[\#528dff\]\/5,
 .light .bg-\[\#528dff\]\/10,
 .light .bg-\[\#528dff\]\/15 { background-color: #e5edff; }
+
+/* --- Opacity variants missed on earlier passes (stayed dark: e.g. the admin
+   top header bg-[#0a0f1e]/60, and panels using bg-[#1E3559]). --- */
+.light .bg-\[\#020d24\]\/70 { background-color: #f1f5fb; }
+.light .bg-\[\#1E3559\],
+.light .bg-\[\#1E3559\]\/60 { background-color: #e3e9f3; }
 
 /* --- Borders --- */
 .light .border-\[\#1E3559\],
@@ -168,6 +185,19 @@ html.light { color-scheme: light; }
 .light .text-slate-200 { color: #1f2a3d; }
 .light .text-slate-300 { color: #334155; }
 .light .text-slate-400 { color: #5b6573; }
+
+/* --- Second-pass remaps: colors that were missed on the first pass and stayed
+   dark in light mode (e.g. the coin-select dropdown), causing invisible text. --- */
+/* Panel / card / dropdown backgrounds → white/light surfaces */
+.light .bg-\[\#0a1b33\],
+.light .bg-\[\#0a1b33\]\/70 { background-color: #ffffff; }
+.light .bg-\[\#16325c\] { background-color: #e3e9f3; }
+/* Muted text → readable dark-gray */
+.light .text-\[\#3a5278\],
+.light .text-\[\#56607a\] { color: #5b6576; }
+.light .border-\[\#3a5278\] { border-color: #d3ddec; }
+/* Error text was a light pink (invisible on white) → readable red */
+.light .text-\[\#ffb4ab\] { color: #c0362c; }
 
 /* Headings use text-white on dark surfaces → flip to dark in light mode... */
 .light .text-white { color: #15233f; }
