@@ -61,7 +61,11 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }: Admi
         {/* Brand + ADMIN badge */}
         <div className="flex flex-col gap-7">
           <div className="flex flex-col gap-3 items-start">
-            <BanaLogo />
+            {/* Logo fills the sidebar width (bleeds into px-5 via -mx-3); self-
+                stretch overrides the parent's items-start so it can span full. */}
+            <div className="self-stretch -mx-3">
+              <BanaLogo size="fill" />
+            </div>
             <span className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 font-bold text-[11px] font-mono tracking-wider">
               <Building2 className="h-3.5 w-3.5" /> {t('badge')}
             </span>

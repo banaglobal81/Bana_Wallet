@@ -11,20 +11,26 @@ const LOGO_SRC = 'https://cdn.banawallet.com/brand/BANA_WALLET_oneline_transpare
 
 interface BanaLogoProps {
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  // sm/md/lg size by a fixed height. `fill` spans the full width of its
+  // container (used in the narrow sidebars, where a long wordmark reads best
+  // when it fills the available width rather than sitting at a fixed height).
+  size?: 'sm' | 'md' | 'lg' | 'fill';
 }
 
 export default function BanaLogo({ className = '', size = 'md' }: BanaLogoProps) {
-  // Heights match the old logo's rendered heights (old widths ÷ 8.88 aspect):
-  // sm 150→17px, md 205→23px, lg 380→43px.
-  const h = { sm: 'h-[17px]', md: 'h-[23px]', lg: 'h-[43px]' }[size];
+  // lg (login hero) is a large ~96px (~577px wide) so it reads as a prominent
+  // hero; sm/md scale down. `fill` uses full container width with auto height.
+  const dims =
+    size === 'fill'
+      ? 'w-full h-auto'
+      : `${{ sm: 'h-[28px]', md: 'h-[40px]', lg: 'h-[96px]' }[size]} w-auto`;
   return (
     <img
       src={LOGO_SRC}
       alt="BANA Wallet"
       width={2649}
       height={441}
-      className={`${h} w-auto max-w-full object-contain select-none pointer-events-none ${className}`}
+      className={`${dims} max-w-full object-contain select-none pointer-events-none ${className}`}
       decoding="async"
       referrerPolicy="no-referrer"
     />

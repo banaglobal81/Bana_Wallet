@@ -100,9 +100,12 @@ export default function Sidebar({
           <X className="h-5 w-5" />
         </button>
 
-        {/* Top Brand Block */}
+        {/* Top Brand Block — logo fills the sidebar width (bleeds into the
+            px-5 padding via -mx-3) so the long wordmark reads as large as fits. */}
         <div className="flex flex-col gap-8">
-          <BanaLogo />
+          <div className="-mx-3">
+            <BanaLogo size="fill" />
+          </div>
 
         {/* Navigation Elements */}
         <nav className="flex flex-col gap-2.5 mt-4">
