@@ -2,28 +2,34 @@
 
 import React from 'react';
 
+// The logo is the chrome "BANA" wordmark — a transparent PNG served from the CDN.
+// Transparent background, so it sits cleanly on both dark and light themes.
+// Sized by HEIGHT; intrinsic width/height reserve the box up front (no reflow).
+const LOGO_SRC = 'https://cdn.banawallet.com/brand/BANA_mark.png?v=1';
+
 interface BanaLogoProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'fill';
 }
 
-// The logo is the wordmark "BANA WALLET" rendered as text with a metallic silver
-// gradient (.bana-logo-text in globals.css). Under .light a darker steel variant
-// kicks in so it stays readable on light backgrounds.
 export default function BanaLogo({ className = '', size = 'md' }: BanaLogoProps) {
-  const sizeClass = {
-    sm: 'text-lg',
-    md: 'text-2xl',
-    lg: 'text-4xl sm:text-5xl',
-    // Sidebars (desktop) want it large; the mobile top bars use fill too, so it
-    // scales down on small screens.
-    fill: 'text-xl lg:text-3xl',
+  // fill is used in the sidebars (desktop) + mobile top bars — a touch larger on
+  // desktop. sm/md are compact, lg is the login hero.
+  const h = {
+    sm: 'h-[26px]',
+    md: 'h-[34px]',
+    lg: 'h-[60px]',
+    fill: 'h-[40px] lg:h-[46px]',
   }[size];
   return (
-    <span
-      className={`bana-logo-text font-extrabold tracking-[0.06em] whitespace-nowrap select-none ${sizeClass} ${className}`}
-    >
-      BANA WALLET
-    </span>
+    <img
+      src={LOGO_SRC}
+      alt="BANA"
+      width={1026}
+      height={227}
+      className={`${h} w-auto max-w-full object-contain select-none pointer-events-none ${className}`}
+      decoding="async"
+      referrerPolicy="no-referrer"
+    />
   );
 }

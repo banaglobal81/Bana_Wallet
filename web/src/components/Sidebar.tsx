@@ -103,7 +103,7 @@ export default function Sidebar({
         {/* Top Brand Block — logo fills the sidebar width (bleeds into the
             px-5 padding via -mx-3) so the long wordmark reads as large as fits. */}
         <div className="flex flex-col gap-4">
-          <div className="-mx-1">
+          <div className="flex justify-center">
             <BanaLogo size="fill" />
           </div>
 
