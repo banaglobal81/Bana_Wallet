@@ -1,0 +1,13 @@
+name = "bana-staking-worker"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+# Run the staking accrual once a day at 00:00 UTC.
+# (Accrual is idempotent, so you can run it more often safely if you prefer.)
+[triggers]
+crons = ["0 0 * * *"]
+
+# Public, non-secret config. Set WEB_URL to your deployed web app.
+# The CRON_SECRET is a SECRET — set it with:  wrangler secret put CRON_SECRET
+[vars]
+WEB_URL = "https://your-web-app-url"

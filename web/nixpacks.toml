@@ -1,0 +1,9 @@
+# Railway/Nixpacks build config for the web app.
+#
+# Use `npm install` instead of the default `npm ci` so the build is resilient to
+# any lockfile / npm-version difference between local and the Railway builder
+# (local uses npm 11; the builder may differ). `npm install` reconciles
+# package.json + package-lock.json instead of hard-failing, and still runs the
+# install scripts (Prisma engine, sharp) + the `postinstall: prisma generate`.
+[phases.install]
+cmds = ["npm install --no-audit --no-fund"]

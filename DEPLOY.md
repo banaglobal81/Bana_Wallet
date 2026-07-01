@@ -2,14 +2,24 @@
 
 This app is a single **Next.js 15** process backed by **PostgreSQL** (Prisma 7).
 The repo is deploy-ready: production build passes, migrations are committed, and
-`railway.json` wires the migrate + start steps. The deployer only needs to create
+`web/railway.json` wires the migrate + start steps. The deployer only needs to create
 the Railway services and set the environment variables.
+
+## Repo layout (monorepo)
+```
+bana-self-custody-system/
+├── web/      ← the Next.js app (build/deploy this)  ← all app code + .env live here
+└── worker/   ← Cloudflare Worker (daily staking-accrual cron) — deployed separately
+```
+**On Railway, set the service's Root Directory to `web/`** so it builds the app.
+The `.env` file lives in **`web/.env`** (not the repo root).
 
 ---
 
 ## 1. Create the services
 1. New Railway project → **Deploy from GitHub repo** → select this repo, branch `main`.
-2. In the same project: **+ New → Database → Add PostgreSQL**.
+2. **Set the service Root Directory to `web/`** (Settings → Root Directory).
+3. In the same project: **+ New → Database → Add PostgreSQL**.
 
 ## 2. Connect the database
 On the **app service → Variables**, set:
