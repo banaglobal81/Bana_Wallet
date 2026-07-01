@@ -10,6 +10,21 @@ import { newNiaUserId } from '@/lib/nia/identity';
 // so login timing can't be used to enumerate which emails have accounts.
 const DUMMY_HASH = '$2b$12$5VKD3CVrMoBLIAnNfv7KcOro7AwNR3BPrMrj.ADevQHws895P4qEK';
 
+// Behind Railway's proxy, Auth.js can't derive its public URL from the request
+// and falls back to the internal http://localhost:8080 (Railway's container
+// port). That wrong base URL is then sent to Google as the OAuth callback and
+// used for post-logout redirects, producing ERR_CONNECTION_REFUSED. Railway
+// injects the real public domain as RAILWAY_PUBLIC_DOMAIN, so use it to set
+// AUTH_URL before NextAuth initializes (also override a stale localhost value).
+// Locally RAILWAY_PUBLIC_DOMAIN is undefined, so nothing changes — trustHost
+// keeps deriving http://localhost:3000 from the request as before.
+const railwayUrl = process.env.RAILWAY_PUBLIC_DOMAIN
+  ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+  : undefined;
+if (railwayUrl && (!process.env.AUTH_URL || process.env.AUTH_URL.includes('localhost'))) {
+  process.env.AUTH_URL = railwayUrl;
+}
+
 export const { auth, handlers, signIn, signOut } = NextAuth({
   ...authConfig,
   providers: [
