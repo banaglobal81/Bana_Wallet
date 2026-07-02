@@ -24,6 +24,11 @@ export function accruedInterest(
   return new Decimal(principal || '0').times(new Decimal(dailyRatePct || '0').div(100)).times(days);
 }
 
+/** Interest earned for a single day: principal × (dailyRate%/100). */
+export function dailyInterest(principal: string, dailyRatePct: string): Decimal {
+  return new Decimal(principal || '0').times(new Decimal(dailyRatePct || '0').div(100));
+}
+
 /** Total interest over the full term (what the user earns at maturity). */
 export function fullInterest(principal: string, dailyRatePct: string, termDays: number): Decimal {
   return new Decimal(principal || '0').times(new Decimal(dailyRatePct || '0').div(100)).times(termDays);

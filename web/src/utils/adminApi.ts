@@ -216,6 +216,16 @@ export interface AdminStakePosition {
   maturityAt: string;
   status: 'ACTIVE' | 'MATURED' | 'PAID';
   accruedInterest: string;
+  paidInterest: string;
+  daysPaid: number;
+}
+
+export interface AdminStakingStat {
+  coin: string;
+  activePrincipal: string;
+  totalPaid: string;
+  activeCount: number;
+  totalCount: number;
 }
 
 export interface StakingProductInput {
@@ -258,6 +268,12 @@ export async function listStakingPositions(): Promise<AdminStakePosition[]> {
   return Array.isArray(r.data) ? r.data : [];
 }
 
+/** Per-coin staking liability overview (active principal + interest paid to date). */
+export async function getStakingStats(): Promise<AdminStakingStat[]> {
+  const r = await getJson<{ ok: boolean; data: AdminStakingStat[] }>('/api/admin/staking/stats');
+  return Array.isArray(r.data) ? r.data : [];
+}
+
 // ---- Managed coins (custom EVM tokens) ----
 
 export interface CoinNetwork {
@@ -292,7 +308,10 @@ export async function createCoin(input: ManagedCoinInput): Promise<void> {
   await postJson('/api/admin/coins', input);
 }
 
-export async function updateCoin(id: string, patch: { visible?: boolean; name?: string }): Promise<void> {
+export async function updateCoin(
+  id: string,
+  patch: { visible?: boolean; name?: string; networks?: CoinNetwork[] },
+): Promise<void> {
   const res = await fetch(`/api/admin/coins/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },

@@ -32,6 +32,14 @@ export interface StakePosition {
   accruedInterest: string;
   fullInterest: string;
   projectedTotal: string;
+  // Real amounts credited by the daily worker (the rewards ledger).
+  paidInterest: string;
+  daysPaid: number;
+}
+
+export interface StakingRewards {
+  totalByCoin: Record<string, string>;
+  recent: Array<{ coin: string; amount: string; dayIndex: number; paidAt: string; positionId: string }>;
 }
 
 async function getJson<T>(path: string): Promise<T> {
@@ -51,6 +59,12 @@ export async function getStakingProducts(): Promise<StakingProduct[]> {
 export async function getStakePositions(): Promise<StakePosition[]> {
   const r = await getJson<{ ok: boolean; data: StakePosition[] }>('/api/staking/positions');
   return Array.isArray(r.data) ? r.data : [];
+}
+
+/** Real staking-interest rewards actually credited by the daily worker. */
+export async function getStakingRewards(): Promise<StakingRewards> {
+  const r = await getJson<{ ok: boolean; data: StakingRewards }>('/api/staking/rewards');
+  return r.data ?? { totalByCoin: {}, recent: [] };
 }
 
 /** Lock funds into a staking product. Throws with the server message on failure. */

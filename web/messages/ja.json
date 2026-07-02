@@ -778,6 +778,8 @@
     "show": "表示",
     "delete": "削除",
     "uploadLogo": "ロゴをアップロード",
-    "logoHint": "PNG/SVG、最大1MB。任意。"
+    "logoHint": "PNG/SVG、最大1MB。任意。",
+    "edit": "編集",
+    "save": "変更を保存"
   }
 }

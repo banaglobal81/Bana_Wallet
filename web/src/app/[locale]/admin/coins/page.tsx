@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { Coins, Plus, Loader2, Check, Trash2, Eye, EyeOff, X, Upload, ImageIcon } from 'lucide-react';
+import { Coins, Plus, Loader2, Check, Trash2, Eye, EyeOff, X, Upload, ImageIcon, Pencil } from 'lucide-react';
 import CoinAvatar from '@/components/wallet/CoinAvatar';
 import {
   listCoins, createCoin, updateCoin, deleteCoin, uploadImage,
@@ -26,6 +26,11 @@ export default function AdminCoinsPage() {
   const [logoKey, setLogoKey] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Inline edit (rename + change contract addresses / networks).
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editNets, setEditNets] = useState<NetRow[]>([{ ...EMPTY_NET }]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -56,6 +61,29 @@ export default function AdminCoinsPage() {
         .map((n) => ({ code: n.code.trim().toUpperCase(), contractAddress: n.contractAddress.trim(), decimals: Number(n.decimals) }));
       await createCoin({ symbol: symbol.trim().toUpperCase(), name: name.trim(), networks, logoKey });
       resetForm(); await load();
+    } catch (e) { setError((e as Error).message); }
+    finally { setBusy(false); }
+  };
+
+  const startEdit = (c: ManagedCoin) => {
+    setError(null);
+    setEditId(c.id);
+    setEditName(c.name);
+    setEditNets(
+      c.networks.length
+        ? c.networks.map((n) => ({ code: n.code, contractAddress: n.contractAddress, decimals: String(n.decimals) }))
+        : [{ ...EMPTY_NET }],
+    );
+  };
+  const cancelEdit = () => { setEditId(null); setEditName(''); setEditNets([{ ...EMPTY_NET }]); };
+  const saveEdit = async (id: string) => {
+    setBusy(true); setError(null);
+    try {
+      const networks: CoinNetwork[] = editNets
+        .filter((n) => n.code.trim() || n.contractAddress.trim())
+        .map((n) => ({ code: n.code.trim().toUpperCase(), contractAddress: n.contractAddress.trim(), decimals: Number(n.decimals) }));
+      await updateCoin(id, { name: editName.trim(), networks });
+      cancelEdit(); await load();
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   };
@@ -147,25 +175,51 @@ export default function AdminCoinsPage() {
       ) : (
         <div className="flex flex-col gap-3">
           {coins.map((c) => (
-            <div key={c.id} className="p-4 sm:p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col sm:flex-row sm:items-center gap-4">
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <CoinAvatar symbol={c.symbol} size={34} />
-                <div className="min-w-0">
-                  <div className="font-bold text-white">{c.symbol} <span className="text-[11px] text-[#8c90a0] font-normal">· {c.name}</span></div>
-                  <div className="flex flex-wrap gap-1.5 mt-1">
-                    {c.networks.map((n) => (
-                      <span key={n.code} className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-[#020d24]/60 border border-[#1E3559] text-[#afc6ff]" title={n.contractAddress}>
-                        {n.code} · {n.contractAddress.slice(0, 6)}…{n.contractAddress.slice(-4)} · {n.decimals}d
-                      </span>
-                    ))}
+            <div key={c.id} className="p-4 sm:p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <CoinAvatar symbol={c.symbol} size={34} />
+                  <div className="min-w-0">
+                    <div className="font-bold text-white">{c.symbol} <span className="text-[11px] text-[#8c90a0] font-normal">· {c.name}</span></div>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {c.networks.map((n) => (
+                        <span key={n.code} className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-[#020d24]/60 border border-[#1E3559] text-[#afc6ff]" title={n.contractAddress}>
+                          {n.code} · {n.contractAddress.slice(0, 6)}…{n.contractAddress.slice(-4)} · {n.decimals}d
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${c.visible ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25' : 'bg-slate-500/10 text-slate-400 border-slate-500/25'}`}>{c.visible ? t('visible') : t('hidden')}</span>
+                  <button disabled={busy} onClick={() => (editId === c.id ? cancelEdit() : startEdit(c))} title={t('edit')} className={`p-1.5 rounded-lg border cursor-pointer disabled:opacity-50 ${editId === c.id ? 'border-amber-500/40 bg-amber-500/15 text-amber-300' : 'border-[#1E3559] bg-[#020d24]/50 hover:bg-[#1e3459] text-[#8c90a0] hover:text-white'}`}><Pencil className="h-3.5 w-3.5" /></button>
+                  <button disabled={busy} onClick={() => toggle(c)} title={c.visible ? t('hide') : t('show')} className="p-1.5 rounded-lg border border-[#1E3559] bg-[#020d24]/50 hover:bg-[#1e3459] text-[#8c90a0] hover:text-white cursor-pointer disabled:opacity-50">{c.visible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}</button>
+                  <button disabled={busy} onClick={() => remove(c)} title={t('delete')} className="p-1.5 rounded-lg border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/15 text-rose-400 cursor-pointer disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /></button>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${c.visible ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25' : 'bg-slate-500/10 text-slate-400 border-slate-500/25'}`}>{c.visible ? t('visible') : t('hidden')}</span>
-                <button disabled={busy} onClick={() => toggle(c)} title={c.visible ? t('hide') : t('show')} className="p-1.5 rounded-lg border border-[#1E3559] bg-[#020d24]/50 hover:bg-[#1e3459] text-[#8c90a0] hover:text-white cursor-pointer disabled:opacity-50">{c.visible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}</button>
-                <button disabled={busy} onClick={() => remove(c)} title={t('delete')} className="p-1.5 rounded-lg border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/15 text-rose-400 cursor-pointer disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /></button>
-              </div>
+
+              {editId === c.id && (
+                <div className="flex flex-col gap-3 pt-3 border-t border-[#1E3559]/60">
+                  <label className="flex flex-col gap-1 max-w-xs"><span className="text-[11px] font-mono text-[#8c90a0]">{t('name')}</span><input className={field} value={editName} onChange={(e) => setEditName(e.target.value)} placeholder={t('name')} /></label>
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-mono text-[#8c90a0] uppercase tracking-wider">{t('networks')}</span>
+                    {editNets.map((n, i) => (
+                      <div key={i} className="grid grid-cols-[1fr_2fr_auto_auto] gap-2 items-center">
+                        <input className={field} value={n.code} onChange={(e) => setEditNets(editNets.map((x, j) => j === i ? { ...x, code: e.target.value } : x))} placeholder={t('network')} />
+                        <input className={`${field} font-mono`} value={n.contractAddress} onChange={(e) => setEditNets(editNets.map((x, j) => j === i ? { ...x, contractAddress: e.target.value } : x))} placeholder={t('contractPlaceholder')} />
+                        <input className={`${field} w-20`} value={n.decimals} onChange={(e) => setEditNets(editNets.map((x, j) => j === i ? { ...x, decimals: e.target.value } : x))} placeholder={t('decimals')} title={t('decimals')} />
+                        <button onClick={() => setEditNets(editNets.length > 1 ? editNets.filter((_, j) => j !== i) : editNets)} className="p-2 rounded-lg border border-[#1E3559] bg-[#020d24]/50 hover:bg-rose-500/15 text-[#8c90a0] hover:text-rose-400 cursor-pointer disabled:opacity-40" disabled={editNets.length <= 1}><X className="h-4 w-4" /></button>
+                      </div>
+                    ))}
+                    <button onClick={() => setEditNets([...editNets, { ...EMPTY_NET }])} className="self-start inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#1E3559] bg-[#020d24]/40 hover:bg-[#112643] text-[#8c90a0] hover:text-white text-xs font-bold cursor-pointer"><Plus className="h-3.5 w-3.5" /> {t('addNetwork')}</button>
+                  </div>
+                  <p className="text-[11px] font-mono text-[#8c90a0]">{t('contractHint')}</p>
+                  <div className="flex gap-2">
+                    <button disabled={busy} onClick={() => saveEdit(c.id)} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-bold cursor-pointer">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} {t('save')}</button>
+                    <button disabled={busy} onClick={cancelEdit} className="px-4 py-2.5 rounded-xl bg-[#020d24]/60 hover:bg-[#112643] text-[#8c90a0] hover:text-white text-sm font-bold border border-[#1E3559]/80 cursor-pointer">{t('cancel')}</button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

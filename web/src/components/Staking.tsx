@@ -7,8 +7,8 @@ import { Screen, SystemSettings } from '../types';
 import { Coins, Loader2, Lock, Clock, Check, TrendingUp } from 'lucide-react';
 import CoinAvatar from './wallet/CoinAvatar';
 import {
-  getStakingProducts, getStakePositions, stake,
-  type StakingProduct, type StakePosition,
+  getStakingProducts, getStakePositions, getStakingRewards, stake,
+  type StakingProduct, type StakePosition, type StakingRewards,
 } from '../utils/stakingApi';
 import { getNiaBalance } from '../utils/niaApi';
 import { accruedInterest, msToMaturity, daysElapsed } from '../lib/stakingMath';
@@ -45,6 +45,7 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
   const [products, setProducts] = useState<StakingProduct[]>([]);
   const [positions, setPositions] = useState<StakePosition[]>([]);
   const [balances, setBalances] = useState<Map<string, Decimal>>(new Map());
+  const [rewards, setRewards] = useState<StakingRewards | null>(null);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(() => Date.now());
 
@@ -57,10 +58,11 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
 
   const load = async () => {
     try {
-      const [p, pos, bal] = await Promise.all([
+      const [p, pos, bal, rew] = await Promise.all([
         getStakingProducts(), getStakePositions(), getNiaBalance().catch(() => []),
+        getStakingRewards().catch(() => null),
       ]);
-      setProducts(p); setPositions(pos); setBalances(aggregateBalances(bal));
+      setProducts(p); setPositions(pos); setBalances(aggregateBalances(bal)); setRewards(rew);
     } catch { /* sections show empty state */ }
     finally { setLoading(false); }
   };
@@ -101,7 +103,7 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
   return (
     <div className="flex-1 min-h-full bg-[#06132a] text-[#d8e2ff] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
       <header className="pb-2 border-b border-[#1E3559]/40">
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
+        <h1 data-testid="staking-title" className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
           <Coins className="h-7 w-7 text-[#528dff]" /> {t('pageTitle')}
         </h1>
         <p className="text-xs sm:text-sm text-[#8c90a0] mt-1 font-mono">{t('pageSubtitle')}</p>
@@ -111,6 +113,26 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
         <div className="flex items-center gap-2.5 py-10 justify-center"><Loader2 className="h-5 w-5 text-[#528dff] animate-spin" /><span className="text-sm text-[#8c90a0]">{t('loading')}</span></div>
       ) : (
         <>
+          {/* Rewards earned — real amounts credited by the daily payout worker */}
+          {rewards && Object.entries(rewards.totalByCoin).some(([, a]) => new Decimal(a || '0').gt(0)) && (
+            <section className="flex flex-col gap-2">
+              <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#d8e2ff] flex items-center gap-2"><Coins className="h-4 w-4 text-emerald-400" /> Rewards Earned</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {Object.entries(rewards.totalByCoin)
+                  .filter(([, a]) => new Decimal(a || '0').gt(0))
+                  .map(([coin, amt]) => (
+                    <div key={coin} data-testid="rewards-earned" className="p-4 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex items-center gap-3">
+                      <CoinAvatar symbol={coin} size={30} />
+                      <div className="min-w-0">
+                        <div className="text-emerald-400 font-mono font-bold truncate">+{new Decimal(amt).toSignificantDigits(8).toString()} {coin}</div>
+                        <div className="text-[10px] font-mono text-[#8c90a0] uppercase tracking-wide">Paid to date</div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </section>
+          )}
+
           {/* Earn — available products */}
           <section className="flex flex-col gap-3">
             <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#d8e2ff] flex items-center gap-2"><TrendingUp className="h-4 w-4 text-emerald-400" /> {t('earnTitle')}</h2>
@@ -199,7 +221,7 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
                   const elapsed = daysElapsed(p.startAt, new Date(now), p.termDays);
                   const remainingMs = msToMaturity(p.maturityAt, new Date(now));
                   return (
-                    <div key={p.id} className="p-4 sm:p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div key={p.id} data-testid="staking-position" className="p-4 sm:p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col sm:flex-row sm:items-center gap-4">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <CoinAvatar symbol={p.coin} size={34} />
                         <div className="min-w-0">
@@ -209,7 +231,7 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
                       </div>
                       <div className="flex items-center gap-5 shrink-0">
                         <div className="text-right">
-                          <div className="text-sm font-bold text-emerald-400 font-mono">+{liveAccrued}</div>
+                          <div data-testid="position-accrued" className="text-sm font-bold text-emerald-400 font-mono">+{liveAccrued}</div>
                           <div className="text-[10px] font-mono text-[#8c90a0] uppercase tracking-wide">{t('accrued')}</div>
                         </div>
                         <div className="text-right min-w-[92px]">

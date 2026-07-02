@@ -2,10 +2,10 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { Sprout, Plus, Loader2, Check, X, Power, Trash2, Users } from 'lucide-react';
+import { Sprout, Plus, Loader2, Check, X, Power, Trash2, Users, Lock, Coins } from 'lucide-react';
 import {
-  listStakingProducts, createStakingProduct, updateStakingProduct, deleteStakingProduct, listStakingPositions,
-  type AdminStakingProduct, type AdminStakePosition, type StakingProductInput,
+  listStakingProducts, createStakingProduct, updateStakingProduct, deleteStakingProduct, listStakingPositions, getStakingStats,
+  type AdminStakingProduct, type AdminStakePosition, type StakingProductInput, type AdminStakingStat,
 } from '@/utils/adminApi';
 
 const EMPTY: StakingProductInput = { coin: '', name: '', termDays: 30, dailyRatePct: '', minAmount: '', maxAmount: '', capacity: '' };
@@ -14,6 +14,7 @@ export default function AdminStakingPage() {
   const t = useTranslations('adminStaking');
   const [products, setProducts] = useState<AdminStakingProduct[]>([]);
   const [positions, setPositions] = useState<AdminStakePosition[]>([]);
+  const [stats, setStats] = useState<AdminStakingStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,8 +24,8 @@ export default function AdminStakingPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [p, pos] = await Promise.all([listStakingProducts(), listStakingPositions()]);
-      setProducts(p); setPositions(pos);
+      const [p, pos, st] = await Promise.all([listStakingProducts(), listStakingPositions(), getStakingStats().catch(() => [])]);
+      setProducts(p); setPositions(pos); setStats(st);
     } catch (e) { setError((e as Error).message); }
     finally { setLoading(false); }
   }, []);
@@ -104,6 +105,28 @@ export default function AdminStakingPage() {
         <p className="text-xs font-mono text-[#8c90a0] py-6">{t('loading')}</p>
       ) : (
         <>
+          {/* Liability overview — real active principal + interest paid to date (per coin) */}
+          {stats.length > 0 && (
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {stats.map((s) => (
+                <div key={s.coin} className="p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-3">
+                  <div className="flex items-center gap-2 text-sm font-bold text-white"><Coins className="h-4 w-4 text-[#528dff]" /> {s.coin}</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <div className="text-[10px] font-mono uppercase tracking-wide text-[#8c90a0] flex items-center gap-1"><Lock className="h-3 w-3" /> Active staked</div>
+                      <div className="font-mono font-bold text-white truncate">{s.activePrincipal} {s.coin}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-mono uppercase tracking-wide text-[#8c90a0]">Interest paid</div>
+                      <div className="font-mono font-bold text-emerald-400 truncate">+{s.totalPaid} {s.coin}</div>
+                    </div>
+                  </div>
+                  <div className="text-[10px] font-mono text-[#8c90a0]">{s.activeCount} active · {s.totalCount} total positions</div>
+                </div>
+              ))}
+            </section>
+          )}
+
           {/* Products */}
           <section className="flex flex-col gap-3">
             <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#d8e2ff]">{t('productsTitle')}</h2>
@@ -166,6 +189,7 @@ export default function AdminStakingPage() {
                       <th className="text-left px-4 py-3">{t('product')}</th>
                       <th className="text-right px-4 py-3">{t('principal')}</th>
                       <th className="text-right px-4 py-3">{t('accrued')}</th>
+                      <th className="text-right px-4 py-3">Paid</th>
                       <th className="text-left px-4 py-3">{t('matures')}</th>
                       <th className="text-center px-4 py-3">{t('status')}</th>
                     </tr>
@@ -176,7 +200,8 @@ export default function AdminStakingPage() {
                         <td className="px-4 py-3 font-mono text-[#afc6ff] truncate max-w-[180px]">{p.email}</td>
                         <td className="px-4 py-3">{p.productName}</td>
                         <td className="px-4 py-3 text-right font-mono text-white">{p.principal} {p.coin}</td>
-                        <td className="px-4 py-3 text-right font-mono text-emerald-400">+{p.accruedInterest}</td>
+                        <td className="px-4 py-3 text-right font-mono text-[#8c90a0]">+{p.accruedInterest}</td>
+                        <td className="px-4 py-3 text-right font-mono text-emerald-400 font-bold">+{p.paidInterest}</td>
                         <td className="px-4 py-3 font-mono text-[10px] text-[#8c90a0]">{new Date(p.maturityAt).toLocaleDateString()}</td>
                         <td className="px-4 py-3 text-center"><span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${POS_STYLE[p.status]}`}>{p.status}</span></td>
                       </tr>

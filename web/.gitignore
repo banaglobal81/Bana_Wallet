@@ -18,3 +18,7 @@ out/
 # Local-only credentials notes (never commit)
 *.local.md
 CREDENTIALS.local*
+/playwright-report/
+/test-results/
+/blob-report/
+/playwright/.cache/

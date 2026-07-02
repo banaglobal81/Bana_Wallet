@@ -778,6 +778,8 @@
     "show": "표시",
     "delete": "삭제",
     "uploadLogo": "로고 업로드",
-    "logoHint": "PNG/SVG, 최대 1MB. 선택사항."
+    "logoHint": "PNG/SVG, 최대 1MB. 선택사항.",
+    "edit": "편집",
+    "save": "변경 저장"
   }
 }

@@ -217,12 +217,34 @@ model StakePosition {
   // Interest accrued so far, maintained by the daily worker (also computed live on read).
   accruedInterest String @default("0")
   lastAccrualAt   DateTime?
+  // Real daily payout: total interest credited to the rewards ledger, and how
+  // many days have been paid (idempotency key for the worker).
+  paidInterest String @default("0")
+  daysPaid     Int    @default(0)
   paidAt       DateTime?
   createdAt    DateTime @default(now())
   product      StakingProduct @relation(fields: [productId], references: [id])
+  payouts      StakingPayout[]
 
   @@index([userId, status])
   @@index([status])
+}
+
+// One row per daily interest payout — the real, auditable rewards ledger. The
+// worker credits `principal × dailyRate%` each day; @@unique makes re-runs
+// idempotent (a given day is only ever paid once).
+model StakingPayout {
+  id         String        @id @default(cuid())
+  positionId String
+  position   StakePosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  userId     String
+  coin       String
+  amount     String                                // interest paid for this day (decimal string)
+  dayIndex   Int                                   // 1-based day number within the term
+  paidAt     DateTime      @default(now())
+
+  @@unique([positionId, dayIndex])
+  @@index([userId])
 }
 
 // An admin-managed coin shown in the user coin list. Custom EVM tokens are added

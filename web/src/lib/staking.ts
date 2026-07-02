@@ -13,6 +13,8 @@ type Position = {
   maturityAt: Date;
   status: string;
   productId: string;
+  paidInterest?: string;
+  daysPaid?: number;
 };
 
 /**
@@ -66,5 +68,8 @@ export function serializePosition(p: Position) {
     accruedInterest: accrued.toFixed(),
     fullInterest: full.toFixed(),
     projectedTotal: new Decimal(p.principal).plus(full).toFixed(),
+    // Real amounts credited by the daily worker (the rewards ledger).
+    paidInterest: p.paidInterest ?? '0',
+    daysPaid: p.daysPaid ?? 0,
   };
 }
