@@ -41,7 +41,7 @@ export default function PasskeysSection() {
           <div className="flex flex-col gap-0.5 min-w-0">
             <span className="font-bold text-slate-100 text-sm">Passkeys (Biometrics)</span>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Protect your account and withdrawals with Passkeys and/or security keys, such as Yubikey.
+              Protect your account and withdrawals with Face ID, fingerprint, or your device&apos;s screen lock.
             </p>
           </div>
         </div>

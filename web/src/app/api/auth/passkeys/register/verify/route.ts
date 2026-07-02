@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       expectedChallenge: user.webauthnChallenge,
       expectedOrigin: origin,
       expectedRPID: rpID,
-      requireUserVerification: false,
+      requireUserVerification: true,
     });
   } catch (e) {
     return NextResponse.json({ ok: false, error: (e as Error).message || 'Verification failed' }, { status: 400 });

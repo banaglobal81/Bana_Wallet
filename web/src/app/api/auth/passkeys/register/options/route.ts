@@ -29,7 +29,15 @@ export async function POST(req: Request) {
       id: new Uint8Array(Buffer.from(p.credentialId, 'base64url')),
       type: 'public-key' as const,
     })),
-    authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' },
+    authenticatorSelection: {
+      // Use the device's built-in authenticator (Face ID / Touch ID / Android
+      // fingerprint / Windows Hello) and require the biometric/PIN step, so
+      // registration actually prompts for the fingerprint/face.
+      authenticatorAttachment: 'platform',
+      residentKey: 'preferred',
+      requireResidentKey: false,
+      userVerification: 'required',
+    },
   });
 
   await prisma.user.update({ where: { id: userId }, data: { webauthnChallenge: options.challenge } });
