@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { signIn } from 'next-auth/react';
-import { Mail, Lock, LogIn, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle, Loader2, CheckCircle2, Fingerprint } from 'lucide-react';
+import { getPasskeyAssertion, passkeysSupported } from '@/utils/passkeysApi';
 
 export default function LoginPage() {
   const t = useTranslations('login');
@@ -16,6 +17,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState('');
   const [resetDone, setResetDone] = useState(false);
+  const [passkeyReady, setPasskeyReady] = useState(false);
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+
+  useEffect(() => setPasskeyReady(passkeysSupported()), []);
 
   // Show a success banner when arriving from a completed password reset (?reset=1).
   // Read from window to avoid wrapping the page in a useSearchParams Suspense boundary.
@@ -32,6 +37,26 @@ export default function LoginPage() {
       await signIn('google', { callbackUrl: '/' });
     } catch {
       setNotice(t('googleError'));
+    }
+  };
+
+  // Passwordless biometric login (Face ID / fingerprint).
+  const handlePasskey = async () => {
+    setError(''); setNotice(''); setPasskeyBusy(true);
+    try {
+      const response = await getPasskeyAssertion();
+      const res = await signIn('passkey', { response, redirect: false });
+      if (res?.error) {
+        setError('Passkey sign-in failed — register a passkey first, or use your password.');
+      } else {
+        router.push('/');
+        router.refresh();
+      }
+    } catch (e) {
+      const msg = (e as Error).message || '';
+      if (!/NotAllowed|abort|timed out/i.test(msg)) setError('Passkey sign-in was cancelled or unavailable.');
+    } finally {
+      setPasskeyBusy(false);
     }
   };
 
@@ -156,6 +181,19 @@ export default function LoginPage() {
           </svg>
           {t('continueWithGoogle')}
         </button>
+
+        {/* Passwordless biometric login */}
+        {passkeyReady && (
+          <button
+            type="button"
+            onClick={handlePasskey}
+            disabled={passkeyBusy}
+            className="mt-3 flex items-center justify-center gap-3 w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-sm font-bold transition-colors disabled:opacity-50"
+          >
+            {passkeyBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4" />}
+            Sign in with passkey
+          </button>
+        )}
 
         {/* Coming-soon notice */}
         {notice && (

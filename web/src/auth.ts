@@ -2,11 +2,13 @@ import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import bcrypt from 'bcryptjs';
-import { headers } from 'next/headers';
+import { headers, cookies } from 'next/headers';
+import { verifyAuthenticationResponse } from '@simplewebauthn/server';
 import { authConfig } from './auth.config';
 import { prisma } from '@/lib/db';
 import { newNiaUserId } from '@/lib/nia/identity';
 import { clientIp, geoLookup } from '@/lib/session-device';
+import { rpFromHeaders } from '@/lib/webauthn';
 
 // A valid bcrypt hash used only to equalize response time when no user exists,
 // so login timing can't be used to enumerate which emails have accounts.
@@ -50,6 +52,58 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         // Disabled accounts cannot sign in (admin-locked).
         if (user.disabled) return null;
         return { id: user.id, email: user.email, role: user.role, niaUserId: user.niaUserId };
+      },
+    }),
+    // Passwordless biometric login: verify a WebAuthn assertion against a
+    // registered passkey. The challenge was set in an httpOnly cookie by
+    // /api/auth/passkeys/authenticate/options.
+    Credentials({
+      id: 'passkey',
+      name: 'Passkey',
+      credentials: { response: {} },
+      async authorize(creds) {
+        try {
+          const responseJSON = String((creds as { response?: unknown })?.response ?? '');
+          if (!responseJSON) return null;
+          const response = JSON.parse(responseJSON);
+
+          const jar = await cookies();
+          const challenge = jar.get('webauthn_auth_challenge')?.value;
+          if (!challenge) return null;
+
+          const passkey = await prisma.passkey.findUnique({
+            where: { credentialId: String(response.id) },
+            include: { user: true },
+          });
+          if (!passkey) return null;
+
+          const { rpID, origin } = rpFromHeaders(await headers());
+          const verification = await verifyAuthenticationResponse({
+            response,
+            expectedChallenge: challenge,
+            expectedOrigin: origin,
+            expectedRPID: rpID,
+            requireUserVerification: true,
+            authenticator: {
+              credentialID: new Uint8Array(Buffer.from(passkey.credentialId, 'base64url')),
+              credentialPublicKey: new Uint8Array(Buffer.from(passkey.publicKey, 'base64url')),
+              counter: passkey.counter,
+            },
+          });
+          if (!verification.verified) return null;
+
+          await prisma.passkey.update({
+            where: { id: passkey.id },
+            data: { counter: verification.authenticationInfo.newCounter, lastUsedAt: new Date() },
+          });
+
+          const u = passkey.user;
+          if (u.disabled) return null;
+          return { id: u.id, email: u.email, role: u.role, niaUserId: u.niaUserId };
+        } catch (e) {
+          console.error('[passkey-login] verification failed:', e);
+          return null;
+        }
       },
     }),
     Google({

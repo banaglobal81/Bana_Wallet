@@ -1,5 +1,5 @@
-import { startRegistration } from '@simplewebauthn/browser';
-import type { PublicKeyCredentialCreationOptionsJSON } from '@simplewebauthn/types';
+import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
+import type { PublicKeyCredentialCreationOptionsJSON, PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/types';
 
 // Client for WebAuthn passkeys (biometric). Identity is the server session.
 export interface PasskeyInfo {
@@ -40,4 +40,14 @@ export async function registerPasskey(deviceName: string): Promise<void> {
   const options = await req<PublicKeyCredentialCreationOptionsJSON>('/api/auth/passkeys/register/options', 'POST');
   const response = await startRegistration(options);
   await req<void>('/api/auth/passkeys/register/verify', 'POST', { response, deviceName });
+}
+
+/**
+ * Prompt the device biometric and return the signed assertion (JSON string) to
+ * hand to signIn('passkey', { response }). Used for passwordless login.
+ */
+export async function getPasskeyAssertion(): Promise<string> {
+  const options = await req<PublicKeyCredentialRequestOptionsJSON>('/api/auth/passkeys/authenticate/options', 'POST');
+  const assertion = await startAuthentication(options);
+  return JSON.stringify(assertion);
 }
