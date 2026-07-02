@@ -88,6 +88,7 @@ export const authConfig = {
         (session.user as any).role = token.role;
         (session.user as any).niaUserId = token.niaUserId ?? null;
       }
+      session.sid = token.sid;
       return session;
     },
   },

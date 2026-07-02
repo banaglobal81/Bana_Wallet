@@ -41,7 +41,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <p className="mt-2 text-sm text-[#8c90a0] leading-relaxed">
               {t.rich('brokerAccessBody', {
                 highlight: (chunks) => (
-                  <span className="text-amber-400 font-bold">{chunks}</span>
+                  <span className="text-slate-200 font-bold">{chunks}</span>
                 ),
               })}
             </p>
@@ -59,21 +59,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="flex w-screen h-screen bg-[#06132a] text-[#d8e2ff] overflow-hidden font-sans antialiased selection:bg-amber-500/30 selection:text-white">
+    <div className="flex w-screen h-screen bg-[#06132a] text-[#d8e2ff] overflow-hidden font-sans antialiased selection:bg-slate-400/30 selection:text-white">
       {/* Vertical admin sidebar — static on desktop, off-canvas drawer on mobile */}
       <AdminSidebar mobileOpen={mobileNavOpen} onCloseMobile={() => setMobileNavOpen(false)} />
 
       {/* Content column: top chrome bar + routed children */}
       <div className="flex-1 min-w-0 h-full flex flex-col">
         {/* Mobile-only top bar: brand + ADMIN badge + chrome + hamburger */}
-        <header className="lg:hidden flex items-center justify-between gap-2 h-16 px-3 shrink-0 border-b border-amber-500/20 bg-[#0a0f1e]/95 backdrop-blur z-20">
+        <header className="lg:hidden flex items-center justify-between gap-2 h-16 px-3 shrink-0 border-b border-slate-400/25 bg-[#0a0f1e]/95 backdrop-blur z-20">
           <div className="flex items-center gap-2 min-w-0">
             {/* Width-sized (with the ADMIN badge alongside) so it grows but stays
                 within the bar; max-w keeps the badge + controls visible. Tap → home. */}
             <Link href="/admin/dashboard" aria-label="Home" className="w-[230px] max-w-[52vw] min-w-0 flex">
               <BanaLogo size="fill" />
             </Link>
-            <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded text-amber-400 font-bold text-[10px] font-mono tracking-wider shrink-0">
+            <span className="flex items-center gap-1 px-2 py-0.5 bg-slate-400/10 border border-slate-400/30 rounded text-slate-200 font-bold text-[10px] font-mono tracking-wider shrink-0">
               <Building2 className="h-3 w-3" /> {t('badge')}
             </span>
           </div>
@@ -86,7 +86,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Desktop-only top bar: persistent chrome, right-aligned */}
-        <header className="hidden lg:flex items-center justify-end gap-3 h-14 px-6 shrink-0 border-b border-amber-500/15 bg-[#0a0f1e]/60 backdrop-blur z-20">
+        <header className="hidden lg:flex items-center justify-end gap-3 h-14 px-6 shrink-0 border-b border-slate-400/20 bg-[#0a0f1e]/60 backdrop-blur z-20">
           <LanguageSwitcher />
           <ThemeToggle />
           <Notifications />

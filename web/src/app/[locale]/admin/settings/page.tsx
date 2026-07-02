@@ -69,18 +69,26 @@ export default function AdminSettingsPage() {
           <p className="text-xs sm:text-sm text-[#8c90a0] mt-1 font-mono">{t('pageSubtitle')}</p>
         </div>
         <div className="self-start flex flex-wrap items-center gap-2">
-          {/* Withdrawals + Users moved here from the mobile bottom bar. */}
+          {/* Withdrawals + Users are in the sidebar on desktop → only show these
+              shortcuts on mobile, where they were moved out of the bottom bar. */}
           <Link
             href="/admin/withdrawals"
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#112643]/70 border border-[#1E3559] text-[#afc6ff] hover:text-white hover:bg-[#1e3459] text-sm font-bold transition-colors"
+            className="lg:hidden flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#112643]/70 border border-[#1E3559] text-[#afc6ff] hover:text-white hover:bg-[#1e3459] text-sm font-bold transition-colors"
           >
             <ArrowUpRight className="h-4 w-4" /> {nav('withdrawals')}
           </Link>
           <Link
             href="/admin/users"
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#112643]/70 border border-[#1E3559] text-[#afc6ff] hover:text-white hover:bg-[#1e3459] text-sm font-bold transition-colors"
+            className="lg:hidden flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#112643]/70 border border-[#1E3559] text-[#afc6ff] hover:text-white hover:bg-[#1e3459] text-sm font-bold transition-colors"
           >
             <Users className="h-4 w-4" /> {nav('users')}
+          </Link>
+          {/* Your own account security — 2FA, passkeys, devices, email. */}
+          <Link
+            href="/admin/settings/security"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#112643]/70 border border-[#1E3559] text-[#afc6ff] hover:text-white hover:bg-[#1e3459] text-sm font-bold transition-colors"
+          >
+            <ShieldCheck className="h-4 w-4" /> Security
           </Link>
           {saved && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold">

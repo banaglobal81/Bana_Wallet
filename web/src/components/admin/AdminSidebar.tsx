@@ -14,7 +14,7 @@ interface AdminSidebarProps {
 }
 
 // Vertical admin navigation — same layout/style as the user wallet sidebar,
-// with an amber accent so it's always clear you're in the admin area.
+// with a silver accent (matching the BANA logo).
 export default function AdminSidebar({ mobileOpen = false, onCloseMobile }: AdminSidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
@@ -63,7 +63,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }: Admi
             <Link href="/admin/dashboard" aria-label="Home" className="flex">
               <BanaLogo size="fill" />
             </Link>
-            <span className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 font-bold text-[11px] font-mono tracking-wider">
+            <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-400/10 border border-slate-400/30 rounded-lg text-slate-200 font-bold text-[11px] font-mono tracking-wider">
               <Building2 className="h-3.5 w-3.5" /> {t('badge')}
             </span>
           </div>
@@ -79,11 +79,11 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }: Admi
                   onClick={onCloseMobile}
                   className={`flex items-center gap-4 px-4 py-3.5 rounded-xl font-sans text-[15px] font-semibold transition-all duration-300 ${
                     active
-                      ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)] font-bold'
+                      ? 'bg-slate-400/10 text-slate-200 border border-slate-400/25 shadow-[0_0_15px_rgba(203,210,220,0.16)] font-bold'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 border border-transparent'
                   }`}
                 >
-                  <Icon className={`h-5 w-5 ${active ? 'text-amber-400' : 'text-slate-400'}`} />
+                  <Icon className={`h-5 w-5 ${active ? 'text-slate-200' : 'text-slate-400'}`} />
                   {label}
                 </Link>
               );

@@ -5,6 +5,8 @@ type UserRole = 'USER' | 'ADMIN';
 
 declare module 'next-auth' {
   interface Session {
+    // sid = the LoginSession row id for this device (used for remote log-out).
+    sid?: string;
     user: {
       id: string;
       role: UserRole;
@@ -23,5 +25,6 @@ declare module '@auth/core/jwt' {
     id: string;
     role: UserRole;
     niaUserId: string | null;
+    sid?: string;
   }
 }

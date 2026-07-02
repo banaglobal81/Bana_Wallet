@@ -5,10 +5,10 @@ import { useTranslations } from 'next-intl';
 import Decimal from 'decimal.js';
 import { Screen, SystemSettings } from '../types';
 import { copyToClipboard } from '../utils/clipboard';
-import { getNiaStatus, getNiaBalance, NiaStatus } from '../utils/niaApi';
 import { getAccount, changePassword, AccountInfo,
   listSavedAddresses, addSavedAddress, deleteSavedAddress, type SavedAddress } from '../utils/accountApi';
 import { getNotifPrefs, setNotifPref, onNotifPrefsChange, NOTIF_CATEGORIES, type NotifPrefs } from '../utils/notifPrefs';
+import { Link } from '@/i18n/navigation';
 import {
   ShieldCheck,
   Copy,
@@ -26,7 +26,8 @@ import {
   BookMarked,
   Plus,
   Trash2,
-  Activity
+  Activity,
+  ChevronRight
 } from 'lucide-react';
 
 interface SettingsProps {
@@ -39,46 +40,6 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
   const t = useTranslations('settings');
   const [rpcInput, setRpcInput] = useState(settings.rpcUrl);
   const [rpcSaved, setRpcSaved] = useState(false);
-
-  // Nia connection status comes from the backend (keys live in .env server-side,
-  // never in the browser). We just read /api/nia/status.
-  const [niaStatus, setNiaStatus] = useState<NiaStatus | null>(null);
-  const [niaLoading, setNiaLoading] = useState(true);
-  const [niaError, setNiaError] = useState<string | null>(null);
-
-  const checkNiaStatus = async () => {
-    setNiaLoading(true);
-    setNiaError(null);
-    try {
-      setNiaStatus(await getNiaStatus());
-    } catch (e: any) {
-      setNiaError(e?.message || t('backendNotReachable'));
-      setNiaStatus(null);
-    } finally {
-      setNiaLoading(false);
-    }
-  };
-
-  // Test-user funded check (reads /api/nia/balance for the configured user).
-  const [funded, setFunded] = useState<'checking' | 'funded' | 'empty' | 'error'>('checking');
-
-  const checkFunded = async () => {
-    setFunded('checking');
-    try {
-      const data = await getNiaBalance();
-      const rows = [
-        ...(Array.isArray(data?.wallets) ? data.wallets : []),
-        ...(Array.isArray(data?.tradingBalances) ? data.tradingBalances : []),
-        ...(Array.isArray(data) ? data : []),
-      ];
-      const hasFunds = rows.some((r: any) => {
-        try { return new Decimal(r?.balance ?? '0').gt(0); } catch { return false; }
-      });
-      setFunded(hasFunds ? 'funded' : 'empty');
-    } catch {
-      setFunded('error');
-    }
-  };
 
   // ---- Account info (email / role / auth method) ----
   const [account, setAccount] = useState<AccountInfo | null>(null);
@@ -151,9 +112,6 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
   };
 
   useEffect(() => {
-    (async () => {
-      await checkNiaStatus();
-    })();
     // Load account info.
     (async () => {
       try { setAccount(await getAccount()); }
@@ -164,12 +122,6 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
     return onNotifPrefsChange(() => setNotifPrefs(getNotifPrefs()));
   }, []);
 
-  const niaConnected = Boolean(niaStatus?.configured);
-
-  // Once we know the backend is connected, check whether the user has a balance.
-  useEffect(() => {
-    if (niaConnected) checkFunded();
-  }, [niaConnected]);
 
 
   const handleUpdateRpc = () => {
@@ -254,166 +206,23 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
             )}
           </div>
 
-          {/* Section: Security — change password */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 bento-hover shadow-lg">
-            <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider flex items-center gap-2">
-              <Lock className="h-4 w-4 text-indigo-400" />
-              {t('securityTitle')}
-            </h3>
-            {account && account.authMethod === 'google' ? (
-              <p className="text-xs text-slate-400 leading-relaxed">
-                {t('googleNoPassword')}
-              </p>
-            ) : (
-              <>
-                <p className="text-xs text-slate-400 leading-relaxed">{t('changePasswordIntro')}</p>
-                <div className="flex flex-col gap-2.5 mt-1">
-                  <input
-                    type="password"
-                    autoComplete="current-password"
-                    value={curPw}
-                    onChange={(e) => setCurPw(e.target.value)}
-                    placeholder={t('currentPasswordPlaceholder')}
-                    className="p-3.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs font-mono focus:outline-none text-slate-200 placeholder-slate-600 transition-colors"
-                  />
-                  <input
-                    type="password"
-                    autoComplete="new-password"
-                    value={newPw}
-                    onChange={(e) => setNewPw(e.target.value)}
-                    placeholder={t('newPasswordPlaceholder')}
-                    className="p-3.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs font-mono focus:outline-none text-slate-200 placeholder-slate-600 transition-colors"
-                  />
-                  <input
-                    type="password"
-                    autoComplete="new-password"
-                    value={confirmPw}
-                    onChange={(e) => setConfirmPw(e.target.value)}
-                    placeholder={t('confirmPasswordPlaceholder')}
-                    className="p-3.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs font-mono focus:outline-none text-slate-200 placeholder-slate-600 transition-colors"
-                  />
-                  {pwError && (
-                    <div className="text-xs font-mono text-rose-300">{pwError}</div>
-                  )}
-                  {pwSuccess && (
-                    <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-mono font-bold">
-                      <Check className="h-4 w-4 shrink-0" /> {t('passwordUpdated')}
-                    </div>
-                  )}
-                  <button
-                    onClick={handleChangePassword}
-                    disabled={pwSubmitting || !curPw || !newPw || !confirmPw}
-                    className="self-start px-5 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl border border-indigo-500/20 font-bold text-xs transition-all cursor-pointer shadow-md select-none flex items-center gap-2"
-                  >
-                    {pwSubmitting && <RefreshCw className="h-3.5 w-3.5 animate-spin" />}
-                    {pwSubmitting ? t('updating') : t('updatePassword')}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Section: Connect Nia Asset API */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 bento-hover shadow-lg">
-            <div className="flex items-center justify-between gap-3">
+          {/* Section: Security — opens the dedicated Security page (2FA,
+              biometric, devices, password). */}
+          <Link
+            href="/settings/security"
+            className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-3 bento-hover shadow-lg hover:border-indigo-500/40 transition-colors group"
+          >
+            <div className="flex flex-col gap-1">
               <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider flex items-center gap-2">
-                <KeyRound className="h-4 w-4 text-indigo-400" />
-                {t('connectNiaTitle')}
+                <Lock className="h-4 w-4 text-indigo-400" />
+                {t('securityTitle')}
               </h3>
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-mono border ${
-                niaConnected
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
-                  : 'bg-slate-800 text-slate-400 border-slate-700'
-              }`}>
-                {niaConnected ? <Link2 className="h-3 w-3" /> : <Link2Off className="h-3 w-3" />}
-                {niaConnected ? t('connected') : t('notConnected')}
-              </span>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Two-factor authentication, biometrics, devices, and password.
+              </p>
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              {t('niaKeysBody')}
-            </p>
-
-            {niaLoading ? (
-              <div className="mt-1 p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-400">
-                {t('checkingBackend')}
-              </div>
-            ) : niaError ? (
-              <div className="mt-1 flex flex-col gap-2.5">
-                <div className="p-3.5 bg-rose-500/5 border border-rose-500/20 rounded-xl text-xs font-mono text-rose-300 leading-relaxed">
-                  {t('backendNotReachableError', { error: niaError })}<br />
-                  {t.rich('startServerHint', { code: (chunks) => <span className="text-white">{chunks}</span> })}
-                </div>
-                <button
-                  onClick={checkNiaStatus}
-                  className="self-start px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-lg text-xs font-bold cursor-pointer flex items-center gap-2"
-                >
-                  <RefreshCw className="h-3.5 w-3.5" /> {t('recheck')}
-                </button>
-              </div>
-            ) : (
-              <div className="mt-1 flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-3 p-3.5 bg-slate-950 border border-slate-800 rounded-xl">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    {niaConnected
-                      ? <ShieldCheck className="h-5 w-5 text-emerald-400 shrink-0" />
-                      : <Link2Off className="h-5 w-5 text-slate-500 shrink-0" />}
-                    <div className="min-w-0">
-                      <div className="text-xs font-mono text-slate-300 font-semibold">
-                        {niaConnected ? t('apiKeyLabel', { preview: niaStatus?.keyPreview ?? '' }) : t('noApiKey')}
-                      </div>
-                      <div className="text-[10px] font-mono text-slate-500 truncate">
-                        {niaConnected
-                          ? t('brokerLabel', { broker: niaStatus?.brokerId ?? '—' })
-                          : t('addKeysHint')}
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={checkNiaStatus}
-                    aria-label={t('recheckConnection')}
-                    className="shrink-0 p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg cursor-pointer"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </button>
-                </div>
-
-                {/* Test-user funded indicator */}
-                {niaConnected && (
-                  <div className="flex items-center justify-between gap-3 p-3 bg-slate-950 border border-slate-800 rounded-xl">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-[11px] font-mono text-slate-400">
-                        {t('testUser')} <span className="text-slate-300">{niaStatus?.hasDefaultUser ? t('testUserSet') : t('testUserNone')}</span>
-                      </span>
-                    </div>
-                    <span className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-mono border ${
-                      funded === 'funded'
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
-                        : funded === 'empty'
-                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/25'
-                        : funded === 'error'
-                        ? 'bg-rose-500/10 text-rose-400 border-rose-500/25'
-                        : 'bg-slate-800 text-slate-400 border-slate-700'
-                    }`}>
-                      {funded === 'checking' && <RefreshCw className="h-3 w-3 animate-spin" />}
-                      {funded === 'funded' && <Check className="h-3 w-3" />}
-                      {funded === 'checking' ? t('checking')
-                        : funded === 'funded' ? t('funded')
-                        : funded === 'empty' ? t('empty')
-                        : t('checkFailed')}
-                    </span>
-                  </div>
-                )}
-
-                {/* Security note */}
-                <div className="flex items-start gap-2 text-[11px] text-slate-500 leading-relaxed font-mono">
-                  <Lock className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span>
-                    {t.rich('secretNote', { highlight: (chunks) => <span className="text-slate-300">{chunks}</span> })}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
+            <ChevronRight className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 transition-colors shrink-0" />
+          </Link>
 
           {/* Section: Withdrawal Address Book */}
           <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 bento-hover shadow-lg">

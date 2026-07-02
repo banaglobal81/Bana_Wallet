@@ -103,3 +103,63 @@ export async function deleteSavedAddress(id: string): Promise<void> {
   const body = await res.json().catch(() => ({}));
   if (!res.ok || body?.ok === false) throw new Error(body?.error || `Request failed (${res.status})`);
 }
+
+// ---- Two-factor authentication (TOTP / Google Authenticator) ----
+
+export interface TwoFAStatus { enabled: boolean; backupCodesRemaining: number; }
+
+async function twofa<T>(path: string, method: 'GET' | 'POST', payload?: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method,
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: method === 'POST' ? JSON.stringify(payload ?? {}) : undefined,
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || body?.ok === false) throw new Error(body?.error || `Request failed (${res.status})`);
+  return body.data as T;
+}
+
+/** Current 2FA status for the signed-in user. */
+export function get2faStatus(): Promise<TwoFAStatus> {
+  return twofa<TwoFAStatus>('/api/auth/2fa', 'GET');
+}
+
+/** Begin enrollment — returns the base32 secret + otpauth URI for the QR. */
+export function setup2fa(): Promise<{ secret: string; otpauthUri: string }> {
+  return twofa('/api/auth/2fa/setup', 'POST');
+}
+
+/** Verify the first code and activate 2FA — returns one-time backup codes. */
+export function enable2fa(code: string): Promise<{ backupCodes: string[] }> {
+  return twofa('/api/auth/2fa/enable', 'POST', { code });
+}
+
+/** Turn off 2FA (requires a current or backup code). */
+export async function disable2fa(code: string): Promise<void> {
+  await twofa('/api/auth/2fa/disable', 'POST', { code });
+}
+
+// ---- Email change (verified) ----
+
+/** Send a 6-digit verification code to the NEW email address. */
+export async function requestEmailChange(newEmail: string): Promise<void> {
+  const res = await fetch('/api/auth/email/request', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ newEmail }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || body?.ok === false) throw new Error(body?.error || `Request failed (${res.status})`);
+}
+
+/** Confirm the code and switch the account email. Returns the new email. */
+export async function verifyEmailChange(code: string): Promise<{ email: string }> {
+  const res = await fetch('/api/auth/email/verify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ code }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || body?.ok === false) throw new Error(body?.error || `Request failed (${res.status})`);
+  return body.data as { email: string };
+}

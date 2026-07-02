@@ -113,9 +113,13 @@ html.light { color-scheme: light; }
 
 /* Sidebar / panels using slate-900 with opacity */
 .light .bg-slate-900\/50,
+.light .bg-slate-900\/60,
 .light .bg-slate-900\/95,
 .light .lg\:bg-slate-900\/50 { background-color: #f3f6fc; }
 .light .bg-\[\#0d1f3c\]\/60 { background-color: #f5f8fd; }
+/* Security-page inner rows / modal (slate-950 tint + #0b1220). */
+.light .bg-slate-950\/40 { background-color: #f3f6fc; }
+.light .bg-\[\#0b1220\] { background-color: #ffffff; }
 
 /* --- Surfaces: deep insets / inputs --- */
 .light .bg-\[\#020d24\],
@@ -239,3 +243,25 @@ html.light { color-scheme: light; }
 .light ::-webkit-scrollbar-track { background: #e2e8f0; }
 .light ::-webkit-scrollbar-thumb { background: #c2cdda; }
 .light ::-webkit-scrollbar-thumb:hover { background: #aebccd; }
+
+/* --- Silver accent (dark theme) --------------------------------------------
+   Primary buttons + active-menu accent become brushed silver to match the
+   silver BANA logo. Dark background is untouched. Scoped to :not(.light) so the
+   light theme keeps its own mapping. --------------------------------------- */
+html:not(.light) .bg-\[\#2E7DFF\],
+html:not(.light) .bg-indigo-600,
+html:not(.light) .bg-indigo-500,
+html:not(.light) .from-\[\#0059c7\] {
+  background-image: linear-gradient(180deg, #f1f3f6 0%, #ccd1d9 52%, #adb4c0 100%) !important;
+  color: #111722 !important;
+  border-color: #e2e6ec !important;
+}
+html:not(.light) .hover\:bg-\[\#1a6aff\]:hover,
+html:not(.light) .hover\:bg-indigo-500:hover,
+html:not(.light) .from-\[\#0059c7\]:hover {
+  background-image: linear-gradient(180deg, #ffffff 0%, #dadee4 52%, #bdc3cd 100%) !important;
+}
+/* Active sidebar / nav accent → silver instead of indigo */
+html:not(.light) .text-indigo-400 { color: #d3d9e1 !important; }
+html:not(.light) .bg-indigo-500\/10 { background-color: rgba(206, 212, 221, 0.12) !important; }
+html:not(.light) .border-indigo-500\/20 { border-color: rgba(206, 212, 221, 0.30) !important; }

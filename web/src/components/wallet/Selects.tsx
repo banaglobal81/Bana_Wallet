@@ -20,7 +20,7 @@ function useOutsideClose(onClose: () => void) {
 const triggerCls =
   'w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl bg-[#0a1b33] border text-left transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
 const panelCls =
-  'absolute z-30 mt-2 w-full rounded-xl bg-[#0a1b33] border border-[#1E3559] shadow-2xl shadow-black/50 overflow-hidden';
+  'absolute z-30 mt-2 right-0 w-[min(340px,calc(100vw-1.5rem))] min-w-full rounded-xl bg-[#0a1b33] border border-[#1E3559] shadow-2xl shadow-black/50 overflow-hidden';
 
 // ---- Searchable coin selector ----
 export function CoinSelect({
@@ -64,7 +64,6 @@ export function CoinSelect({
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8c90a0] pointer-events-none" />
               <input
-                autoFocus
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder={searchPlaceholder}

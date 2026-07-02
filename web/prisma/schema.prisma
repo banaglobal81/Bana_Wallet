@@ -121,6 +121,61 @@ model User {
   resetTokenExpiry DateTime?
   // Admin can disable an account — blocks login (compromised/abusive accounts).
   disabled     Boolean  @default(false)
+  // TOTP 2FA (Google Authenticator). The secret is AES-256-GCM encrypted at rest
+  // (see src/lib/crypto.ts). totpEnabledAt is set only after a code is verified;
+  // a null secret / null enabledAt means 2FA is off. Backup codes are stored as
+  // SHA-256 hashes and removed as they are consumed.
+  totpSecret       String?
+  totpEnabledAt    DateTime?
+  totpBackupCodes  String[]  @default([])
+  // WebAuthn (biometric passkeys). Transient challenge held during registration,
+  // cleared once the response is verified. Credentials live in the Passkey table.
+  webauthnChallenge String?
+  // Email change (verified). A pending change holds the new address + a hashed
+  // 6-digit code until verified. On change we stamp emailChangedAt (24h
+  // withdrawal hold) and block the previous address from re-registering for 30d.
+  pendingEmail              String?
+  emailChangeCodeHash       String?
+  emailChangeExpiry         DateTime?
+  emailChangedAt            DateTime?
+  previousEmail             String?
+  previousEmailBlockedUntil DateTime?
+  passkeys         Passkey[]
+  loginSessions    LoginSession[]
+}
+
+// A login session / device — created on each sign-in, embedded in the JWT as
+// `sid`. Powers the "My Devices" page and remote log-out: deleting a row makes
+// requireUser() reject that session (checked fail-open, so DB hiccups never lock
+// anyone out). "Last login" = createdAt.
+model LoginSession {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent  String?
+  ip         String?
+  city       String?
+  country    String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+// A registered WebAuthn credential (biometric passkey) — one row per device.
+// Shown to the user under "My devices"; used as a biometric login factor.
+model Passkey {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialId String    @unique          // base64url credential ID
+  publicKey    String                      // base64url COSE public key
+  counter      Int       @default(0)
+  transports   String[]  @default([])
+  deviceName   String?                     // user-supplied label, e.g. "iPhone"
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+
+  @@index([userId])
 }
 
 // An admin-created staking offer: a coin + lock term + daily interest rate.

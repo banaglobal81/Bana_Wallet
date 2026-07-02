@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 
 export const metadata: Metadata = {
-  title: 'BANA Wallet — RWA & Healthcare',
+  title: 'BANA Wallet',
   description: 'BANA Wallet — self-custody for RWA & Healthcare assets.',
 };
 

@@ -84,6 +84,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return fail(e as Error & { status?: number; data?: { code?: unknown } });
   }
 
+  // -- Safety hold: withdrawals are paused for 24h after an email change --
+  try {
+    const u = await prisma.user.findUnique({ where: { id: dbUserId }, select: { emailChangedAt: true } });
+    if (u?.emailChangedAt) {
+      const elapsed = Date.now() - u.emailChangedAt.getTime();
+      const windowMs = 24 * 60 * 60 * 1000;
+      if (elapsed < windowMs) {
+        const hrs = Math.ceil((windowMs - elapsed) / (60 * 60 * 1000));
+        return NextResponse.json(
+          { ok: false, error: `Withdrawals are paused for ${hrs}h after an email change, to protect your assets.` },
+          { status: 403 },
+        );
+      }
+    }
+  } catch { /* fail-open: don't block on a transient lookup error */ }
+
   const { currency, network, toAddress, amount } = body as {
     currency?: string;
     network?: string;

@@ -5,7 +5,7 @@ import { Link, usePathname } from '@/i18n/navigation';
 import { LayoutDashboard, Coins, SlidersHorizontal, Sprout, CircleDollarSign } from 'lucide-react';
 
 // Mobile-only bottom navigation for the admin area (replaces the hamburger
-// drawer on small screens). Uses the admin amber accent for the active item.
+// drawer on small screens). Uses the silver accent for the active item.
 // Dashboard sits in the centre. (Users + Withdrawals live in the Settings page.)
 const ITEMS: { href: string; icon: typeof Coins; navKey: 'dashboard' | 'settlement' | 'settings' | 'staking' | 'coins' }[] = [
   { href: '/admin/settlement', icon: Coins, navKey: 'settlement' },
@@ -21,7 +21,7 @@ export default function AdminBottomNav() {
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
   return (
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 flex items-stretch border-t border-amber-500/15 bg-[#0a0f1e]/95 backdrop-blur overflow-x-auto">
+    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 flex items-stretch border-t border-slate-400/20 bg-[#0a0f1e]/95 backdrop-blur overflow-x-auto">
       {ITEMS.map(({ href, icon: Icon, navKey }) => {
         const active = isActive(href);
         return (
@@ -31,7 +31,7 @@ export default function AdminBottomNav() {
             aria-current={active ? 'page' : undefined}
             ref={active ? (el) => el?.scrollIntoView({ inline: 'center', block: 'nearest' }) : undefined}
             className={`flex-1 min-w-[62px] flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
-              active ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200'
+              active ? 'text-slate-200' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Icon className="h-5 w-5 shrink-0" />

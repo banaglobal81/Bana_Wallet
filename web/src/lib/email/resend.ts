@@ -47,3 +47,33 @@ export async function sendPasswordResetEmail(to: string, token: string): Promise
     throw new Error(`Resend send failed: ${error.message ?? 'unknown error'}`);
   }
 }
+
+/**
+ * Send a 6-digit code to a NEW email address to verify the user owns it before
+ * switching their account email. Throws if email isn't configured or the send
+ * fails — the request route surfaces a clean error.
+ */
+export async function sendEmailChangeCode(to: string, code: string): Promise<void> {
+  if (!RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is not configured on the server.');
+  }
+  const resend = new Resend(RESEND_API_KEY);
+  const { error } = await resend.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: `${code} is your BANA Wallet email verification code`,
+    text:
+      `Use this code to confirm your new BANA Wallet email address:\n\n${code}\n\n` +
+      `The code is valid for 15 minutes. If you didn't request this, ignore this email.`,
+    html:
+      `<div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto">` +
+      `<h2 style="color:#0b1f3a">Confirm your new email</h2>` +
+      `<p>Enter this code in BANA Wallet to verify your new email address:</p>` +
+      `<p style="font-size:30px;font-weight:800;letter-spacing:6px;color:#0b1f3a">${code}</p>` +
+      `<p style="color:#64748b;font-size:13px">Valid for <strong>15 minutes</strong>. If you didn't request this, ignore this email.</p>` +
+      `</div>`,
+  });
+  if (error) {
+    throw new Error(`Resend send failed: ${error.message ?? 'unknown error'}`);
+  }
+}

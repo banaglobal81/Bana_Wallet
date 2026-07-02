@@ -25,6 +25,18 @@ export async function POST(req: Request) {
   try {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return NextResponse.json({ ok: false, error: 'Email already registered' }, { status: 409 });
+    // Safety policy: an address recently changed away from another account can't
+    // be re-registered for 30 days.
+    const blocked = await prisma.user.findFirst({
+      where: { previousEmail: email, previousEmailBlockedUntil: { gt: new Date() } },
+      select: { id: true },
+    });
+    if (blocked) {
+      return NextResponse.json(
+        { ok: false, error: 'This email was recently changed from an account and can’t be registered yet. Please try again later.' },
+        { status: 409 },
+      );
+    }
     const passwordHash = await bcrypt.hash(password, 12);
     // Mint a dedicated Nia-Hub end-user id so this account maps to its own
     // Nia sub-account rather than sharing NIA_DEFAULT_USER_ID.

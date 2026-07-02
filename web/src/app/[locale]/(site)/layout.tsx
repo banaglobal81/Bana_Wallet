@@ -20,7 +20,18 @@ const PATH_TO_SCREEN: Record<string, Screen> = Object.fromEntries(
 );
 
 function pathToScreen(pathname: string): Screen {
-  return PATH_TO_SCREEN[pathname] ?? 'PORTFOLIO_DASHBOARD';
+  // Exact match first.
+  if (PATH_TO_SCREEN[pathname]) return PATH_TO_SCREEN[pathname];
+  // Otherwise resolve sub-routes (e.g. /settings/security → Settings) by the
+  // longest matching path prefix, so the sidebar highlights the right item
+  // instead of falling back to Dashboard.
+  let best: { screen: Screen; len: number } | null = null;
+  for (const [screen, path] of Object.entries(SCREEN_TO_PATH)) {
+    if (path && pathname.startsWith(path + '/') && (!best || path.length > best.len)) {
+      best = { screen: screen as Screen, len: path.length };
+    }
+  }
+  return best?.screen ?? 'PORTFOLIO_DASHBOARD';
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {

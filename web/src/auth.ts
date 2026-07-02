@@ -2,9 +2,11 @@ import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import bcrypt from 'bcryptjs';
+import { headers } from 'next/headers';
 import { authConfig } from './auth.config';
 import { prisma } from '@/lib/db';
 import { newNiaUserId } from '@/lib/nia/identity';
+import { clientIp, geoLookup } from '@/lib/session-device';
 
 // A valid bcrypt hash used only to equalize response time when no user exists,
 // so login timing can't be used to enumerate which emails have accounts.
@@ -100,6 +102,28 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         token.id = (user as any).id;
         token.role = (user as any).role;
         token.niaUserId = (user as any).niaUserId ?? null;
+      }
+      // On sign-in (user present), record a login session and remember its id in
+      // the token so "My Devices" can list this device and remotely revoke it.
+      // Fail-open: never block sign-in if tracking fails.
+      if (user && token.id && !token.sid) {
+        try {
+          const h = await headers();
+          const ip = clientIp(h);
+          const geo = await geoLookup(ip, h.get('cf-ipcountry'));
+          const ls = await prisma.loginSession.create({
+            data: {
+              userId: token.id as string,
+              userAgent: h.get('user-agent') || null,
+              ip: ip || null,
+              city: geo.city,
+              country: geo.country,
+            },
+          });
+          token.sid = ls.id;
+        } catch (e) {
+          console.error('[session-tracking] failed to record login session:', e);
+        }
       }
       // On subsequent requests neither block runs; token is returned as-is
       // (already populated from a prior sign-in).
