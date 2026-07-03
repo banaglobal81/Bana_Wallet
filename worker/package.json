@@ -2,8 +2,11 @@
   "name": "bana-staking-worker",
   "version": "0.0.0",
   "private": true,
-  "description": "Cloudflare Worker (cron) that triggers daily staking interest accrual on the BANA web app.",
+  "type": "module",
+  "main": "trigger.mjs",
+  "description": "Daily staking-accrual cron for the BANA web app. Runs on Railway (Cron Schedule → `npm start`) or Cloudflare (wrangler deploy).",
   "scripts": {
+    "start": "node trigger.mjs",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit"
