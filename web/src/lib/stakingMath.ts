@@ -5,9 +5,32 @@ import Decimal from 'decimal.js';
 
 export const DAY_MS = 86_400_000;
 
+/**
+ * The length of "one staking day" in ms. Defaults to a real 24h day. For
+ * TESTING / DEMO ONLY it can be shortened (e.g. 5 minutes = 1 day) so a full
+ * multi-day payout cycle can be observed in minutes. Set via env:
+ *   - `NEXT_PUBLIC_STAKING_DAY_MS` — read on BOTH server and browser (keeps the
+ *     live display in sync with the payout engine), OR
+ *   - `STAKING_DAY_MS` — server-only fallback.
+ * Unset / invalid → a real day. PRODUCTION MUST LEAVE THIS UNSET.
+ */
+export function stakingDayMs(): number {
+  const raw =
+    (typeof process !== 'undefined' && process.env
+      ? process.env.NEXT_PUBLIC_STAKING_DAY_MS || process.env.STAKING_DAY_MS
+      : '') || '';
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : DAY_MS;
+}
+
 /** Whole days elapsed since startAt (>= 0), optionally capped at `cap` (the term). */
-export function daysElapsed(startAt: Date | string, now: Date = new Date(), cap?: number): number {
-  const elapsed = Math.floor((now.getTime() - new Date(startAt).getTime()) / DAY_MS);
+export function daysElapsed(
+  startAt: Date | string,
+  now: Date = new Date(),
+  cap?: number,
+  dayMs: number = stakingDayMs(),
+): number {
+  const elapsed = Math.floor((now.getTime() - new Date(startAt).getTime()) / dayMs);
   const clamped = Math.max(0, elapsed);
   return cap != null ? Math.min(clamped, cap) : clamped;
 }

@@ -53,4 +53,15 @@ describe('stakingMath', () => {
     // 333.33 × 0.5% × 3 = 4.99995 — must be exact, not 4.9999500000001
     expect(accruedInterest('333.33', '0.5', start, 3, new Date(start.getTime() + 3 * DAY_MS)).toFixed()).toBe('4.99995');
   });
+
+  it('accelerated day unit (test/demo): 5 minutes = 1 day', () => {
+    const FIVE_MIN = 5 * 60 * 1000;
+    const t = new Date('2026-01-01T01:00:00Z'); // 60 min after start
+    // 60 min / 5-min-days = 12 whole "days" elapsed.
+    expect(daysElapsed(start, t, undefined, FIVE_MIN)).toBe(12);
+    // 17.5 min → 3 whole 5-min days (floors the half).
+    expect(daysElapsed(start, new Date(start.getTime() + 17.5 * 60 * 1000), 10, FIVE_MIN)).toBe(3);
+    // Still capped at the term (10) even though 60 min = 12 units elapsed.
+    expect(daysElapsed(start, t, 10, FIVE_MIN)).toBe(10);
+  });
 });
