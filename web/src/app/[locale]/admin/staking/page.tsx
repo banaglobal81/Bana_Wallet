@@ -125,7 +125,7 @@ export default function AdminStakingPage() {
           </h1>
           <p className="text-xs sm:text-sm text-[#8c90a0] mt-1 font-mono">{t('pageSubtitle')}</p>
         </div>
-        <button onClick={() => setShowForm((v) => !v)} className="self-start inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-sm font-bold cursor-pointer">
+        <button data-testid="new-product-btn" onClick={() => setShowForm((v) => !v)} className="self-start inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-sm font-bold cursor-pointer">
           <Plus className="h-4 w-4" /> {t('newProduct')}
         </button>
       </header>
@@ -142,9 +142,10 @@ export default function AdminStakingPage() {
             {'  ·  '}Paid today: <span className="text-emerald-400">{status?.totalPaidToday ?? '0'}</span> ({status?.payoutsToday ?? 0})
             {'  ·  '}<span className="text-[#afc6ff]">{status?.activeCount ?? 0}</span> active
           </span>
-          {runMsg && <span className="text-emerald-300">{runMsg}</span>}
+          {runMsg && <span data-testid="settlement-msg" className="text-emerald-300">{runMsg}</span>}
         </div>
         <button
+          data-testid="run-settlement"
           disabled={running}
           onClick={runSettlement}
           title="Run the daily interest payout now (idempotent)"
@@ -160,16 +161,16 @@ export default function AdminStakingPage() {
           <h3 className="font-bold text-white text-sm">{t('newProduct')}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('coin')}</span><input className={`${field} opacity-70 cursor-not-allowed`} value="BANA" readOnly title="Only BANA is stakeable" /></label>
-            <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('name')}</span><input className={field} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t('namePlaceholder')} /></label>
-            <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('termDays')}</span><input className={field} type="number" min={1} value={form.termDays} onChange={(e) => setForm({ ...form, termDays: Number(e.target.value) })} /></label>
-            <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('dailyRate')}</span><input className={field} value={form.dailyRatePct} onChange={(e) => setForm({ ...form, dailyRatePct: e.target.value })} placeholder="0.05" /></label>
+            <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('name')}</span><input data-testid="np-name" className={field} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t('namePlaceholder')} /></label>
+            <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('termDays')}</span><input data-testid="np-term" className={field} type="number" min={1} value={form.termDays} onChange={(e) => setForm({ ...form, termDays: Number(e.target.value) })} /></label>
+            <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('dailyRate')}</span><input data-testid="np-rate" className={field} value={form.dailyRatePct} onChange={(e) => setForm({ ...form, dailyRatePct: e.target.value })} placeholder="0.05" /></label>
             <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('minOpt')}</span><input className={field} value={form.minAmount ?? ''} onChange={(e) => setForm({ ...form, minAmount: e.target.value })} placeholder="—" /></label>
             <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('maxOpt')}</span><input className={field} value={form.maxAmount ?? ''} onChange={(e) => setForm({ ...form, maxAmount: e.target.value })} placeholder="—" /></label>
             <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('capacityOpt')}</span><input className={field} value={form.capacity ?? ''} onChange={(e) => setForm({ ...form, capacity: e.target.value })} placeholder="—" /></label>
           </div>
           <p className="text-[11px] font-mono text-[#8c90a0]">{t('rateHint')}</p>
           <div className="flex gap-2">
-            <button disabled={busy} onClick={create} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-bold cursor-pointer">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} {t('create')}</button>
+            <button data-testid="np-submit" disabled={busy} onClick={create} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-bold cursor-pointer">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} {t('create')}</button>
             <button disabled={busy} onClick={() => { setShowForm(false); setForm(EMPTY); }} className="px-4 py-2.5 rounded-xl bg-[#020d24]/60 hover:bg-[#112643] text-[#8c90a0] hover:text-white text-sm font-bold border border-[#1E3559]/80 cursor-pointer">{t('cancel')}</button>
           </div>
         </div>
@@ -214,13 +215,13 @@ export default function AdminStakingPage() {
                   <h3 className="font-bold text-white text-sm">Edit {p.coin} {t('daysN', { n: p.termDays })}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('name')}</span><input className={field} value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} /></label>
-                    <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('dailyRate')}</span><input className={field} value={editForm.dailyRatePct} onChange={(e) => setEditForm({ ...editForm, dailyRatePct: e.target.value })} placeholder="0.05" /></label>
+                    <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('dailyRate')}</span><input data-testid="edit-rate" className={field} value={editForm.dailyRatePct} onChange={(e) => setEditForm({ ...editForm, dailyRatePct: e.target.value })} placeholder="0.05" /></label>
                     <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('minOpt')}</span><input className={field} value={editForm.minAmount} onChange={(e) => setEditForm({ ...editForm, minAmount: e.target.value })} placeholder="—" /></label>
                     <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('maxOpt')}</span><input className={field} value={editForm.maxAmount} onChange={(e) => setEditForm({ ...editForm, maxAmount: e.target.value })} placeholder="—" /></label>
                     <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('capacityOpt')}</span><input className={field} value={editForm.capacity} onChange={(e) => setEditForm({ ...editForm, capacity: e.target.value })} placeholder="—" /></label>
                   </div>
                   <div className="flex gap-2">
-                    <button disabled={busy} onClick={() => saveEdit(p.id)} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-bold cursor-pointer">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save</button>
+                    <button data-testid="edit-save" disabled={busy} onClick={() => saveEdit(p.id)} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-bold cursor-pointer">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save</button>
                     <button disabled={busy} onClick={cancelEdit} className="px-4 py-2.5 rounded-xl bg-[#020d24]/60 hover:bg-[#112643] text-[#8c90a0] hover:text-white text-sm font-bold border border-[#1E3559]/80 cursor-pointer">{t('cancel')}</button>
                   </div>
                 </div>
@@ -246,7 +247,7 @@ export default function AdminStakingPage() {
                   </thead>
                   <tbody className="divide-y divide-[#1E3559]/50">
                     {products.map((p) => (
-                      <tr key={p.id} className="hover:bg-[#112643]/40">
+                      <tr key={p.id} data-testid="product-row" data-term={p.termDays} className="hover:bg-[#112643]/40">
                         <td className="px-4 py-3 font-bold text-white">{p.name}</td>
                         <td className="px-4 py-3 font-mono text-[#afc6ff]">{p.coin}</td>
                         <td className="px-4 py-3 text-right font-mono">{t('daysN', { n: p.termDays })}</td>
@@ -258,10 +259,10 @@ export default function AdminStakingPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button disabled={busy} onClick={() => (editId === p.id ? cancelEdit() : startEdit(p))} title="Edit" className={`p-1.5 rounded-lg border cursor-pointer disabled:opacity-50 ${editId === p.id ? 'border-amber-500/40 bg-amber-500/15 text-amber-300' : 'border-[#1E3559] bg-[#020d24]/50 hover:bg-[#1e3459] text-[#8c90a0] hover:text-white'}`}><Pencil className="h-3.5 w-3.5" /></button>
-                            <button disabled={busy} onClick={() => toggle(p)} title={p.status === 'OPEN' ? t('close') : t('open')} className="p-1.5 rounded-lg border border-[#1E3559] bg-[#020d24]/50 hover:bg-[#1e3459] text-[#8c90a0] hover:text-white cursor-pointer disabled:opacity-50"><Power className="h-3.5 w-3.5" /></button>
+                            <button data-testid="p-edit" disabled={busy} onClick={() => (editId === p.id ? cancelEdit() : startEdit(p))} title="Edit" className={`p-1.5 rounded-lg border cursor-pointer disabled:opacity-50 ${editId === p.id ? 'border-amber-500/40 bg-amber-500/15 text-amber-300' : 'border-[#1E3559] bg-[#020d24]/50 hover:bg-[#1e3459] text-[#8c90a0] hover:text-white'}`}><Pencil className="h-3.5 w-3.5" /></button>
+                            <button data-testid="p-toggle" disabled={busy} onClick={() => toggle(p)} title={p.status === 'OPEN' ? t('close') : t('open')} className="p-1.5 rounded-lg border border-[#1E3559] bg-[#020d24]/50 hover:bg-[#1e3459] text-[#8c90a0] hover:text-white cursor-pointer disabled:opacity-50"><Power className="h-3.5 w-3.5" /></button>
                             {p.positionCount === 0 && (
-                              <button disabled={busy} onClick={() => remove(p)} title={t('delete')} className="p-1.5 rounded-lg border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/15 text-rose-400 cursor-pointer disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /></button>
+                              <button data-testid="p-delete" disabled={busy} onClick={() => remove(p)} title={t('delete')} className="p-1.5 rounded-lg border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/15 text-rose-400 cursor-pointer disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /></button>
                             )}
                           </div>
                         </td>
