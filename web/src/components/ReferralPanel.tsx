@@ -72,13 +72,12 @@ export default function ReferralPanel() {
         )}
       </div>
 
-      {/* Commission earned */}
+      {/* Commission earned — only shown once the program is active or the user has
+          actually earned something (so an inactive feature isn't shown pre-launch). */}
+      {earn && (earn.enabled || earn.days > 0) && (
       <div className={`${card} flex flex-col gap-3`}>
         <div className="flex items-center gap-2 text-xs font-mono text-[#8c90a0]">
           <TrendingUp className="h-3.5 w-3.5 text-emerald-400" /> Referral commission earned
-          {earn && !earn.enabled && (
-            <span className="ml-auto text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-400 border border-slate-500/25">not active yet</span>
-          )}
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div>
@@ -106,6 +105,7 @@ export default function ReferralPanel() {
           </div>
         )}
       </div>
+      )}
     </section>
   );
 }
