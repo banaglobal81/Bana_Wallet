@@ -10,11 +10,11 @@ describe('referralTreeMath', () => {
   // Four lines under the root: A=1,000,000 (400k self + 600k sub), B=300,000,
   // C=200,000, D=100,000 — all in BANA.
   const members: DownlineMember[] = [
-    { id: 'A', email: 'a', depth: 1, lineRootId: 'A', activeStake: '400000' },
-    { id: 'A1', email: 'a1', depth: 2, lineRootId: 'A', activeStake: '600000' },
-    { id: 'B', email: 'b', depth: 1, lineRootId: 'B', activeStake: '300000' },
-    { id: 'C', email: 'c', depth: 1, lineRootId: 'C', activeStake: '200000' },
-    { id: 'D', email: 'd', depth: 1, lineRootId: 'D', activeStake: '100000' },
+    { id: 'A', email: 'a', depth: 1, lineRootId: 'A', activeStake: '400000', dailyInterest: '0' },
+    { id: 'A1', email: 'a1', depth: 2, lineRootId: 'A', activeStake: '600000', dailyInterest: '0' },
+    { id: 'B', email: 'b', depth: 1, lineRootId: 'B', activeStake: '300000', dailyInterest: '0' },
+    { id: 'C', email: 'c', depth: 1, lineRootId: 'C', activeStake: '200000', dailyInterest: '0' },
+    { id: 'D', email: 'd', depth: 1, lineRootId: 'D', activeStake: '100000', dailyInterest: '0' },
   ];
 
   it('summarizeLines totals each direct-referral line', () => {

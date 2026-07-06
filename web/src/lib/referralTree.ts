@@ -29,7 +29,12 @@ export async function getDownline(rootId: string): Promise<DownlineMember[]> {
         (SELECT SUM(p.principal::numeric) FROM "StakePosition" p
          WHERE p."userId" = t.id AND p.status = 'ACTIVE'),
         0
-      )::text AS "activeStake"
+      )::text AS "activeStake",
+      COALESCE(
+        (SELECT SUM(p.principal::numeric * p."dailyRatePct"::numeric / 100) FROM "StakePosition" p
+         WHERE p."userId" = t.id AND p.status = 'ACTIVE'),
+        0
+      )::text AS "dailyInterest"
     FROM tree t
   `;
 }

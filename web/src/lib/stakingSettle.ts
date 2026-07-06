@@ -2,6 +2,7 @@ import 'server-only';
 import Decimal from 'decimal.js';
 import { prisma } from '@/lib/db';
 import { daysElapsed, dailyInterest } from '@/lib/stakingMath';
+import { payReferralBonuses, type ReferralBonusRunResult } from '@/lib/referralBonus';
 
 export interface SettlementResult {
   processed: number;
@@ -9,6 +10,7 @@ export interface SettlementResult {
   daysCredited: number;
   totalPaid: string;
   at: string;
+  referral: ReferralBonusRunResult; // MLM commission run (no-op unless enabled)
 }
 
 // The daily staking settlement. For every ACTIVE position it PAYS the interest
@@ -69,5 +71,9 @@ export async function runStakingSettlement(now: Date = new Date()): Promise<Sett
     processed += 1;
   }
 
-  return { processed, matured, daysCredited, totalPaid: totalPaid.toFixed(), at: now.toISOString() };
+  // MLM referral commission for this settlement day — runs after base interest is
+  // credited (bonuses are a % of that interest). No-op unless REFERRAL_BONUS_ENABLED.
+  const referral = await payReferralBonuses(now);
+
+  return { processed, matured, daysCredited, totalPaid: totalPaid.toFixed(), at: now.toISOString(), referral };
 }

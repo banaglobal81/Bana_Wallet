@@ -9,6 +9,7 @@ export interface DownlineMember {
   depth: number;        // 1 = direct referral (1대), 2 = their referrals (2대), …
   lineRootId: string;   // the direct referral whose sub-tree this member belongs to
   activeStake: string;  // sum of ACTIVE StakePosition principal (in the staked coin)
+  dailyInterest: string; // sum of one day's interest across their ACTIVE stakes (principal × rate%/100)
 }
 
 export interface LineSummary {

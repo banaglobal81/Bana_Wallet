@@ -258,6 +258,23 @@ model StakingPayout {
   @@index([userId])
 }
 
+// MLM referral commission paid to an upline for one settlement "day" (Phase B).
+// One row per (user, dayKey) makes the daily payout idempotent. layer1 = 대·소실적
+// 매칭, layer2 = 유니레벨 부스트. Written only when REFERRAL_BONUS_ENABLED is on.
+model ReferralBonusPayout {
+  id        String   @id @default(cuid())
+  userId    String
+  dayKey    String                                 // floor(now / stakingDayMs) — advances one per settlement day
+  coin      String   @default("BANA")
+  layer1    String   @default("0")                 // 대·소실적 매칭 (decimal string)
+  layer2    String   @default("0")                 // 유니레벨 부스트 (decimal string)
+  total     String   @default("0")
+  paidAt    DateTime @default(now())
+
+  @@unique([userId, dayKey])
+  @@index([userId])
+}
+
 // An admin-managed coin shown in the user coin list. Custom EVM tokens are added
 // by contract address per network. Real deposits/withdrawals only work for coins
 // the Nia hub also supports (custom tokens are display-only until then).
