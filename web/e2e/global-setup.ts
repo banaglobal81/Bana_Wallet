@@ -15,6 +15,12 @@ export const E2E = {
   elapsedDays: 5, // → accrued = 5000 × 0.7% × 5 = 175 USDT
 };
 
+// A deterministic ADMIN used by the admin-pages E2E (admin.spec.ts).
+export const E2E_ADMIN = {
+  email: 'e2e-admin@example.com',
+  password: 'e2e-adminpass-123',
+};
+
 const DAY = 86_400_000;
 const cuid = () => 'c' + crypto.randomUUID().replace(/-/g, '').slice(0, 24);
 
@@ -27,6 +33,15 @@ export default async function globalSetup() {
   await c.query('DELETE FROM "StakingPayout" WHERE "userId" IN (SELECT id FROM "User" WHERE email=$1)', [E2E.email]);
   await c.query('DELETE FROM "StakePosition" WHERE email=$1', [E2E.email]);
   await c.query('DELETE FROM "User" WHERE email=$1', [E2E.email]);
+
+  // Admin user for the admin-pages E2E (upsert to a known password).
+  await c.query('DELETE FROM "User" WHERE email=$1', [E2E_ADMIN.email]);
+  const adminHash = await bcrypt.hash(E2E_ADMIN.password, 12);
+  await c.query(
+    'INSERT INTO "User"(id,email,"passwordHash",role,"createdAt") VALUES($1,$2,$3,$4,now())',
+    [cuid(), E2E_ADMIN.email, adminHash, 'ADMIN'],
+  );
+  console.log(`[e2e] seeded ADMIN ${E2E_ADMIN.email}`);
   await c.query('DELETE FROM "StakingProduct" WHERE name=$1', [E2E.productName]);
 
   // User (with a real bcrypt password so it logs in through the form).

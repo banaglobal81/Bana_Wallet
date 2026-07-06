@@ -53,7 +53,10 @@ export const authConfig = {
           if (rest.startsWith('/api/')) {
             return Response.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
           }
-          return false; // Auth.js redirects to signIn
+          // Explicit redirect — in this middleware setup (auth() wrapping the intl
+          // middleware) returning `false` does NOT auto-redirect, so the page shell
+          // would otherwise render for logged-out visitors.
+          return Response.redirect(p('/login'));
         }
         if (role !== 'ADMIN') {
           if (rest.startsWith('/api/')) {
