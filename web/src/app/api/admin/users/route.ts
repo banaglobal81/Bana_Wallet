@@ -34,6 +34,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         passwordHash: true,
         resetTokenHash: true,
         resetTokenExpiry: true,
+        // Referral tree (Phase A): this user's code, who invited them, and how
+        // many people they've directly invited.
+        referralCode: true,
+        referredBy: { select: { email: true } },
+        _count: { select: { referrals: true } },
       },
     });
 
@@ -47,6 +52,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       disabled: u.disabled,
       authMethod: u.passwordHash ? 'password' : 'google',
       resetPending: Boolean(u.resetTokenHash && u.resetTokenExpiry && u.resetTokenExpiry.getTime() > now),
+      referralCode: u.referralCode,
+      invitedBy: u.referredBy?.email ?? null,
+      referralCount: u._count.referrals,
     }));
 
     return NextResponse.json({ ok: true, data });

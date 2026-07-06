@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { signIn } from 'next-auth/react';
@@ -10,6 +10,8 @@ import { Mail, Lock, UserPlus, AlertCircle, Loader2 } from 'lucide-react';
 export default function SignupPage() {
   const t = useTranslations('signup');
   const router = useRouter();
+  // Referral attribution: capture ?ref=CODE from the invite link (if present).
+  const ref = useSearchParams().get('ref')?.trim() || undefined;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -31,7 +33,7 @@ export default function SignupPage() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, ref }),
       });
 
       const data: { ok: boolean; error?: string } = await res.json();

@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/db';
 import { newNiaUserId } from '@/lib/nia/identity';
 import { getPlatformSettings } from '@/lib/platformSettings';
+import { uniqueReferralCode, resolveReferrer } from '@/lib/referral';
 
 export async function POST(req: Request) {
   // Respect the platform "new signups" toggle.
@@ -38,9 +39,15 @@ export async function POST(req: Request) {
       );
     }
     const passwordHash = await bcrypt.hash(password, 12);
+    // Referral attribution: if a valid ?ref code was supplied, record who invited
+    // this user. Also mint this user's own shareable code. (Phase A — tree only.)
+    const referredById = await resolveReferrer(body.ref);
+    const referralCode = await uniqueReferralCode();
     // Mint a dedicated Nia-Hub end-user id so this account maps to its own
     // Nia sub-account rather than sharing NIA_DEFAULT_USER_ID.
-    await prisma.user.create({ data: { email, passwordHash, role: 'USER', niaUserId: newNiaUserId() } });
+    await prisma.user.create({
+      data: { email, passwordHash, role: 'USER', niaUserId: newNiaUserId(), referralCode, referredById },
+    });
     return NextResponse.json({ ok: true });
   } catch (e) {
     // P2002 = unique constraint race (two signups, same email)

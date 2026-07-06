@@ -27,6 +27,19 @@ export function getNiaStatus(): Promise<NiaStatus> {
   return getJson<NiaStatus>('/api/nia/status');
 }
 
+export interface ReferralInfo {
+  code: string;
+  link: string;
+  directReferrals: number;
+  invitedBy: string | null;
+}
+
+/** The signed-in user's referral code + invite link + direct-referral count. */
+export async function getReferral(): Promise<ReferralInfo> {
+  const r = await getJson<{ ok: boolean; data: ReferralInfo }>('/api/referral');
+  return r.data;
+}
+
 /** Trade & fee receipts for the current session user (history). */
 export async function getNiaTrades(): Promise<any[]> {
   const r = await getJson<{ ok: boolean; data: any[] }>('/api/nia/trades');

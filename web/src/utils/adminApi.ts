@@ -10,6 +10,10 @@ export interface AdminUser {
   disabled: boolean;
   authMethod: 'password' | 'google';
   resetPending: boolean;
+  // Referral tree (Phase A)
+  referralCode: string | null;
+  invitedBy: string | null;
+  referralCount: number;
 }
 
 export interface AdminUserWallet {

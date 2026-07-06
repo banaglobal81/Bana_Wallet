@@ -142,6 +142,17 @@ model User {
   previousEmailBlockedUntil DateTime?
   passkeys         Passkey[]
   loginSessions    LoginSession[]
+  // Referral tree (Phase A foundation for the referral/rewards program).
+  //  - referralCode: this user's own shareable code (unique).
+  //  - referredById: who invited this user → self-relation forms the multi-level tree.
+  // NOTE: no commission/bonus math here yet — that is gated on the senior's approved
+  // spec + legal review. This only records the "who invited whom" relationships.
+  referralCode  String?  @unique
+  referredById  String?
+  referredBy    User?    @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals     User[]   @relation("UserReferrals")
+
+  @@index([referredById])
 }
 
 // A login session / device — created on each sign-in, embedded in the JWT as
