@@ -8,7 +8,7 @@ import {
   type AdminStakingProduct, type AdminStakePosition, type StakingProductInput, type AdminStakingStat,
 } from '@/utils/adminApi';
 
-const EMPTY: StakingProductInput = { coin: '', name: '', termDays: 30, dailyRatePct: '', minAmount: '', maxAmount: '', capacity: '' };
+const EMPTY: StakingProductInput = { coin: 'BANA', name: '', termDays: 30, dailyRatePct: '', minAmount: '', maxAmount: '', capacity: '' };
 
 export default function AdminStakingPage() {
   const t = useTranslations('adminStaking');
@@ -85,7 +85,7 @@ export default function AdminStakingPage() {
         <div className="p-6 rounded-2xl bg-[#112643]/70 border border-amber-500/20 flex flex-col gap-4">
           <h3 className="font-bold text-white text-sm">{t('newProduct')}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('coin')}</span><input className={field} value={form.coin} onChange={(e) => setForm({ ...form, coin: e.target.value })} placeholder="USDT" /></label>
+            <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('coin')}</span><input className={field} value={form.coin} onChange={(e) => setForm({ ...form, coin: e.target.value })} placeholder="BANA" /></label>
             <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('name')}</span><input className={field} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t('namePlaceholder')} /></label>
             <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('termDays')}</span><input className={field} type="number" min={1} value={form.termDays} onChange={(e) => setForm({ ...form, termDays: Number(e.target.value) })} /></label>
             <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('dailyRate')}</span><input className={field} value={form.dailyRatePct} onChange={(e) => setForm({ ...form, dailyRatePct: e.target.value })} placeholder="0.05" /></label>
