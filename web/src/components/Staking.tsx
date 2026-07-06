@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Screen, SystemSettings } from '../types';
 import { Coins, Loader2, Lock, Clock, Check, TrendingUp } from 'lucide-react';
 import CoinAvatar from './wallet/CoinAvatar';
+import ReferralPanel from './ReferralPanel';
 import {
   getStakingProducts, getStakePositions, getStakingRewards, stake,
   type StakingProduct, type StakePosition, type StakingRewards,
@@ -113,6 +114,9 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
         <div className="flex items-center gap-2.5 py-10 justify-center"><Loader2 className="h-5 w-5 text-[#528dff] animate-spin" /><span className="text-sm text-[#8c90a0]">{t('loading')}</span></div>
       ) : (
         <>
+          {/* Referral invite link + commission earned */}
+          <ReferralPanel />
+
           {/* Rewards earned — real amounts credited by the daily payout worker */}
           {rewards && Object.entries(rewards.totalByCoin).some(([, a]) => new Decimal(a || '0').gt(0)) && (
             <section className="flex flex-col gap-2">

@@ -5,8 +5,8 @@ import { useTranslations } from 'next-intl';
 import { Sprout, Plus, Loader2, Check, X, Power, Trash2, Users, Lock, Coins, Pencil, Play } from 'lucide-react';
 import {
   listStakingProducts, createStakingProduct, updateStakingProduct, deleteStakingProduct, listStakingPositions, getStakingStats,
-  runStakingSettlement, getStakingRunStatus,
-  type AdminStakingProduct, type AdminStakePosition, type StakingProductInput, type AdminStakingStat, type StakingRunStatus,
+  runStakingSettlement, getStakingRunStatus, getReferralOverview,
+  type AdminStakingProduct, type AdminStakePosition, type StakingProductInput, type AdminStakingStat, type StakingRunStatus, type ReferralOverview,
 } from '@/utils/adminApi';
 
 const EMPTY: StakingProductInput = { coin: 'BANA', name: '', termDays: 30, dailyRatePct: '', minAmount: '', maxAmount: '', capacity: '' };
@@ -19,6 +19,7 @@ export default function AdminStakingPage() {
   const [products, setProducts] = useState<AdminStakingProduct[]>([]);
   const [positions, setPositions] = useState<AdminStakePosition[]>([]);
   const [stats, setStats] = useState<AdminStakingStat[]>([]);
+  const [referral, setReferral] = useState<ReferralOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,11 +38,12 @@ export default function AdminStakingPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [p, pos, st, run] = await Promise.all([
+      const [p, pos, st, run, ref] = await Promise.all([
         listStakingProducts(), listStakingPositions(),
         getStakingStats().catch(() => []), getStakingRunStatus().catch(() => null),
+        getReferralOverview().catch(() => null),
       ]);
-      setProducts(p); setPositions(pos); setStats(st); setStatus(run);
+      setProducts(p); setPositions(pos); setStats(st); setStatus(run); setReferral(ref);
     } catch (e) { setError((e as Error).message); }
     finally { setLoading(false); }
   }, []);
@@ -199,6 +201,56 @@ export default function AdminStakingPage() {
                   <div className="text-[10px] font-mono text-[#8c90a0]">{s.activeCount} active · {s.totalCount} total positions</div>
                 </div>
               ))}
+            </section>
+          )}
+
+          {/* Referral commissions (대·소실적 매칭 + 유니레벨 부스트) */}
+          {referral && (
+            <section className="flex flex-col gap-3">
+              <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#d8e2ff] flex items-center gap-2">
+                Referral commissions
+                {!referral.enabled && <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-400 border border-slate-500/25">flag OFF</span>}
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-[#112643]/70 border border-[#1E3559]">
+                  <div className="text-[10px] font-mono uppercase tracking-wide text-[#8c90a0]">Total paid</div>
+                  <div className="font-mono font-bold text-emerald-400 truncate">+{referral.grandTotal} BANA</div>
+                </div>
+                <div className="p-4 rounded-2xl bg-[#112643]/70 border border-[#1E3559]">
+                  <div className="text-[10px] font-mono uppercase tracking-wide text-[#8c90a0]">Uplines (with downline)</div>
+                  <div className="font-mono font-bold text-white">{referral.uplines}</div>
+                </div>
+                <div className="p-4 rounded-2xl bg-[#112643]/70 border border-[#1E3559]">
+                  <div className="text-[10px] font-mono uppercase tracking-wide text-[#8c90a0]">Earners</div>
+                  <div className="font-mono font-bold text-white">{referral.earners.length}</div>
+                </div>
+              </div>
+              {referral.earners.length > 0 && (
+                <div className="overflow-x-auto rounded-2xl border border-[#1E3559]">
+                  <table className="w-full text-sm">
+                    <thead className="bg-[#0a1b33] text-[11px] font-mono uppercase text-[#8c90a0]">
+                      <tr>
+                        <th className="text-left px-4 py-3">User</th>
+                        <th className="text-right px-4 py-3">Matching</th>
+                        <th className="text-right px-4 py-3">Boost</th>
+                        <th className="text-right px-4 py-3">Total</th>
+                        <th className="text-right px-4 py-3">Days</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#1E3559]/50">
+                      {referral.earners.map((e) => (
+                        <tr key={e.email} className="hover:bg-[#112643]/40">
+                          <td className="px-4 py-3 font-mono text-[#afc6ff] truncate max-w-[220px]">{e.email}</td>
+                          <td className="px-4 py-3 text-right font-mono text-[#8c90a0]">{e.matching}</td>
+                          <td className="px-4 py-3 text-right font-mono text-[#8c90a0]">{e.boost}</td>
+                          <td className="px-4 py-3 text-right font-mono text-emerald-400 font-bold">+{e.total}</td>
+                          <td className="px-4 py-3 text-right font-mono">{e.days}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </section>
           )}
 

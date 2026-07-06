@@ -40,6 +40,22 @@ export async function getReferral(): Promise<ReferralInfo> {
   return r.data;
 }
 
+export interface ReferralEarnings {
+  enabled: boolean;
+  coin: string;
+  total: string;
+  matching: string; // 대·소실적 매칭 (Layer 1)
+  boost: string;    // 유니레벨 부스트 (Layer 2)
+  days: number;
+  recent: Array<{ layer1: string; layer2: string; total: string; paidAt: string }>;
+}
+
+/** The signed-in user's referral commission summary (from the payout ledger). */
+export async function getReferralEarnings(): Promise<ReferralEarnings> {
+  const r = await getJson<{ ok: boolean; data: ReferralEarnings }>('/api/referral/earnings');
+  return r.data;
+}
+
 /** Trade & fee receipts for the current session user (history). */
 export async function getNiaTrades(): Promise<any[]> {
   const r = await getJson<{ ok: boolean; data: any[] }>('/api/nia/trades');

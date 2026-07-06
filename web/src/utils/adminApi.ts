@@ -305,6 +305,29 @@ export async function getStakingRunStatus(): Promise<StakingRunStatus> {
   return r.data;
 }
 
+// ---- Referral commissions ----
+
+export interface ReferralEarner {
+  email: string;
+  days: number;
+  total: string;
+  matching: string;
+  boost: string;
+}
+
+export interface ReferralOverview {
+  enabled: boolean;
+  grandTotal: string;
+  uplines: number;
+  earners: ReferralEarner[];
+}
+
+/** Referral commission overview (total paid + top earners). */
+export async function getReferralOverview(): Promise<ReferralOverview> {
+  const r = await getJson<{ ok: boolean; data: ReferralOverview }>('/api/admin/referral');
+  return r.data;
+}
+
 // ---- Managed coins (custom EVM tokens) ----
 
 export interface CoinNetwork {
