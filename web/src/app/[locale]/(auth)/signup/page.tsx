@@ -36,7 +36,9 @@ export default function SignupPage() {
         body: JSON.stringify({ email, password, ref }),
       });
 
-      const data: { ok: boolean; error?: string } = await res.json();
+      // Guard against a non-JSON body (e.g. a 503 HTML error page) so signup
+      // never crashes on an unexpected response — surface a clean error instead.
+      const data: { ok: boolean; error?: string } = await res.json().catch(() => ({ ok: false }));
 
       if (!data.ok) {
         if (res.status === 409) {
