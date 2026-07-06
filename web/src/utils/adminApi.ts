@@ -274,6 +274,33 @@ export async function getStakingStats(): Promise<AdminStakingStat[]> {
   return Array.isArray(r.data) ? r.data : [];
 }
 
+export interface StakingRunResult {
+  processed: number;
+  matured: number;
+  daysCredited: number;
+  totalPaid: string;
+  at: string;
+}
+
+/** Run the daily staking settlement now (admin-triggered; idempotent). */
+export async function runStakingSettlement(): Promise<StakingRunResult> {
+  const r = await postJson<{ ok: boolean; data: StakingRunResult }>('/api/admin/staking/run', {});
+  return r.data;
+}
+
+export interface StakingRunStatus {
+  lastPayoutAt: string | null;
+  payoutsToday: number;
+  totalPaidToday: string;
+  activeCount: number;
+}
+
+/** Settlement status — when interest was last paid, paid today, active count. */
+export async function getStakingRunStatus(): Promise<StakingRunStatus> {
+  const r = await getJson<{ ok: boolean; data: StakingRunStatus }>('/api/admin/staking/run');
+  return r.data;
+}
+
 // ---- Managed coins (custom EVM tokens) ----
 
 export interface CoinNetwork {

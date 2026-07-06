@@ -65,6 +65,8 @@ export async function POST(req: Request): Promise<NextResponse> {
   const name = String(body.name ?? '').trim();
   const termDays = Number(body.termDays);
   if (!coin) return NextResponse.json({ ok: false, error: 'Coin is required' }, { status: 400 });
+  // Policy: only the BANA token is stakeable.
+  if (coin !== 'BANA') return NextResponse.json({ ok: false, error: 'Only BANA staking is supported.' }, { status: 400 });
   if (!name) return NextResponse.json({ ok: false, error: 'Name is required' }, { status: 400 });
   if (!Number.isInteger(termDays) || termDays <= 0) {
     return NextResponse.json({ ok: false, error: 'Term (days) must be a whole number greater than 0' }, { status: 400 });

@@ -1,0 +1,73 @@
+import 'server-only';
+import Decimal from 'decimal.js';
+import { prisma } from '@/lib/db';
+import { daysElapsed, dailyInterest } from '@/lib/stakingMath';
+
+export interface SettlementResult {
+  processed: number;
+  matured: number;
+  daysCredited: number;
+  totalPaid: string;
+  at: string;
+}
+
+// The daily staking settlement. For every ACTIVE position it PAYS the interest
+// earned for each elapsed day that hasn't been paid yet — one auditable row per
+// day in StakingPayout — then flips matured positions to MATURED (which unlocks
+// the principal). Idempotent: re-running pays nothing twice (days tracked by
+// daysPaid + the unique [positionId, dayIndex]). Shared by the cron endpoint
+// and the admin "run now" action so both behave identically.
+export async function runStakingSettlement(now: Date = new Date()): Promise<SettlementResult> {
+  let processed = 0;
+  let matured = 0;
+  let daysCredited = 0;
+  let totalPaid = new Decimal(0);
+
+  const positions = await prisma.stakePosition.findMany({
+    where: { status: 'ACTIVE' },
+    select: {
+      id: true, userId: true, coin: true, principal: true,
+      dailyRatePct: true, termDays: true, startAt: true, daysPaid: true,
+    },
+  });
+
+  for (const p of positions) {
+    const dueDays = daysElapsed(p.startAt, now, p.termDays);
+    const perDay = dailyInterest(p.principal, p.dailyRatePct);
+    const newDays = dueDays - p.daysPaid;
+
+    if (newDays > 0) {
+      const rows = [];
+      for (let d = p.daysPaid + 1; d <= dueDays; d += 1) {
+        rows.push({ positionId: p.id, userId: p.userId, coin: p.coin, amount: perDay.toFixed(), dayIndex: d });
+      }
+      await prisma.stakingPayout.createMany({ data: rows, skipDuplicates: true });
+
+      const paidToDate = perDay.times(dueDays);
+      const isDone = dueDays >= p.termDays;
+      await prisma.stakePosition.update({
+        where: { id: p.id },
+        data: {
+          daysPaid: dueDays,
+          paidInterest: paidToDate.toFixed(),
+          accruedInterest: paidToDate.toFixed(),
+          lastAccrualAt: now,
+          ...(isDone ? { status: 'MATURED', paidAt: now } : {}),
+        },
+      });
+
+      daysCredited += newDays;
+      totalPaid = totalPaid.plus(perDay.times(newDays));
+      if (isDone) matured += 1;
+    } else if (dueDays >= p.termDays) {
+      await prisma.stakePosition.update({
+        where: { id: p.id },
+        data: { status: 'MATURED', paidAt: now, lastAccrualAt: now },
+      });
+      matured += 1;
+    }
+    processed += 1;
+  }
+
+  return { processed, matured, daysCredited, totalPaid: totalPaid.toFixed(), at: now.toISOString() };
+}

@@ -2,13 +2,17 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { Sprout, Plus, Loader2, Check, X, Power, Trash2, Users, Lock, Coins } from 'lucide-react';
+import { Sprout, Plus, Loader2, Check, X, Power, Trash2, Users, Lock, Coins, Pencil, Play } from 'lucide-react';
 import {
   listStakingProducts, createStakingProduct, updateStakingProduct, deleteStakingProduct, listStakingPositions, getStakingStats,
-  type AdminStakingProduct, type AdminStakePosition, type StakingProductInput, type AdminStakingStat,
+  runStakingSettlement, getStakingRunStatus,
+  type AdminStakingProduct, type AdminStakePosition, type StakingProductInput, type AdminStakingStat, type StakingRunStatus,
 } from '@/utils/adminApi';
 
 const EMPTY: StakingProductInput = { coin: 'BANA', name: '', termDays: 30, dailyRatePct: '', minAmount: '', maxAmount: '', capacity: '' };
+
+// Fields an existing product can be edited to (coin + term are fixed after creation).
+type EditForm = { name: string; dailyRatePct: string; minAmount: string; maxAmount: string; capacity: string };
 
 export default function AdminStakingPage() {
   const t = useTranslations('adminStaking');
@@ -21,15 +25,63 @@ export default function AdminStakingPage() {
   const [form, setForm] = useState<StakingProductInput>(EMPTY);
   const [showForm, setShowForm] = useState(false);
 
+  // Settlement (daily payout) run + status.
+  const [status, setStatus] = useState<StakingRunStatus | null>(null);
+  const [running, setRunning] = useState(false);
+  const [runMsg, setRunMsg] = useState<string | null>(null);
+
+  // Inline product edit.
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<EditForm>({ name: '', dailyRatePct: '', minAmount: '', maxAmount: '', capacity: '' });
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [p, pos, st] = await Promise.all([listStakingProducts(), listStakingPositions(), getStakingStats().catch(() => [])]);
-      setProducts(p); setPositions(pos); setStats(st);
+      const [p, pos, st, run] = await Promise.all([
+        listStakingProducts(), listStakingPositions(),
+        getStakingStats().catch(() => []), getStakingRunStatus().catch(() => null),
+      ]);
+      setProducts(p); setPositions(pos); setStats(st); setStatus(run);
     } catch (e) { setError((e as Error).message); }
     finally { setLoading(false); }
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  const runSettlement = async () => {
+    setRunning(true); setError(null); setRunMsg(null);
+    try {
+      const r = await runStakingSettlement();
+      setRunMsg(r.daysCredited > 0
+        ? `Paid ${r.totalPaid} across ${r.daysCredited} day(s); ${r.matured} matured.`
+        : `Up to date — nothing new to pay (${r.processed} active).`);
+      await load();
+    } catch (e) { setError((e as Error).message); }
+    finally { setRunning(false); }
+  };
+
+  const startEdit = (p: AdminStakingProduct) => {
+    setError(null);
+    setEditId(p.id);
+    setEditForm({
+      name: p.name, dailyRatePct: p.dailyRatePct,
+      minAmount: p.minAmount ?? '', maxAmount: p.maxAmount ?? '', capacity: p.capacity ?? '',
+    });
+  };
+  const cancelEdit = () => { setEditId(null); };
+  const saveEdit = async (id: string) => {
+    setBusy(true); setError(null);
+    try {
+      await updateStakingProduct(id, {
+        name: editForm.name.trim(),
+        dailyRatePct: editForm.dailyRatePct,
+        minAmount: editForm.minAmount || null,
+        maxAmount: editForm.maxAmount || null,
+        capacity: editForm.capacity || null,
+      });
+      setEditId(null); await load();
+    } catch (e) { setError((e as Error).message); }
+    finally { setBusy(false); }
+  };
 
   const create = async () => {
     setBusy(true); setError(null);
@@ -80,12 +132,34 @@ export default function AdminStakingPage() {
 
       {error && <div className="px-4 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm">{error}</div>}
 
+      {/* Daily settlement — status + manual run */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+        <div className="flex flex-col gap-1 text-xs font-mono text-[#8c90a0]">
+          <span className="text-[11px] uppercase tracking-wider text-[#d8e2ff] font-bold">Daily settlement</span>
+          <span>
+            Last interest paid:{' '}
+            <span className="text-[#afc6ff]">{status?.lastPayoutAt ? new Date(status.lastPayoutAt).toLocaleString() : 'never'}</span>
+            {'  ·  '}Paid today: <span className="text-emerald-400">{status?.totalPaidToday ?? '0'}</span> ({status?.payoutsToday ?? 0})
+            {'  ·  '}<span className="text-[#afc6ff]">{status?.activeCount ?? 0}</span> active
+          </span>
+          {runMsg && <span className="text-emerald-300">{runMsg}</span>}
+        </div>
+        <button
+          disabled={running}
+          onClick={runSettlement}
+          title="Run the daily interest payout now (idempotent)"
+          className="self-start inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-bold cursor-pointer whitespace-nowrap"
+        >
+          {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Run settlement now
+        </button>
+      </div>
+
       {/* Create form */}
       {showForm && (
         <div className="p-6 rounded-2xl bg-[#112643]/70 border border-amber-500/20 flex flex-col gap-4">
           <h3 className="font-bold text-white text-sm">{t('newProduct')}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('coin')}</span><input className={field} value={form.coin} onChange={(e) => setForm({ ...form, coin: e.target.value })} placeholder="BANA" /></label>
+            <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('coin')}</span><input className={`${field} opacity-70 cursor-not-allowed`} value="BANA" readOnly title="Only BANA is stakeable" /></label>
             <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('name')}</span><input className={field} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t('namePlaceholder')} /></label>
             <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('termDays')}</span><input className={field} type="number" min={1} value={form.termDays} onChange={(e) => setForm({ ...form, termDays: Number(e.target.value) })} /></label>
             <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('dailyRate')}</span><input className={field} value={form.dailyRatePct} onChange={(e) => setForm({ ...form, dailyRatePct: e.target.value })} placeholder="0.05" /></label>
@@ -130,6 +204,29 @@ export default function AdminStakingPage() {
           {/* Products */}
           <section className="flex flex-col gap-3">
             <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#d8e2ff]">{t('productsTitle')}</h2>
+
+            {/* Inline edit — change an existing product's rate / limits (coin + term are fixed) */}
+            {editId && (() => {
+              const p = products.find((x) => x.id === editId);
+              if (!p) return null;
+              return (
+                <div className="p-5 rounded-2xl bg-[#112643]/70 border border-amber-500/20 flex flex-col gap-4">
+                  <h3 className="font-bold text-white text-sm">Edit {p.coin} {t('daysN', { n: p.termDays })}</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('name')}</span><input className={field} value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} /></label>
+                    <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('dailyRate')}</span><input className={field} value={editForm.dailyRatePct} onChange={(e) => setEditForm({ ...editForm, dailyRatePct: e.target.value })} placeholder="0.05" /></label>
+                    <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('minOpt')}</span><input className={field} value={editForm.minAmount} onChange={(e) => setEditForm({ ...editForm, minAmount: e.target.value })} placeholder="—" /></label>
+                    <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('maxOpt')}</span><input className={field} value={editForm.maxAmount} onChange={(e) => setEditForm({ ...editForm, maxAmount: e.target.value })} placeholder="—" /></label>
+                    <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('capacityOpt')}</span><input className={field} value={editForm.capacity} onChange={(e) => setEditForm({ ...editForm, capacity: e.target.value })} placeholder="—" /></label>
+                  </div>
+                  <div className="flex gap-2">
+                    <button disabled={busy} onClick={() => saveEdit(p.id)} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-bold cursor-pointer">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save</button>
+                    <button disabled={busy} onClick={cancelEdit} className="px-4 py-2.5 rounded-xl bg-[#020d24]/60 hover:bg-[#112643] text-[#8c90a0] hover:text-white text-sm font-bold border border-[#1E3559]/80 cursor-pointer">{t('cancel')}</button>
+                  </div>
+                </div>
+              );
+            })()}
+
             {products.length === 0 ? (
               <div className="p-6 rounded-2xl bg-[#112643]/70 border border-[#1E3559] text-center text-sm text-[#8c90a0]">{t('noProducts')}</div>
             ) : (
@@ -161,6 +258,7 @@ export default function AdminStakingPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-1.5">
+                            <button disabled={busy} onClick={() => (editId === p.id ? cancelEdit() : startEdit(p))} title="Edit" className={`p-1.5 rounded-lg border cursor-pointer disabled:opacity-50 ${editId === p.id ? 'border-amber-500/40 bg-amber-500/15 text-amber-300' : 'border-[#1E3559] bg-[#020d24]/50 hover:bg-[#1e3459] text-[#8c90a0] hover:text-white'}`}><Pencil className="h-3.5 w-3.5" /></button>
                             <button disabled={busy} onClick={() => toggle(p)} title={p.status === 'OPEN' ? t('close') : t('open')} className="p-1.5 rounded-lg border border-[#1E3559] bg-[#020d24]/50 hover:bg-[#1e3459] text-[#8c90a0] hover:text-white cursor-pointer disabled:opacity-50"><Power className="h-3.5 w-3.5" /></button>
                             {p.positionCount === 0 && (
                               <button disabled={busy} onClick={() => remove(p)} title={t('delete')} className="p-1.5 rounded-lg border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/15 text-rose-400 cursor-pointer disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /></button>
