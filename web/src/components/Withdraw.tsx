@@ -153,12 +153,14 @@ export default function Withdraw({ onNavigate }: WithdrawProps) {
   const dest = destination.trim();
   const addressLooksValid = isEvm ? /^0x[a-fA-F0-9]{40}$/.test(dest) : dest.length >= 16;
   const amountIsPositive = amountDec.gt(0);
-  const overBalance = amountDec.gt(balance);
+  const totalSend = amountIsPositive ? amountDec.plus(networkFee) : new Decimal(0);
+  // The balance must cover the amount PLUS the network fee (fee is charged on top).
+  const overBalance = totalSend.gt(balance);
   const belowMin = amountIsPositive && minAmount.gt(0) && amountDec.lt(minAmount);
   const hasNoBalance = !balanceLoading && balance.lte(0);
   const canReview = amountIsPositive && !overBalance && !belowMin && addressLooksValid && !hasNoBalance;
-  const totalSend = amountIsPositive ? amountDec.plus(networkFee) : new Decimal(0);
-  const handleMax = () => setAmount(balance.toFixed());
+  // Max = the most that can be sent while still leaving room for the fee.
+  const handleMax = () => setAmount(Decimal.max(0, balance.minus(networkFee)).toFixed());
 
   const reviewing = stage === 'review';
   const hasCoin = !!selectedAsset;
