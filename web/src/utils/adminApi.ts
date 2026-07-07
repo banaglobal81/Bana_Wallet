@@ -76,7 +76,7 @@ export async function getUserWallet(userId: string): Promise<AdminUserWallet> {
 
 // ---- Withdrawal approval queue ----
 
-export type WithdrawalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'FAILED';
+export type WithdrawalStatus = 'PENDING' | 'PROCESSING' | 'APPROVED' | 'REJECTED' | 'FAILED';
 
 export interface WithdrawalRequest {
   id: string;

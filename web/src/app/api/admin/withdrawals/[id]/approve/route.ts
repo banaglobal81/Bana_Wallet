@@ -38,18 +38,27 @@ export async function POST(
   niaState.inFlightWithdrawals.add(guardKey);
 
   try {
-    const wr = await prisma.withdrawalRequest.findUnique({ where: { id } });
-    if (!wr) return NextResponse.json({ ok: false, error: 'Withdrawal not found' }, { status: 404 });
-    if (wr.status !== 'PENDING') {
-      return NextResponse.json({ ok: false, error: `Already ${wr.status.toLowerCase()}` }, { status: 409 });
+    // ATOMIC CLAIM: flip PENDING -> PROCESSING in one statement. Only the caller
+    // that wins this update may forward — a concurrent approve, a retry, or a
+    // second replica sees count 0 and stops. This is the real double-forward
+    // guard (the in-memory set above is only a per-process fast path).
+    const claim = await prisma.withdrawalRequest.updateMany({
+      where: { id, status: 'PENDING' },
+      data: { status: 'PROCESSING', reviewedById: adminId ?? null, reviewedAt: new Date() },
+    });
+    if (claim.count === 0) {
+      const existing = await prisma.withdrawalRequest.findUnique({ where: { id }, select: { status: true } });
+      if (!existing) return NextResponse.json({ ok: false, error: 'Withdrawal not found' }, { status: 404 });
+      return NextResponse.json({ ok: false, error: `Already ${existing.status.toLowerCase()}` }, { status: 409 });
     }
+    const wr = (await prisma.withdrawalRequest.findUnique({ where: { id } }))!;
 
-    // Forward to the hub — funds leave here (shared helper).
+    // Forward to the hub — funds leave here (shared helper). On error the helper
+    // marks the row FAILED (needs manual verification), never back to PENDING.
     const result = await forwardWithdrawalToHub(wr, { adminId });
     if (!result.ok) {
-      // Hub rejected — request stays PENDING (lastError recorded) for retry.
       return NextResponse.json(
-        { ok: false, error: `Hub rejected the withdrawal: ${result.error}` },
+        { ok: false, error: `Withdrawal could not be completed: ${result.error}. It is marked FAILED — verify on the hub before retrying.` },
         { status: result.status ?? 502 },
       );
     }

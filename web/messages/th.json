@@ -653,7 +653,8 @@
     "statusPENDING": "รอดำเนินการ",
     "statusAPPROVED": "อนุมัติแล้ว",
     "statusREJECTED": "ปฏิเสธแล้ว",
-    "statusFAILED": "ล้มเหลว"
+    "statusFAILED": "ล้มเหลว",
+    "statusPROCESSING": "กำลังดำเนินการ"
   },
   "adminDashboard": {
     "pageTitle": "แดชบอร์ด",

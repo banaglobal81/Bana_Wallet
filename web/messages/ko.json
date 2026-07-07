@@ -653,7 +653,8 @@
     "statusPENDING": "대기",
     "statusAPPROVED": "승인됨",
     "statusREJECTED": "거부됨",
-    "statusFAILED": "실패"
+    "statusFAILED": "실패",
+    "statusPROCESSING": "처리 중"
   },
   "adminDashboard": {
     "pageTitle": "대시보드",

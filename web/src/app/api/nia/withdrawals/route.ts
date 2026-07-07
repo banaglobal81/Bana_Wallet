@@ -238,11 +238,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const usdValue = STABLECOINS.has(cur) ? decAmount : null;
     const threshold = policy?.autoApproveUnderUsd ? new Decimal(policy.autoApproveUnderUsd) : null;
     if (threshold && threshold.gt(0) && usdValue && usdValue.lte(threshold)) {
-      const result = await forwardWithdrawalToHub(wr);
-      if (result.ok) {
-        return NextResponse.json({ ok: true, data: { id: wr.id, status: 'APPROVED', autoApproved: true } });
+      // Atomically claim before forwarding (same double-forward guard as the
+      // admin approve path). Only forward if we won the PENDING -> PROCESSING flip.
+      const claim = await prisma.withdrawalRequest.updateMany({
+        where: { id: wr.id, status: 'PENDING' },
+        data: { status: 'PROCESSING' },
+      });
+      if (claim.count === 1) {
+        const result = await forwardWithdrawalToHub(wr);
+        if (result.ok) {
+          return NextResponse.json({ ok: true, data: { id: wr.id, status: 'APPROVED', autoApproved: true } });
+        }
+        // On error the helper marks it FAILED (needs manual verification).
+        return NextResponse.json({ ok: true, data: { id: wr.id, status: 'FAILED', pendingApproval: true } });
       }
-      // Hub rejected — leave it PENDING for manual review (lastError recorded).
     }
 
     return NextResponse.json({ ok: true, data: { id: wr.id, status: 'PENDING', pendingApproval: true } });

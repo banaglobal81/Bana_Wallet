@@ -653,7 +653,8 @@
     "statusPENDING": "保留中",
     "statusAPPROVED": "承認済み",
     "statusREJECTED": "却下",
-    "statusFAILED": "失敗"
+    "statusFAILED": "失敗",
+    "statusPROCESSING": "処理中"
   },
   "adminDashboard": {
     "pageTitle": "ダッシュボード",

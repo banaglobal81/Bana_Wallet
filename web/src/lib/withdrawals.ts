@@ -14,12 +14,19 @@ type WithdrawalRow = {
 
 /**
  * Forward a stored withdrawal request to Nia-Hub — this is the point where funds
- * actually leave. On success the row is marked APPROVED (with the hub reference);
- * on failure it stays in its current status with `lastError` recorded so it can be
- * retried. The stored idempotencyKey makes retries safe against double-spend.
+ * actually leave. The caller MUST have already atomically claimed the row
+ * (status PENDING -> PROCESSING) so this can never run twice concurrently.
  *
- * Shared by the admin approve route and the auto-approve path so the forwarding
- * logic lives in exactly one place.
+ * Safety:
+ *  - Always sends a stable idempotencyKey (the request id) so the hub can dedup
+ *    a retry, in case the same request is ever forwarded twice.
+ *  - On success -> APPROVED. On ANY error the outcome is UNKNOWN (the hub may
+ *    have executed before the response was lost), so we mark the row FAILED with
+ *    the error — NOT back to PENDING — so it is never blindly re-approved (which
+ *    would risk a double-spend). An operator must verify against the hub before
+ *    creating a new withdrawal.
+ *
+ * Shared by the admin approve route and the auto-approve path.
  */
 export async function forwardWithdrawalToHub(
   wr: WithdrawalRow,
@@ -31,8 +38,9 @@ export async function forwardWithdrawalToHub(
     network: wr.network,
     amount: wr.amount,
     toAddress: wr.toAddress,
+    // Stable per-request key so a retry can be deduplicated hub-side.
+    idempotencyKey: wr.idempotencyKey ?? wr.id,
   };
-  if (wr.idempotencyKey) upstream.idempotencyKey = wr.idempotencyKey;
 
   try {
     const data = await niaWalletRequest('POST', '/api/v1/withdrawals', { body: upstream });
@@ -48,7 +56,11 @@ export async function forwardWithdrawalToHub(
     return { ok: true };
   } catch (e) {
     const err = e as Error & { status?: number };
-    await prisma.withdrawalRequest.update({ where: { id: wr.id }, data: { lastError: err.message } });
+    // Outcome unknown → FAILED (needs manual verification), never auto-retryable.
+    await prisma.withdrawalRequest.update({
+      where: { id: wr.id },
+      data: { status: 'FAILED', lastError: err.message },
+    });
     return { ok: false, error: err.message, status: err.status };
   }
 }

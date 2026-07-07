@@ -653,7 +653,8 @@
     "statusPENDING": "Đang chờ",
     "statusAPPROVED": "Đã duyệt",
     "statusREJECTED": "Đã từ chối",
-    "statusFAILED": "Thất bại"
+    "statusFAILED": "Thất bại",
+    "statusPROCESSING": "Đang xử lý"
   },
   "adminDashboard": {
     "pageTitle": "Bảng điều khiển",

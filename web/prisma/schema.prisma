@@ -22,6 +22,7 @@ enum Role {
 
 enum WithdrawalStatus {
   PENDING
+  PROCESSING   // atomically claimed for forwarding — prevents a double-forward
   APPROVED
   REJECTED
   FAILED

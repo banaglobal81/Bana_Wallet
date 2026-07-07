@@ -653,7 +653,8 @@
     "statusPENDING": "待处理",
     "statusAPPROVED": "已批准",
     "statusREJECTED": "已拒绝",
-    "statusFAILED": "失败"
+    "statusFAILED": "失败",
+    "statusPROCESSING": "处理中"
   },
   "adminDashboard": {
     "pageTitle": "仪表板",

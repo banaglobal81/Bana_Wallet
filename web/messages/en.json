@@ -653,7 +653,8 @@
     "statusPENDING": "Pending",
     "statusAPPROVED": "Approved",
     "statusREJECTED": "Rejected",
-    "statusFAILED": "Failed"
+    "statusFAILED": "Failed",
+    "statusPROCESSING": "Processing"
   },
   "adminDashboard": {
     "pageTitle": "Dashboard",
