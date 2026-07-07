@@ -8,8 +8,13 @@ import { NIA_WEBHOOK_SECRET } from '@/lib/nia/config';
 import { niaState, WEBHOOK_EVENTS_MAX } from '@/lib/nia/state';
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  // -- Optional shared-secret verification (timing-safe) --
-  if (NIA_WEBHOOK_SECRET) {
+  // -- Shared-secret verification (timing-safe). FAIL CLOSED: this endpoint is
+  // public (excluded from the auth gate), so if no secret is configured we reject
+  // rather than accept forged events (e.g. a fake "deposit received" notification). --
+  if (!NIA_WEBHOOK_SECRET) {
+    return NextResponse.json({ ok: false, error: 'Webhook not configured' }, { status: 503 });
+  }
+  {
     const provided = req.headers.get('X-Nia-Webhook-Secret') ?? '';
     // [SECURITY] Use constant-time comparison to prevent timing-oracle attacks.
     // Guard against length mismatch: if lengths differ, reject without throwing.

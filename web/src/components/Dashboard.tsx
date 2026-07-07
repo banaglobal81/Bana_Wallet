@@ -49,6 +49,14 @@ interface RawBalanceRow {
   walletType?: string;
 }
 
+// Safe Decimal parse — Nia-Hub can return "" / non-numeric fields for an
+// uninitialized wallet, and new Decimal("") THROWS. Never let a bad field crash
+// the portfolio load (which would freeze it on the skeleton forever).
+function safeDec(v: unknown): Decimal {
+  try { return new Decimal(v == null || v === '' ? '0' : (v as string)); }
+  catch { return new Decimal(0); }
+}
+
 function flattenBalanceData(raw: unknown): RawBalanceRow[] {
   if (Array.isArray(raw)) {
     return raw as RawBalanceRow[];
@@ -167,8 +175,8 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
       const bySymbol = new Map<string, Decimal>();
       for (const row of rows) {
         if (!row.currency) continue;
-        const bal = new Decimal(row.balance ?? '0');
-        const lkd = new Decimal(row.locked ?? '0');
+        const bal = safeDec(row.balance);
+        const lkd = safeDec(row.locked);
         const prev = bySymbol.get(row.currency) ?? new Decimal(0);
         bySymbol.set(row.currency, prev.plus(bal).plus(lkd));
       }
@@ -216,8 +224,8 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
         return {
           currency: item.currency,
           amount: item.amount,
-          price: new Decimal(result.price),
-          changePct: new Decimal(result.changePct),
+          price: safeDec(result.price),
+          changePct: safeDec(result.changePct),
           hasPrice: true,
         };
       });
