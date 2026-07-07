@@ -49,10 +49,13 @@ test.describe('Admin pages', () => {
     });
   }
 
-  test('non-admin is redirected away from /admin', async ({ page, context }) => {
-    // A logged-out browser hitting an admin route must not see it.
-    await context.clearCookies();
-    await page.goto('/en/admin/dashboard');
-    await expect(page).toHaveURL(/\/login/, { timeout: 15_000 });
+  test('logged-out user is redirected away from /admin', async ({ browser }) => {
+    // Use a genuinely fresh context (never logged in, no cache) so we test the
+    // real server redirect — not a bfcache copy of a previously-loaded page.
+    const ctx = await browser.newContext();
+    const p = await ctx.newPage();
+    await p.goto('http://localhost:3000/en/admin/dashboard');
+    await expect(p).toHaveURL(/\/login/, { timeout: 15_000 });
+    await ctx.close();
   });
 });
