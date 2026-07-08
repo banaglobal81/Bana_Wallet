@@ -8,7 +8,7 @@ import { prisma } from '@/lib/db';
 import { requireUser } from '@/lib/auth/session';
 import { niaWalletRequest } from '@/lib/nia/client';
 import { resolveSessionUserId } from '@/lib/nia/resolve';
-import { settleMaturedPositions, lockedPrincipalByCoin } from '@/lib/staking';
+import { settleMaturedPositions } from '@/lib/staking';
 import { DAY_MS } from '@/lib/stakingMath';
 
 function err(e: unknown) {
@@ -67,44 +67,63 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: `Maximum stake is ${product.maxAmount} ${product.coin}.` }, { status: 400 });
   }
 
-  // Product capacity (total across all active positions).
-  if (product.capacity) {
-    const active = await prisma.stakePosition.findMany({
-      where: { productId, status: 'ACTIVE' }, select: { principal: true },
-    });
-    const used = active.reduce((s, p) => s.plus(new Decimal(p.principal)), new Decimal(0));
-    if (used.plus(amount).gt(new Decimal(product.capacity))) {
-      const left = Decimal.max(0, new Decimal(product.capacity).minus(used));
-      return NextResponse.json({ ok: false, error: `Not enough capacity left in this product (only ${left.toFixed()} ${product.coin} available).` }, { status: 409 });
-    }
-  }
-
-  // Available balance = Nia free balance − already-locked staked principal.
+  // Fetch the user's free balance from Nia (external I/O — kept OUTSIDE the DB
+  // transaction below so we don't hold the row locks during a network call).
+  // Staking never changes this number; only deposits/withdrawals do, so reading
+  // it just before taking the lock is safe.
   await settleMaturedPositions(dbUserId);
-  let available: Decimal;
+  let niaBal: Decimal;
   try {
     const raw = await niaWalletRequest('GET', '/api/v1/wallets', { query: { userId: niaUserId, currency: product.coin } });
-    const niaBal = sumBalance(raw, product.coin);
-    const locked = (await lockedPrincipalByCoin(dbUserId)).get(product.coin) ?? new Decimal(0);
-    available = niaBal.minus(locked);
+    niaBal = sumBalance(raw, product.coin);
   } catch (e) { return err(e); }
-
-  if (amount.gt(available)) {
-    return NextResponse.json(
-      { ok: false, error: `Not enough available ${product.coin}. You have ${Decimal.max(0, available).toFixed()} free to stake.` },
-      { status: 400 },
-    );
-  }
 
   const startAt = new Date();
   const maturityAt = new Date(startAt.getTime() + product.termDays * DAY_MS);
-  const position = await prisma.stakePosition.create({
-    data: {
-      userId: dbUserId, niaUserId, email, productId: product.id, coin: product.coin,
-      principal: amount.toFixed(), dailyRatePct: product.dailyRatePct, termDays: product.termDays,
-      startAt, maturityAt,
-    },
-  });
+
+  // Capacity re-check + available-balance re-check + position creation run in ONE
+  // transaction, guarded by Postgres advisory locks (product first, then user —
+  // a consistent lock order avoids deadlock). Without this, two concurrent stake
+  // requests could both read the same available balance / capacity and each
+  // create a position, locking more principal than the user actually holds (and
+  // then accruing daily interest on funds that aren't there). Serializing per
+  // user (balance) and per product (capacity) closes that race.
+  let position: { id: string };
+  try {
+    position = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`stake_product:${product.id}`}, 0))`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`stake_user:${dbUserId}`}, 0))`;
+
+      if (product.capacity) {
+        const active = await tx.stakePosition.findMany({
+          where: { productId, status: 'ACTIVE' }, select: { principal: true },
+        });
+        const used = active.reduce((s, p) => s.plus(new Decimal(p.principal)), new Decimal(0));
+        if (used.plus(amount).gt(new Decimal(product.capacity))) {
+          const left = Decimal.max(0, new Decimal(product.capacity).minus(used));
+          throw Object.assign(new Error(`Not enough capacity left in this product (only ${left.toFixed()} ${product.coin} available).`), { status: 409 });
+        }
+      }
+
+      const lockedRows = await tx.stakePosition.findMany({
+        where: { userId: dbUserId, status: 'ACTIVE', coin: product.coin }, select: { principal: true },
+      });
+      const locked = lockedRows.reduce((s, p) => s.plus(new Decimal(p.principal)), new Decimal(0));
+      const available = niaBal.minus(locked);
+      if (amount.gt(available)) {
+        throw Object.assign(new Error(`Not enough available ${product.coin}. You have ${Decimal.max(0, available).toFixed()} free to stake.`), { status: 400 });
+      }
+
+      return tx.stakePosition.create({
+        data: {
+          userId: dbUserId, niaUserId, email, productId: product.id, coin: product.coin,
+          principal: amount.toFixed(), dailyRatePct: product.dailyRatePct, termDays: product.termDays,
+          startAt, maturityAt,
+        },
+        select: { id: true },
+      });
+    });
+  } catch (e) { return err(e); }
 
   return NextResponse.json({ ok: true, data: { id: position.id, maturityAt: maturityAt.toISOString() } });
 }

@@ -25,8 +25,12 @@ export async function runStakingSettlement(now: Date = new Date()): Promise<Sett
   let daysCredited = 0;
   let totalPaid = new Decimal(0);
 
+  // ACTIVE positions, plus any that were matured WITHOUT being fully paid (a
+  // lazily-matured row has status MATURED but paidAt=null — the settlement job
+  // always stamps paidAt when it matures). Picking those up self-heals any days
+  // that a premature unlock would otherwise have stranded.
   const positions = await prisma.stakePosition.findMany({
-    where: { status: 'ACTIVE' },
+    where: { OR: [{ status: 'ACTIVE' }, { status: 'MATURED', paidAt: null }] },
     select: {
       id: true, userId: true, coin: true, principal: true,
       dailyRatePct: true, termDays: true, startAt: true, daysPaid: true,

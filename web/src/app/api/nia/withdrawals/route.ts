@@ -39,7 +39,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       const dbUserId = (session?.user as { id?: string } | undefined)?.id;
       if (dbUserId) {
         const reqs = await prisma.withdrawalRequest.findMany({
-          where: { userId: dbUserId, status: { in: ['PENDING', 'REJECTED', 'FAILED'] } },
+          where: { userId: dbUserId, status: { in: ['PENDING', 'PROCESSING', 'REJECTED', 'FAILED'] } },
           orderBy: { createdAt: 'desc' },
           take: 20,
         });
@@ -177,29 +177,43 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // -- 3c. Staking lock: principal locked in active stakes is non-withdrawable --
+  // Reading the local stake state is best-effort (treat a transient local-DB
+  // error as "no lock"). But once we know there IS locked principal, verifying it
+  // is NOT optional: the hub has no knowledge of the soft-lock, so if we can't
+  // fetch the balance to check it we must FAIL CLOSED rather than risk letting
+  // staked funds be withdrawn.
+  let locked = new Decimal(0);
   try {
     await settleMaturedPositions(dbUserId);
-    const locked = (await lockedPrincipalByCoin(dbUserId)).get(curUpper) ?? new Decimal(0);
-    if (locked.gt(0)) {
+    locked = (await lockedPrincipalByCoin(dbUserId)).get(curUpper) ?? new Decimal(0);
+  } catch { /* local stake lookup best-effort */ }
+  if (locked.gt(0)) {
+    let niaBal: Decimal;
+    try {
       const raw = await niaWalletRequest('GET', '/api/v1/wallets', { query: { userId: niaUserId, currency: String(currency ?? '') } });
       const rows: unknown[] = Array.isArray(raw)
         ? raw
         : raw && typeof raw === 'object'
           ? Object.values(raw as Record<string, unknown>).flatMap((v) => (Array.isArray(v) ? v : []))
           : [];
-      let niaBal = new Decimal(0);
+      niaBal = new Decimal(0);
       for (const r of rows as Array<{ currency?: string; balance?: string }>) {
         if ((r?.currency ?? '').toUpperCase() === curUpper) niaBal = niaBal.plus(new Decimal(r.balance ?? '0'));
       }
-      const available = niaBal.minus(locked);
-      if (decAmount.gt(available)) {
-        return NextResponse.json(
-          { ok: false, error: `${locked.toFixed()} ${curUpper} is locked in staking. You have ${Decimal.max(0, available).toFixed()} ${curUpper} available to withdraw.` },
-          { status: 400 },
-        );
-      }
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: 'Could not verify your available balance against staking locks right now. Please try again shortly.' },
+        { status: 503 },
+      );
     }
-  } catch { /* best-effort — Nia still enforces its own balance check downstream */ }
+    const available = niaBal.minus(locked);
+    if (decAmount.gt(available)) {
+      return NextResponse.json(
+        { ok: false, error: `${locked.toFixed()} ${curUpper} is locked in staking. You have ${Decimal.max(0, available).toFixed()} ${curUpper} available to withdraw.` },
+        { status: 400 },
+      );
+    }
+  }
 
   // -- 4. In-flight dedup guard (prevents concurrent duplicate submissions) --
   const clientKey = req.headers.get('Idempotency-Key');
@@ -249,8 +263,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         if (result.ok) {
           return NextResponse.json({ ok: true, data: { id: wr.id, status: 'APPROVED', autoApproved: true } });
         }
-        // On error the helper marks it FAILED (needs manual verification).
-        return NextResponse.json({ ok: true, data: { id: wr.id, status: 'FAILED', pendingApproval: true } });
+        // On error the helper marks it FAILED (needs manual verification on the
+        // hub). Signal FAILED distinctly — it is NOT "pending admin approval".
+        return NextResponse.json({ ok: true, data: { id: wr.id, status: 'FAILED', failed: true } });
       }
     }
 

@@ -30,7 +30,13 @@ export async function GET(): Promise<NextResponse> {
     LIMIT 50
   `;
 
-  const grandTotal = earners.reduce((s, r) => s.plus(new Decimal(r.total || '0')), new Decimal(0)).toFixed();
+  // Platform-wide total across ALL earners — computed with its own un-LIMITed
+  // aggregate. (Reducing over `earners` would only sum the top 50 shown above and
+  // silently understate the true total once there are more than 50 earners.)
+  const totalRow = await prisma.$queryRaw<Array<{ total: string }>>`
+    SELECT COALESCE(SUM(total::numeric), 0)::text AS total FROM "ReferralBonusPayout"
+  `;
+  const grandTotal = new Decimal(totalRow[0]?.total || '0').toFixed();
   const withDownline = await prisma.$queryRaw<Array<{ n: number }>>`
     SELECT COUNT(DISTINCT "referredById")::int AS n FROM "User" WHERE "referredById" IS NOT NULL
   `;

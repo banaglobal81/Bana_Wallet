@@ -6,11 +6,11 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 
-const STATUSES = ['PENDING', 'APPROVED', 'REJECTED', 'FAILED'] as const;
+const STATUSES = ['PENDING', 'PROCESSING', 'APPROVED', 'REJECTED', 'FAILED'] as const;
 
 /**
  * GET /api/admin/withdrawals — withdrawal approval queue (ADMIN only).
- * Optional ?status=PENDING|APPROVED|REJECTED|FAILED filters; default returns all
+ * Optional ?status=PENDING|PROCESSING|APPROVED|REJECTED|FAILED filters; default returns all
  * (newest first, capped). Also returns the count of PENDING for the nav badge.
  */
 export async function GET(req: NextRequest): Promise<NextResponse> {

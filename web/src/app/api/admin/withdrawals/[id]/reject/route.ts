@@ -30,9 +30,13 @@ export async function POST(
   const reason = String(body.reason ?? '').trim().slice(0, 300) || null;
 
   try {
-    // Atomic claim — only a PENDING request can be rejected.
+    // Atomic claim. A PENDING request can be rejected normally. A PROCESSING
+    // request can ALSO be rejected as a recovery path for a row left stuck when a
+    // forward died mid-flight — the operator must first verify on the hub that the
+    // funds did NOT leave. The forward helper only settles rows still in
+    // PROCESSING, so this reject and a late hub response can't both win.
     const claimed = await prisma.withdrawalRequest.updateMany({
-      where: { id, status: 'PENDING' },
+      where: { id, status: { in: ['PENDING', 'PROCESSING'] } },
       data: { status: 'REJECTED', reviewedById: adminId, reviewedAt: new Date(), rejectionReason: reason },
     });
     if (claimed.count === 0) {

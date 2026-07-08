@@ -18,16 +18,31 @@ type Position = {
 };
 
 /**
- * Flip any ACTIVE position whose term has ended to MATURED. Lazy settlement —
- * called on read so statuses are always current without a background job.
- * (Interest payout into the wallet is Phase 2; here the principal simply unlocks.)
+ * Flip a matured position to MATURED (which unlocks its principal) ONLY once every
+ * day of its term has actually been paid. Lazy settlement — called on read so
+ * statuses stay current without a background job.
+ *
+ * CRITICAL: we must NOT mature a position that still has unpaid days. The daily
+ * settlement job (`runStakingSettlement`) credits ACTIVE (and matured-but-unpaid)
+ * positions; if this lazy path flipped a position to MATURED before its final
+ * day(s) were credited, that interest could be stranded. So here we only unlock
+ * positions with `daysPaid >= termDays`, and leave the rest ACTIVE for the
+ * settlement job to credit-then-mature. (Prisma can't compare two columns in a
+ * single updateMany, so we select candidates past maturity and filter in code.)
  */
 export async function settleMaturedPositions(userId?: string): Promise<void> {
   try {
-    await prisma.stakePosition.updateMany({
+    const candidates = await prisma.stakePosition.findMany({
       where: { status: 'ACTIVE', maturityAt: { lte: new Date() }, ...(userId ? { userId } : {}) },
-      data: { status: 'MATURED' },
+      select: { id: true, daysPaid: true, termDays: true },
     });
+    const ids = candidates.filter((p) => p.daysPaid >= p.termDays).map((p) => p.id);
+    if (ids.length) {
+      await prisma.stakePosition.updateMany({
+        where: { id: { in: ids } },
+        data: { status: 'MATURED', paidAt: new Date() },
+      });
+    }
   } catch {
     /* best-effort */
   }

@@ -275,6 +275,28 @@ function mergeItems(
   return all.slice(0, 50);
 }
 
+// The full set of notification ids derivable from the current server data
+// (before dedup/dismiss filtering). Used to prune persisted read/dismissed ids
+// down to items that still exist, so those localStorage sets can't grow forever.
+function currentItemIds(events: any[], deposits: any[], withdrawals: any[], trades: any[], t: T): Set<string> {
+  const ids = new Set<string>();
+  const empty = new Set<string>(); // ids don't depend on read state
+  for (const ev of events) ids.add(mapWebhookEvent(ev, empty, t).id);
+  for (const dep of deposits) ids.add(mapDeposit(dep, empty, t).id);
+  for (const wd of withdrawals) ids.add(mapWithdrawal(wd, empty, t).id);
+  for (const trade of trades) ids.add(mapTrade(trade, empty, t).id);
+  return ids;
+}
+
+// Keep only the ids from `set` that are still live. No-op when `live` is empty
+// (a transient all-empty fetch) so we never resurrect read/dismissed items.
+function pruneToLive(set: Set<string>, live: Set<string>): Set<string> {
+  if (live.size === 0) return set;
+  const next = new Set<string>();
+  for (const id of set) if (live.has(id)) next.add(id);
+  return next.size === set.size ? set : next; // preserve reference when unchanged
+}
+
 // ---- Component ---------------------------------------------------------------
 const POLL_MS = 25_000;
 
@@ -326,12 +348,17 @@ export default function Notifications() {
       ]);
       // Read the latest persisted read ids from state (captured by closure) to
       // correctly mark items; use a functional update so we always see latest.
+      // Also prune the persisted read/dismissed sets to ids that still exist in
+      // the live data, so those localStorage sets stay bounded.
+      const live = currentItemIds(events, deposits, withdrawals, trades, t);
       setReadIds((currentReadIds) => {
+        const prunedRead = pruneToLive(currentReadIds, live);
         setDismissedIds((currentDismissed) => {
-          setItems(mergeItems(events, deposits, withdrawals, trades, currentReadIds, t, currentDismissed));
-          return currentDismissed; // unchanged
+          const prunedDismissed = pruneToLive(currentDismissed, live);
+          setItems(mergeItems(events, deposits, withdrawals, trades, prunedRead, t, prunedDismissed));
+          return prunedDismissed;
         });
-        return currentReadIds; // unchanged
+        return prunedRead;
       });
     } catch {
       // On error: leave existing items intact; don't clear them.

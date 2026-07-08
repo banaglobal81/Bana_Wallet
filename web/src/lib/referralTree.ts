@@ -22,6 +22,10 @@ export async function getDownline(rootId: string): Promise<DownlineMember[]> {
       SELECT u.id, u.email, u."referredById", t.depth + 1, t.line_root
       FROM "User" u
       JOIN tree t ON u."referredById" = t.id
+      -- Depth cap: the tree is acyclic today (referredById is set once at signup),
+      -- but this bounds recursion so a future re-parent that introduced a cycle
+      -- can't spin forever and take down the settlement job.
+      WHERE t.depth < 100
     )
     SELECT
       t.id, t.email, t.depth, t.line_root AS "lineRootId",

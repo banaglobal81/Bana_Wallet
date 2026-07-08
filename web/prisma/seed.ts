@@ -2,10 +2,16 @@
 // script does NOT auto-load .env, so this must run before reading process.env.
 // dotenv logs "injected env (N) from .env" — useful to confirm it found the file.
 import 'dotenv/config';
+import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+
+// Mirror src/lib/nia/identity.ts's `bana_<uuid>` format (that module is
+// `server-only`, so the seed can't import it). Every account needs a Nia-Hub
+// end-user id — without one, wallet routes fail closed with 403.
+const newNiaUserId = () => `bana_${randomUUID()}`;
 
 // Prisma 7 requires a driver adapter (the URL is no longer read from the schema
 // or a constructor option). Mirror src/lib/db.ts here (seed can't import that
@@ -31,11 +37,16 @@ async function main() {
   const email = rawEmail.trim().toLowerCase();
   const passwordHash = await bcrypt.hash(password, 12);
 
-  await prisma.user.upsert({
+  const admin = await prisma.user.upsert({
     where: { email },
     update: { passwordHash, role: 'ADMIN' },
-    create: { email, passwordHash, role: 'ADMIN' },
+    create: { email, passwordHash, role: 'ADMIN', niaUserId: newNiaUserId() },
   });
+  // Backfill for an admin seeded before per-user Nia ids existed (would 403 on
+  // wallet routes otherwise). niaUserId is unique + stable once set.
+  if (!admin.niaUserId) {
+    await prisma.user.update({ where: { id: admin.id }, data: { niaUserId: newNiaUserId() } });
+  }
 
   console.log(`Seeded ADMIN: ${email}`);
 }

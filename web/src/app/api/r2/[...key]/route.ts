@@ -11,6 +11,11 @@ const CT: Record<string, string> = {
   svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif',
 };
 
+// Cacheable miss — CoinAvatar probes this endpoint for logos that usually don't
+// exist; let the browser cache the negative result briefly instead of re-hitting
+// R2 on every render. Short TTL so a freshly-uploaded logo appears promptly.
+const miss = () => new NextResponse(null, { status: 404, headers: { 'Cache-Control': 'public, max-age=300' } });
+
 // GET /api/r2/<key...> — public image proxy that streams a logo from R2.
 // e.g. /api/r2/coins/usdt.svg  or  /api/r2/brand/bana_wordmark.png
 export async function GET(_req: Request, { params }: { params: Promise<{ key: string[] }> }): Promise<NextResponse | Response> {
@@ -20,11 +25,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
   if (!path || path.includes('..') || !ALLOWED_PREFIXES.some((p) => path.startsWith(p))) {
     return new NextResponse(null, { status: 404 });
   }
-  if (!r2Configured()) return new NextResponse(null, { status: 404 });
+  if (!r2Configured()) return miss();
 
   try {
     const res = await r2Get(path);
-    if (!res.ok || !res.body) return new NextResponse(null, { status: 404 });
+    if (!res.ok || !res.body) return miss();
     const ext = path.split('.').pop()?.toLowerCase() ?? '';
     return new Response(res.body, {
       status: 200,
@@ -34,6 +39,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
       },
     });
   } catch {
-    return new NextResponse(null, { status: 404 });
+    return miss();
   }
 }

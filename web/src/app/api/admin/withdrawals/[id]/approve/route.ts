@@ -9,9 +9,12 @@ import { forwardWithdrawalToHub } from '@/lib/withdrawals';
 
 /**
  * POST /api/admin/withdrawals/[id]/approve — approve a pending withdrawal (ADMIN only).
- * This is the point where funds actually leave: the stored request is forwarded to
- * Nia-Hub. On hub failure the request stays PENDING (with lastError) so it can be
- * retried; the idempotencyKey makes a retry safe against double-spend.
+ * This is the point where funds actually leave: the request is atomically claimed
+ * (PENDING -> PROCESSING) and forwarded to Nia-Hub. On hub failure the row is
+ * marked FAILED (with lastError) — never auto-retried — because the outcome is
+ * unknown and a blind retry could double-spend; an operator must verify on the hub
+ * (and can then clear a stuck row via reject). The idempotencyKey makes any
+ * hub-side retry safe.
  */
 export async function POST(
   _req: Request,

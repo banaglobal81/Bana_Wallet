@@ -49,16 +49,20 @@ export async function forwardWithdrawalToHub(
       (data as { withdrawalId?: string } | null)?.withdrawalId ??
       (data as { txId?: string } | null)?.txId ??
       null;
-    await prisma.withdrawalRequest.update({
-      where: { id: wr.id },
+    // Only settle a row we still own (status PROCESSING). If an operator cleared a
+    // "stuck" PROCESSING row (→ REJECTED) while this call was in flight, don't
+    // clobber their decision.
+    await prisma.withdrawalRequest.updateMany({
+      where: { id: wr.id, status: 'PROCESSING' },
       data: { status: 'APPROVED', reviewedById: opts.adminId ?? null, reviewedAt: new Date(), hubTxId, lastError: null },
     });
     return { ok: true };
   } catch (e) {
     const err = e as Error & { status?: number };
     // Outcome unknown → FAILED (needs manual verification), never auto-retryable.
-    await prisma.withdrawalRequest.update({
-      where: { id: wr.id },
+    // Guarded on PROCESSING for the same reason as the success path above.
+    await prisma.withdrawalRequest.updateMany({
+      where: { id: wr.id, status: 'PROCESSING' },
       data: { status: 'FAILED', lastError: err.message },
     });
     return { ok: false, error: err.message, status: err.status };

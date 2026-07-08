@@ -20,10 +20,12 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: err.message }, { status: err.status ?? 500 });
   }
 
+  // webhookEvents is maintained newest-first (unshift), so take the FIRST 20 to
+  // get the most-recent deposits. (A previous slice(-20).reverse() took the
+  // OLDEST 20 once the buffer held more than 20 deposit events.)
   const events = (niaState.webhookEvents ?? [])
     .filter((e) => /deposit|received|credit/i.test(e.type))
-    .slice(-20)
-    .reverse()
+    .slice(0, 20)
     .map((e) => {
       const d = (e.data ?? {}) as Record<string, unknown>;
       return {

@@ -64,14 +64,17 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             secondFactorOk = verifyTotp(code, decryptSecret(user.totpSecret));
           } catch { secondFactorOk = false; }
           if (!secondFactorOk) {
-            // Fall back to a one-time backup code; consume it on use.
+            // Fall back to a one-time backup code, consumed ATOMICALLY: the update
+            // only matches while the code is still present, so two concurrent
+            // logins presenting the same code can't both succeed (the loser gets
+            // count 0). Prevents a single backup code authenticating twice.
             const usedHash = matchBackupCode(code, user.totpBackupCodes);
             if (usedHash) {
-              await prisma.user.update({
-                where: { id: user.id },
-                data: { totpBackupCodes: user.totpBackupCodes.filter((h) => h !== usedHash) },
+              const consumed = await prisma.user.updateMany({
+                where: { id: user.id, totpBackupCodes: { has: usedHash } },
+                data: { totpBackupCodes: { set: user.totpBackupCodes.filter((h) => h !== usedHash) } },
               });
-              secondFactorOk = true;
+              if (consumed.count === 1) secondFactorOk = true;
             }
           }
           if (!secondFactorOk) return null;
@@ -162,6 +165,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         });
         // Disabled accounts cannot sign in (admin-locked).
         if (record.disabled) return false;
+        // Backfill niaUserId for a legacy Google account created before per-user
+        // Nia ids existed — without it, wallet routes fail closed with 403.
+        if (!record.niaUserId) {
+          await prisma.user.update({ where: { id: record.id }, data: { niaUserId: newNiaUserId() } });
+        }
         return true;
       }
       // Credentials path — authorize() already validated, just allow through.
