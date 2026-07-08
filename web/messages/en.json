@@ -16,7 +16,8 @@
     "withdrawals": "Withdrawals",
     "dashboard": "Dashboard",
     "adminConsole": "Admin Console",
-    "coins": "Coins"
+    "coins": "Coins",
+    "coinManagement": "Coin Management"
   },
   "login": {
     "title": "Sign in",

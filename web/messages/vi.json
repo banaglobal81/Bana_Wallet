@@ -16,7 +16,8 @@
     "withdrawals": "Rút tiền",
     "dashboard": "Bảng điều khiển",
     "adminConsole": "Bảng quản trị",
-    "coins": "Coin"
+    "coins": "Coin",
+    "coinManagement": "Quản lý Coin"
   },
   "login": {
     "title": "Đăng nhập",

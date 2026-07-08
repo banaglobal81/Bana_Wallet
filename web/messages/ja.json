@@ -16,7 +16,8 @@
     "withdrawals": "出金",
     "dashboard": "ダッシュボード",
     "adminConsole": "管理コンソール",
-    "coins": "コイン"
+    "coins": "コイン",
+    "coinManagement": "コイン管理"
   },
   "login": {
     "title": "ログイン",

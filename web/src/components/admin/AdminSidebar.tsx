@@ -27,7 +27,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }: Admi
     { href: '/admin/withdrawals', label: nav('withdrawals'), icon: ArrowUpRight },
     { href: '/admin/settlement', label: nav('settlement'), icon: Coins },
     { href: '/admin/staking', label: nav('staking'), icon: Sprout },
-    { href: '/admin/coins', label: nav('coins'), icon: CircleDollarSign },
+    { href: '/admin/coins', label: nav('coinManagement'), icon: CircleDollarSign },
     { href: '/admin/users', label: nav('users'), icon: Users },
     { href: '/admin/settings', label: nav('settings'), icon: SlidersHorizontal },
   ];

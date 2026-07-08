@@ -16,7 +16,8 @@
     "withdrawals": "提现",
     "dashboard": "仪表板",
     "adminConsole": "管理控制台",
-    "coins": "币种"
+    "coins": "币种",
+    "coinManagement": "币种管理"
   },
   "login": {
     "title": "登录",

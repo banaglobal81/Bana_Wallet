@@ -16,7 +16,8 @@
     "withdrawals": "การถอน",
     "dashboard": "แดชบอร์ด",
     "adminConsole": "คอนโซลผู้ดูแล",
-    "coins": "เหรียญ"
+    "coins": "เหรียญ",
+    "coinManagement": "จัดการเหรียญ"
   },
   "login": {
     "title": "เข้าสู่ระบบ",
