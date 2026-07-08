@@ -9,6 +9,8 @@ import { prisma } from '@/lib/db';
 import { newNiaUserId } from '@/lib/nia/identity';
 import { clientIp, geoLookup } from '@/lib/session-device';
 import { rpFromHeaders } from '@/lib/webauthn';
+import { verifyTotp, matchBackupCode } from '@/lib/totp';
+import { decryptSecret } from '@/lib/crypto';
 
 // A valid bcrypt hash used only to equalize response time when no user exists,
 // so login timing can't be used to enumerate which emails have accounts.
@@ -33,7 +35,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   ...authConfig,
   providers: [
     Credentials({
-      credentials: { email: {}, password: {} },
+      credentials: { email: {}, password: {}, totp: {} },
       async authorize(creds) {
         const email = String(creds?.email ?? '').toLowerCase().trim();
         const password = String(creds?.password ?? '');
@@ -51,6 +53,30 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         if (!ok) return null;
         // Disabled accounts cannot sign in (admin-locked).
         if (user.disabled) return null;
+
+        // SECOND FACTOR: if 2FA is enabled, a valid TOTP code (or a one-time
+        // backup code) is REQUIRED — password alone is not enough.
+        if (user.totpEnabledAt && user.totpSecret) {
+          const code = String(creds?.totp ?? '').trim();
+          if (!code) return null; // client must collect + resubmit the code
+          let secondFactorOk = false;
+          try {
+            secondFactorOk = verifyTotp(code, decryptSecret(user.totpSecret));
+          } catch { secondFactorOk = false; }
+          if (!secondFactorOk) {
+            // Fall back to a one-time backup code; consume it on use.
+            const usedHash = matchBackupCode(code, user.totpBackupCodes);
+            if (usedHash) {
+              await prisma.user.update({
+                where: { id: user.id },
+                data: { totpBackupCodes: user.totpBackupCodes.filter((h) => h !== usedHash) },
+              });
+              secondFactorOk = true;
+            }
+          }
+          if (!secondFactorOk) return null;
+        }
+
         return { id: user.id, email: user.email, role: user.role, niaUserId: user.niaUserId };
       },
     }),

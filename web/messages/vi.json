@@ -34,7 +34,13 @@
     "noAccount": "Chưa có tài khoản?",
     "createOne": "Tạo tài khoản",
     "forgotPassword": "Quên mật khẩu?",
-    "resetSuccess": "Mật khẩu của bạn đã được đặt lại. Vui lòng đăng nhập bằng mật khẩu mới."
+    "resetSuccess": "Mật khẩu của bạn đã được đặt lại. Vui lòng đăng nhập bằng mật khẩu mới.",
+    "twoFactorLabel": "Mã xác thực",
+    "twoFactorPlaceholder": "Mã 6 số hoặc mã dự phòng",
+    "twoFactorHint": "Nhập mã từ ứng dụng xác thực của bạn.",
+    "twoFactorBack": "Dùng tài khoản khác",
+    "verify": "Xác minh",
+    "errorInvalidCode": "Mã không hợp lệ. Vui lòng thử lại."
   },
   "signup": {
     "title": "Tạo tài khoản",

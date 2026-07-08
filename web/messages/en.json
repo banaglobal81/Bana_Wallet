@@ -34,7 +34,13 @@
     "noAccount": "No account?",
     "createOne": "Create one",
     "forgotPassword": "Forgot password?",
-    "resetSuccess": "Your password has been reset. Please sign in with your new password."
+    "resetSuccess": "Your password has been reset. Please sign in with your new password.",
+    "twoFactorLabel": "Authentication code",
+    "twoFactorPlaceholder": "6-digit or backup code",
+    "twoFactorHint": "Enter the code from your authenticator app.",
+    "twoFactorBack": "Use a different account",
+    "verify": "Verify",
+    "errorInvalidCode": "Invalid code. Please try again."
   },
   "signup": {
     "title": "Create account",

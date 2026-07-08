@@ -34,7 +34,13 @@
     "noAccount": "还没有账户？",
     "createOne": "创建账户",
     "forgotPassword": "忘记密码？",
-    "resetSuccess": "您的密码已重置，请使用新密码登录。"
+    "resetSuccess": "您的密码已重置，请使用新密码登录。",
+    "twoFactorLabel": "验证码",
+    "twoFactorPlaceholder": "6位或备份码",
+    "twoFactorHint": "请输入验证器应用中的代码。",
+    "twoFactorBack": "使用其他账户",
+    "verify": "验证",
+    "errorInvalidCode": "验证码无效，请重试。"
   },
   "signup": {
     "title": "创建账户",

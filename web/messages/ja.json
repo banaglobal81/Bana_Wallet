@@ -34,7 +34,13 @@
     "noAccount": "アカウントをお持ちでないですか？",
     "createOne": "アカウントを作成",
     "forgotPassword": "パスワードをお忘れですか？",
-    "resetSuccess": "パスワードが再設定されました。新しいパスワードでログインしてください。"
+    "resetSuccess": "パスワードが再設定されました。新しいパスワードでログインしてください。",
+    "twoFactorLabel": "認証コード",
+    "twoFactorPlaceholder": "6桁またはバックアップコード",
+    "twoFactorHint": "認証アプリのコードを入力してください。",
+    "twoFactorBack": "別のアカウントを使用",
+    "verify": "確認",
+    "errorInvalidCode": "コードが正しくありません。もう一度お試しください。"
   },
   "signup": {
     "title": "アカウント作成",

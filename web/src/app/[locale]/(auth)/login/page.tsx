@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { signIn } from 'next-auth/react';
-import { Mail, Lock, LogIn, AlertCircle, Loader2, CheckCircle2, Fingerprint } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle, Loader2, CheckCircle2, Fingerprint, ShieldCheck } from 'lucide-react';
 import { getPasskeyAssertion, passkeysSupported } from '@/utils/passkeysApi';
 
 export default function LoginPage() {
@@ -19,6 +19,9 @@ export default function LoginPage() {
   const [resetDone, setResetDone] = useState(false);
   const [passkeyReady, setPasskeyReady] = useState(false);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
+  // Two-factor step: after a correct password, 2FA-enabled accounts must enter a code.
+  const [totp, setTotp] = useState('');
+  const [twoFAStep, setTwoFAStep] = useState(false);
 
   useEffect(() => setPasskeyReady(passkeysSupported()), []);
 
@@ -60,19 +63,34 @@ export default function LoginPage() {
     }
   };
 
+  const finishLogin = async (extra: Record<string, string> = {}) => {
+    const res = await signIn('credentials', { email, password, redirect: false, ...extra });
+    if (res?.error) return false;
+    router.push('/');
+    router.refresh();
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
-      const res = await signIn('credentials', { email, password, redirect: false });
-      if (res?.error) {
-        setError(t('errorInvalidCredentials'));
-      } else {
-        router.push('/');
-        router.refresh();
+      if (twoFAStep) {
+        // Step 2 — submit the second factor.
+        if (!(await finishLogin({ totp: totp.trim() }))) setError(t('errorInvalidCode'));
+        return;
       }
+      // Step 1 — verify the password and find out whether 2FA is required.
+      const pre = await fetch('/api/auth/login-precheck', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await pre.json().catch(() => ({ ok: false }));
+      if (!data.ok) { setError(t('errorInvalidCredentials')); return; }
+      if (data.twoFactor) { setTwoFAStep(true); return; } // ask for the code next
+      if (!(await finishLogin())) setError(t('errorInvalidCredentials'));
     } finally {
       setLoading(false);
     }
@@ -104,6 +122,7 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="off"
                 required
+                disabled={twoFAStep}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={t('emailPlaceholder')}
@@ -124,6 +143,7 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="off"
                 required
+                disabled={twoFAStep}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={t('passwordPlaceholder')}
@@ -136,6 +156,34 @@ export default function LoginPage() {
               </Link>
             </div>
           </div>
+
+          {/* 2FA code — shown only after a correct password on a 2FA-enabled account */}
+          {twoFAStep && (
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="totp" className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{t('twoFactorLabel')}</label>
+              <div className="relative">
+                <ShieldCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                <input
+                  id="totp"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  autoFocus
+                  required
+                  value={totp}
+                  onChange={(e) => setTotp(e.target.value)}
+                  placeholder={t('twoFactorPlaceholder')}
+                  className="w-full pl-10 pr-4 py-3 bg-slate-950/60 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-colors"
+                />
+              </div>
+              <div className="flex justify-between">
+                <p className="text-xs text-slate-500">{t('twoFactorHint')}</p>
+                <button type="button" onClick={() => { setTwoFAStep(false); setTotp(''); setError(''); }} className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold">
+                  {t('twoFactorBack')}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Error */}
           {error && (
@@ -156,7 +204,7 @@ export default function LoginPage() {
             ) : (
               <LogIn className="h-4 w-4" />
             )}
-            {loading ? t('submitting') : t('submit')}
+            {loading ? t('submitting') : twoFAStep ? t('verify') : t('submit')}
           </button>
         </form>
 
