@@ -86,11 +86,27 @@ function saveReadIds(ids: Set<string>): void {
   } catch { /* ignore */ }
 }
 
+// Dismissed ids are persisted like read ids so a dismissed item does NOT come
+// back on the next poll (mergeItems rebuilds the list from the server each time).
+const DISMISS_KEY = 'bana_notifications_dismissed_v1';
+function loadDismissedIds(): Set<string> {
+  if (typeof window === 'undefined') return new Set<string>();
+  try {
+    const raw = localStorage.getItem(DISMISS_KEY);
+    if (raw) { const p = JSON.parse(raw); if (Array.isArray(p)) return new Set<string>(p); }
+  } catch { /* ignore */ }
+  return new Set<string>();
+}
+function saveDismissedIds(ids: Set<string>): void {
+  try { localStorage.setItem(DISMISS_KEY, JSON.stringify(Array.from(ids))); } catch { /* ignore */ }
+}
+
 // Translation function type (next-intl scoped translator for the 'notifications' namespace).
 type T = ReturnType<typeof useTranslations>;
 
 // ---- Relative-time helper ----------------------------------------------------
 function relTime(ts: number, t: T): string {
+  if (!Number.isFinite(ts)) return t('justNow'); // guard NaN from an unparseable date
   const s = Math.floor((Date.now() - ts) / 1000);
   if (s < 10) return t('justNow');
   if (s < 60) return t('secondsAgo', { count: s });
@@ -240,26 +256,19 @@ function mergeItems(
   trades: any[],
   readIds: Set<string>,
   t: T,
+  dismissedIds: Set<string>,
 ): NotifItem[] {
   const seen = new Set<string>();
   const all: NotifItem[] = [];
+  const add = (item: NotifItem) => {
+    if (dismissedIds.has(item.id) || seen.has(item.id)) return; // hide dismissed
+    seen.add(item.id); all.push(item);
+  };
 
-  for (const ev of events) {
-    const item = mapWebhookEvent(ev, readIds, t);
-    if (!seen.has(item.id)) { seen.add(item.id); all.push(item); }
-  }
-  for (const dep of deposits) {
-    const item = mapDeposit(dep, readIds, t);
-    if (!seen.has(item.id)) { seen.add(item.id); all.push(item); }
-  }
-  for (const wd of withdrawals) {
-    const item = mapWithdrawal(wd, readIds, t);
-    if (!seen.has(item.id)) { seen.add(item.id); all.push(item); }
-  }
-  for (const trade of trades) {
-    const item = mapTrade(trade, readIds, t);
-    if (!seen.has(item.id)) { seen.add(item.id); all.push(item); }
-  }
+  for (const ev of events) add(mapWebhookEvent(ev, readIds, t));
+  for (const dep of deposits) add(mapDeposit(dep, readIds, t));
+  for (const wd of withdrawals) add(mapWithdrawal(wd, readIds, t));
+  for (const trade of trades) add(mapTrade(trade, readIds, t));
 
   // Sort newest first, cap at 50.
   all.sort((a, b) => b.ts - a.ts);
@@ -277,6 +286,7 @@ export default function Notifications() {
   // Start empty so server and first client render match (no hydration mismatch);
   // hydrate read ids from localStorage after mount.
   const [readIds, setReadIds] = useState<Set<string>>(() => new Set<string>());
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => new Set<string>());
   const [hydrated, setHydrated] = useState(false);
   const [, setTick] = useState(0); // forces relative-time refresh
   // Display preferences (which categories to show). Start with all-enabled
@@ -291,11 +301,13 @@ export default function Notifications() {
   useEffect(() => {
     try { localStorage.removeItem('bana_notifications_v1'); } catch { /* ignore */ }
     setReadIds(loadReadIds());
+    setDismissedIds(loadDismissedIds());
     setHydrated(true);
   }, []);
 
-  // Persist read ids whenever they change (after the initial hydration load).
+  // Persist read + dismissed ids whenever they change (after initial hydration).
   useEffect(() => { if (hydrated) saveReadIds(readIds); }, [readIds, hydrated]);
+  useEffect(() => { if (hydrated) saveDismissedIds(dismissedIds); }, [dismissedIds, hydrated]);
 
   // Refresh relative timestamps every 20s.
   useEffect(() => {
@@ -315,7 +327,10 @@ export default function Notifications() {
       // Read the latest persisted read ids from state (captured by closure) to
       // correctly mark items; use a functional update so we always see latest.
       setReadIds((currentReadIds) => {
-        setItems(mergeItems(events, deposits, withdrawals, trades, currentReadIds, t));
+        setDismissedIds((currentDismissed) => {
+          setItems(mergeItems(events, deposits, withdrawals, trades, currentReadIds, t, currentDismissed));
+          return currentDismissed; // unchanged
+        });
         return currentReadIds; // unchanged
       });
     } catch {
@@ -378,8 +393,11 @@ export default function Notifications() {
       return next;
     });
 
-  const dismiss = (id: string) =>
+  const dismiss = (id: string) => {
     setItems((prev) => prev.filter((n) => n.id !== id));
+    // Persist the dismissal so the next poll doesn't re-add it.
+    setDismissedIds((prev) => new Set(prev).add(id));
+  };
 
   return (
     <div className="relative" ref={wrapRef}>

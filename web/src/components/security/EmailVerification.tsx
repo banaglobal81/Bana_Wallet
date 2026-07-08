@@ -23,6 +23,7 @@ export default function EmailVerification({ settingsPath = '/settings' }: { sett
   const [ack1, setAck1] = useState(false);
   const [ack2, setAck2] = useState(false);
   const [newEmail, setNewEmail] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,11 +33,11 @@ export default function EmailVerification({ settingsPath = '/settings' }: { sett
   useEffect(() => { refresh(); }, []);
 
   const openModal = () => { setError(null); setAck1(false); setAck2(false); setModal(true); };
-  const proceed = () => { setModal(false); setNewEmail(''); setCode(''); setDone(false); setView('form'); };
+  const proceed = () => { setModal(false); setNewEmail(''); setCurrentPassword(''); setCode(''); setDone(false); setView('form'); };
 
   const sendCode = async () => {
     setError(null); setBusy(true);
-    try { await requestEmailChange(newEmail.trim().toLowerCase()); setView('code'); }
+    try { await requestEmailChange(newEmail.trim().toLowerCase(), currentPassword); setCurrentPassword(''); setView('code'); }
     catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   };
 
@@ -82,8 +83,11 @@ export default function EmailVerification({ settingsPath = '/settings' }: { sett
         <div className="rounded-2xl bg-slate-900/60 border border-slate-800 p-5 flex flex-col gap-3 max-w-md">
           <label className="text-xs font-mono uppercase tracking-widest text-slate-500">New email address</label>
           <input type="email" autoComplete="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="you@example.com" className={inp} />
+          <label className="text-xs font-mono uppercase tracking-widest text-slate-500 mt-1">Current password</label>
+          <input type="password" autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" className={inp} />
+          <p className="text-[11px] text-slate-500 leading-relaxed">For your security, confirm your password to change the account email.</p>
           <div className="flex gap-2">
-            <button onClick={sendCode} disabled={busy || !newEmail.includes('@')} className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white rounded-xl font-bold text-xs cursor-pointer flex items-center gap-2">
+            <button onClick={sendCode} disabled={busy || !newEmail.includes('@') || !currentPassword} className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white rounded-xl font-bold text-xs cursor-pointer flex items-center gap-2">
               {busy && <RefreshCw className="h-3.5 w-3.5 animate-spin" />} Send verification code
             </button>
             <button onClick={() => setView('idle')} className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 font-bold text-xs cursor-pointer">Cancel</button>

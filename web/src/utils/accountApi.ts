@@ -141,12 +141,12 @@ export async function disable2fa(code: string): Promise<void> {
 
 // ---- Email change (verified) ----
 
-/** Send a 6-digit verification code to the NEW email address. */
-export async function requestEmailChange(newEmail: string): Promise<void> {
+/** Send a 6-digit verification code to the NEW email address (re-auth required). */
+export async function requestEmailChange(newEmail: string, currentPassword: string): Promise<void> {
   const res = await fetch('/api/auth/email/request', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ newEmail }),
+    body: JSON.stringify({ newEmail, currentPassword }),
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok || body?.ok === false) throw new Error(body?.error || `Request failed (${res.status})`);

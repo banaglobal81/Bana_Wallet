@@ -2,6 +2,7 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { randomInt } from 'node:crypto';
+import bcrypt from 'bcryptjs';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { sha256Hex } from '@/lib/crypto';
@@ -16,9 +17,10 @@ export async function POST(req: Request) {
   const userId = (session?.user as { id?: string } | undefined)?.id;
   if (!userId) return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
 
-  let body: { newEmail?: unknown } = {};
+  let body: { newEmail?: unknown; currentPassword?: unknown } = {};
   try { body = await req.json(); } catch { body = {}; }
   const newEmail = String(body.newEmail ?? '').toLowerCase().trim();
+  const currentPassword = String(body.currentPassword ?? '');
 
   if (!EMAIL_RE.test(newEmail)) {
     return NextResponse.json({ ok: false, error: 'Enter a valid email address.' }, { status: 400 });
@@ -33,6 +35,12 @@ export async function POST(req: Request) {
       { ok: false, error: 'This account signs in with Google — its email is managed by Google and can’t be changed here.' },
       { status: 400 },
     );
+  }
+  // RE-AUTHENTICATE: changing the email is an account-takeover pivot (change email
+  // → password reset), so require the current password — a stolen session alone
+  // must not be able to do it.
+  if (!currentPassword || !(await bcrypt.compare(currentPassword, user.passwordHash))) {
+    return NextResponse.json({ ok: false, error: 'Incorrect password.' }, { status: 403 });
   }
   if (newEmail === user.email) {
     return NextResponse.json({ ok: false, error: 'That is already your email address.' }, { status: 400 });

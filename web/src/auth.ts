@@ -96,6 +96,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           const jar = await cookies();
           const challenge = jar.get('webauthn_auth_challenge')?.value;
           if (!challenge) return null;
+          // Consume the challenge so it is single-use (no replay within its TTL).
+          // Best-effort: never let a cookie-write issue break a valid login.
+          try { jar.delete('webauthn_auth_challenge'); } catch { /* best-effort */ }
 
           const passkey = await prisma.passkey.findUnique({
             where: { credentialId: String(response.id) },
