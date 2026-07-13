@@ -104,7 +104,11 @@ export default function Withdraw({ onNavigate }: WithdrawProps) {
         const seen = new Set(list.map((c) => c.symbol.toUpperCase()));
         for (const m of managed) {
           if (seen.has(m.symbol.toUpperCase())) continue;
-          list.push({ symbol: m.symbol, networks: m.networks.map((n) => ({ code: n.code, chainType: 'EVM', fee: '0', min: '0' })) });
+          // Mirror the hub path: only surface networks that accept withdrawals.
+          const nets = m.networks
+            .filter((n) => n.withdrawEnabled !== false)
+            .map((n) => ({ code: n.code, chainType: 'EVM', fee: '0', min: '0' }));
+          if (nets.length) list.push({ symbol: m.symbol, networks: nets });
         }
         if (cancelled) return;
         setCurrencies(list);

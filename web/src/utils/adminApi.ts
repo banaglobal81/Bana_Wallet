@@ -334,6 +334,8 @@ export interface CoinNetwork {
   code: string;
   contractAddress: string;
   decimals: number;
+  depositEnabled?: boolean;
+  withdrawEnabled?: boolean;
 }
 
 export interface ManagedCoin {

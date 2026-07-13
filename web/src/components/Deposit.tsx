@@ -72,7 +72,11 @@ export default function Deposit(_props: DepositProps) {
         const seen = new Set(list.map((c) => c.symbol.toUpperCase()));
         for (const m of managed) {
           if (seen.has(m.symbol.toUpperCase())) continue;
-          list.push({ symbol: m.symbol, networks: m.networks.map((n) => ({ code: n.code, chainType: 'EVM' })) });
+          // Mirror the hub path: only surface networks that accept deposits.
+          const nets = m.networks
+            .filter((n) => n.depositEnabled !== false)
+            .map((n) => ({ code: n.code, chainType: 'EVM' }));
+          if (nets.length) list.push({ symbol: m.symbol, networks: nets });
         }
         if (cancelled) return;
         setCurrencies(list);

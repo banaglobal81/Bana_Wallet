@@ -9,8 +9,8 @@ import {
   type ManagedCoin, type CoinNetwork,
 } from '@/utils/adminApi';
 
-type NetRow = { code: string; contractAddress: string; decimals: string };
-const EMPTY_NET: NetRow = { code: '', contractAddress: '', decimals: '18' };
+type NetRow = { code: string; contractAddress: string; decimals: string; depositEnabled: boolean; withdrawEnabled: boolean };
+const EMPTY_NET: NetRow = { code: '', contractAddress: '', decimals: '18', depositEnabled: true, withdrawEnabled: true };
 
 export default function AdminCoinsPage() {
   const t = useTranslations('adminCoins');
@@ -58,7 +58,7 @@ export default function AdminCoinsPage() {
     try {
       const networks: CoinNetwork[] = nets
         .filter((n) => n.code.trim() || n.contractAddress.trim())
-        .map((n) => ({ code: n.code.trim().toUpperCase(), contractAddress: n.contractAddress.trim(), decimals: Number(n.decimals) }));
+        .map((n) => ({ code: n.code.trim().toUpperCase(), contractAddress: n.contractAddress.trim(), decimals: Number(n.decimals), depositEnabled: n.depositEnabled, withdrawEnabled: n.withdrawEnabled }));
       await createCoin({ symbol: symbol.trim().toUpperCase(), name: name.trim(), networks, logoKey });
       resetForm(); await load();
     } catch (e) { setError((e as Error).message); }
@@ -71,7 +71,7 @@ export default function AdminCoinsPage() {
     setEditName(c.name);
     setEditNets(
       c.networks.length
-        ? c.networks.map((n) => ({ code: n.code, contractAddress: n.contractAddress, decimals: String(n.decimals) }))
+        ? c.networks.map((n) => ({ code: n.code, contractAddress: n.contractAddress, decimals: String(n.decimals), depositEnabled: n.depositEnabled !== false, withdrawEnabled: n.withdrawEnabled !== false }))
         : [{ ...EMPTY_NET }],
     );
   };
@@ -81,7 +81,7 @@ export default function AdminCoinsPage() {
     try {
       const networks: CoinNetwork[] = editNets
         .filter((n) => n.code.trim() || n.contractAddress.trim())
-        .map((n) => ({ code: n.code.trim().toUpperCase(), contractAddress: n.contractAddress.trim(), decimals: Number(n.decimals) }));
+        .map((n) => ({ code: n.code.trim().toUpperCase(), contractAddress: n.contractAddress.trim(), decimals: Number(n.decimals), depositEnabled: n.depositEnabled, withdrawEnabled: n.withdrawEnabled }));
       await updateCoin(id, { name: editName.trim(), networks });
       cancelEdit(); await load();
     } catch (e) { setError((e as Error).message); }
@@ -102,6 +102,9 @@ export default function AdminCoinsPage() {
   };
 
   const field = 'p-2.5 rounded-xl bg-[#020d24]/60 border border-[#1E3559] text-sm text-[#d8e2ff] placeholder-[#8c90a0] focus:outline-none focus:border-amber-500/60 transition-colors';
+  // Deposit/withdraw availability chip for a network row.
+  const netChip = (on: boolean) =>
+    `px-2.5 py-2 rounded-lg border text-[11px] font-mono font-bold cursor-pointer select-none transition-colors ${on ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-[#1E3559] bg-[#020d24]/50 text-[#56607a]'}`;
 
   return (
     <div className="flex-1 min-h-full bg-[#06132a] text-[#d8e2ff] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
@@ -150,10 +153,12 @@ export default function AdminCoinsPage() {
           <div className="flex flex-col gap-2">
             <span className="text-[11px] font-mono text-[#8c90a0] uppercase tracking-wider">{t('networks')}</span>
             {nets.map((n, i) => (
-              <div key={i} className="grid grid-cols-[1fr_2fr_auto_auto] gap-2 items-center">
+              <div key={i} className="grid grid-cols-[1fr_2fr_auto_auto_auto_auto] gap-2 items-center">
                 <input className={field} value={n.code} onChange={(e) => setNets(nets.map((x, j) => j === i ? { ...x, code: e.target.value } : x))} placeholder={t('network')} />
                 <input className={`${field} font-mono`} value={n.contractAddress} onChange={(e) => setNets(nets.map((x, j) => j === i ? { ...x, contractAddress: e.target.value } : x))} placeholder={t('contractPlaceholder')} />
                 <input className={`${field} w-20`} value={n.decimals} onChange={(e) => setNets(nets.map((x, j) => j === i ? { ...x, decimals: e.target.value } : x))} placeholder={t('decimals')} title={t('decimals')} />
+                <button type="button" onClick={() => setNets(nets.map((x, j) => j === i ? { ...x, depositEnabled: !x.depositEnabled } : x))} className={netChip(n.depositEnabled)} title={t('depositToggleHint')}>{t('depositLabel')}</button>
+                <button type="button" onClick={() => setNets(nets.map((x, j) => j === i ? { ...x, withdrawEnabled: !x.withdrawEnabled } : x))} className={netChip(n.withdrawEnabled)} title={t('withdrawToggleHint')}>{t('withdrawLabel')}</button>
                 <button onClick={() => setNets(nets.length > 1 ? nets.filter((_, j) => j !== i) : nets)} className="p-2 rounded-lg border border-[#1E3559] bg-[#020d24]/50 hover:bg-rose-500/15 text-[#8c90a0] hover:text-rose-400 cursor-pointer disabled:opacity-40" disabled={nets.length <= 1}><X className="h-4 w-4" /></button>
               </div>
             ))}
@@ -185,6 +190,8 @@ export default function AdminCoinsPage() {
                       {c.networks.map((n) => (
                         <span key={n.code} className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-[#020d24]/60 border border-[#1E3559] text-[#afc6ff]" title={n.contractAddress}>
                           {n.code} · {n.contractAddress.slice(0, 6)}…{n.contractAddress.slice(-4)} · {n.decimals}d
+                          {n.depositEnabled === false && <span className="text-rose-400" title={t('depositToggleHint')}>· {t('depositLabel')}✕</span>}
+                          {n.withdrawEnabled === false && <span className="text-rose-400" title={t('withdrawToggleHint')}>· {t('withdrawLabel')}✕</span>}
                         </span>
                       ))}
                     </div>
@@ -204,10 +211,12 @@ export default function AdminCoinsPage() {
                   <div className="flex flex-col gap-2">
                     <span className="text-[11px] font-mono text-[#8c90a0] uppercase tracking-wider">{t('networks')}</span>
                     {editNets.map((n, i) => (
-                      <div key={i} className="grid grid-cols-[1fr_2fr_auto_auto] gap-2 items-center">
+                      <div key={i} className="grid grid-cols-[1fr_2fr_auto_auto_auto_auto] gap-2 items-center">
                         <input className={field} value={n.code} onChange={(e) => setEditNets(editNets.map((x, j) => j === i ? { ...x, code: e.target.value } : x))} placeholder={t('network')} />
                         <input className={`${field} font-mono`} value={n.contractAddress} onChange={(e) => setEditNets(editNets.map((x, j) => j === i ? { ...x, contractAddress: e.target.value } : x))} placeholder={t('contractPlaceholder')} />
                         <input className={`${field} w-20`} value={n.decimals} onChange={(e) => setEditNets(editNets.map((x, j) => j === i ? { ...x, decimals: e.target.value } : x))} placeholder={t('decimals')} title={t('decimals')} />
+                        <button type="button" onClick={() => setEditNets(editNets.map((x, j) => j === i ? { ...x, depositEnabled: !x.depositEnabled } : x))} className={netChip(n.depositEnabled)} title={t('depositToggleHint')}>{t('depositLabel')}</button>
+                        <button type="button" onClick={() => setEditNets(editNets.map((x, j) => j === i ? { ...x, withdrawEnabled: !x.withdrawEnabled } : x))} className={netChip(n.withdrawEnabled)} title={t('withdrawToggleHint')}>{t('withdrawLabel')}</button>
                         <button onClick={() => setEditNets(editNets.length > 1 ? editNets.filter((_, j) => j !== i) : editNets)} className="p-2 rounded-lg border border-[#1E3559] bg-[#020d24]/50 hover:bg-rose-500/15 text-[#8c90a0] hover:text-rose-400 cursor-pointer disabled:opacity-40" disabled={editNets.length <= 1}><X className="h-4 w-4" /></button>
                       </div>
                     ))}

@@ -4,6 +4,10 @@ export interface ManagedCoinNetwork {
   code: string;
   contractAddress: string;
   decimals: number;
+  // Optional for backward-compat with coins saved before these flags existed;
+  // absent is treated as enabled (only an explicit false disables the network).
+  depositEnabled?: boolean;
+  withdrawEnabled?: boolean;
 }
 
 export interface UserManagedCoin {

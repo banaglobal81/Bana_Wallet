@@ -788,6 +788,10 @@
     "uploadLogo": "로고 업로드",
     "logoHint": "PNG/SVG, 최대 1MB. 선택사항.",
     "edit": "편집",
-    "save": "변경 저장"
+    "save": "변경 저장",
+    "depositLabel": "입금",
+    "withdrawLabel": "출금",
+    "depositToggleHint": "이 네트워크에서 사용자의 입금 허용 여부를 전환합니다",
+    "withdrawToggleHint": "이 네트워크에서 사용자의 출금 허용 여부를 전환합니다"
   }
 }

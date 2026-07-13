@@ -788,6 +788,10 @@
     "uploadLogo": "上传图标",
     "logoHint": "PNG/SVG，最大 1MB。可选。",
     "edit": "编辑",
-    "save": "保存更改"
+    "save": "保存更改",
+    "depositLabel": "充值",
+    "withdrawLabel": "提现",
+    "depositToggleHint": "切换用户是否可在此网络充值",
+    "withdrawToggleHint": "切换用户是否可在此网络提现"
   }
 }

@@ -788,6 +788,10 @@
     "uploadLogo": "Upload logo",
     "logoHint": "PNG/SVG, max 1 MB. Optional.",
     "edit": "Edit",
-    "save": "Save changes"
+    "save": "Save changes",
+    "depositLabel": "Deposit",
+    "withdrawLabel": "Withdraw",
+    "depositToggleHint": "Toggle whether users can deposit on this network",
+    "withdrawToggleHint": "Toggle whether users can withdraw on this network"
   }
 }

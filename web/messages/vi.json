@@ -788,6 +788,10 @@
     "uploadLogo": "Tải lên logo",
     "logoHint": "PNG/SVG, tối đa 1 MB. Tùy chọn.",
     "edit": "Sửa",
-    "save": "Lưu thay đổi"
+    "save": "Lưu thay đổi",
+    "depositLabel": "Nạp",
+    "withdrawLabel": "Rút",
+    "depositToggleHint": "Bật/tắt việc người dùng nạp trên mạng này",
+    "withdrawToggleHint": "Bật/tắt việc người dùng rút trên mạng này"
   }
 }
