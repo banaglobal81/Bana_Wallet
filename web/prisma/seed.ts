@@ -49,6 +49,35 @@ async function main() {
   }
 
   console.log(`Seeded ADMIN: ${email}`);
+
+  await seedBanaCoin();
+}
+
+// Seed the BANA managed coin with its CURRENT (신/new) contract address, so a
+// fresh database starts with the right token. Create-if-missing ONLY: if a BANA
+// row already exists (e.g. production), this leaves it untouched — update the
+// live contract address through Admin → Coins, not here.
+//
+// NOTE: verify these values match the deployed token. Decimals for most BEP20
+// tokens are 18; the network code should match what you use in Admin → Coins.
+async function seedBanaCoin() {
+  const BANA_CONTRACT = '0x154a8Ca29526184D1A3a02f047e4127FD14156b9'; // 신 (new)
+  const networks = [
+    {
+      code: 'BINANCE',
+      contractAddress: BANA_CONTRACT,
+      decimals: 18,
+      depositEnabled: true,
+      withdrawEnabled: true,
+    },
+  ];
+
+  const coin = await prisma.managedCoin.upsert({
+    where: { symbol: 'BANA' },
+    update: {}, // never clobber an existing (possibly live) BANA row
+    create: { symbol: 'BANA', name: 'BANA', networks, logoKey: null, visible: true },
+  });
+  console.log(`Seeded managed coin BANA (contract ${BANA_CONTRACT}) — id ${coin.id}`);
 }
 
 main()
