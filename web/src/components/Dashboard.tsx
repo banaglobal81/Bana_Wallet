@@ -18,6 +18,7 @@ import {
 import Decimal from 'decimal.js';
 import { useTranslations } from 'next-intl';
 import { getNiaBalance, getNiaPrice, getNiaKlines } from '../utils/niaApi';
+import StakedSummaryCard from './staking/StakedSummaryCard';
 
 // ---------------------------------------------------------------------------
 // Internal types
@@ -615,6 +616,9 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
           </div>
         </div>
       </section>
+
+      {/* Staked coin + live earnings (only shows if the user has a stake) */}
+      <StakedSummaryCard onOpen={() => onNavigate('STAKING_INTERFACE', 'push')} />
 
       {/* 3. Main Split Board Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

@@ -763,6 +763,13 @@
     "accrued": "獲得",
     "matures": "満期"
   },
+  "stakedSummary": {
+    "title": "ステーキング",
+    "live": "ライブ",
+    "staked": "ステーキング中",
+    "earning": "リアルタイム収益",
+    "credited": "支払済み"
+  },
   "adminCoins": {
     "pageTitle": "コイン",
     "pageSubtitle": "ユーザーに表示するコインを追加・削除します。",

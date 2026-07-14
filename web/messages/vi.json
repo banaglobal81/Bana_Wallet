@@ -763,6 +763,13 @@
     "accrued": "Đã nhận",
     "matures": "Đáo hạn"
   },
+  "stakedSummary": {
+    "title": "Staking",
+    "live": "Trực tiếp",
+    "staked": "Đang stake",
+    "earning": "Đang sinh lời",
+    "credited": "Đã ghi có"
+  },
   "adminCoins": {
     "pageTitle": "Coin",
     "pageSubtitle": "Thêm hoặc xóa các coin hiển thị cho người dùng.",

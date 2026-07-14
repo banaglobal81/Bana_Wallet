@@ -763,6 +763,13 @@
     "accrued": "已赚",
     "matures": "到期"
   },
+  "stakedSummary": {
+    "title": "质押",
+    "live": "实时",
+    "staked": "质押中",
+    "earning": "实时收益",
+    "credited": "已发放"
+  },
   "adminCoins": {
     "pageTitle": "币种",
     "pageSubtitle": "添加或移除向用户显示的币种。",

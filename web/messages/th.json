@@ -763,6 +763,13 @@
     "accrued": "ได้รับ",
     "matures": "ครบกำหนด"
   },
+  "stakedSummary": {
+    "title": "สเตกกิ้ง",
+    "live": "เรียลไทม์",
+    "staked": "กำลังสเตก",
+    "earning": "กำไรเรียลไทม์",
+    "credited": "จ่ายแล้ว"
+  },
   "adminCoins": {
     "pageTitle": "เหรียญ",
     "pageSubtitle": "เพิ่มหรือลบเหรียญที่แสดงต่อผู้ใช้",

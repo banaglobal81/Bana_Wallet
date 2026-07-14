@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Screen, SystemSettings } from '../types'; // SystemSettings kept for WalletProps signature
 import { getNiaBalance } from '../utils/niaApi';
+import StakedSummaryCard from './staking/StakedSummaryCard';
 import {
   Wallet as WalletIcon,
   Download,
@@ -92,6 +93,9 @@ export default function Wallet({ onNavigate }: WalletProps) {
               <ChevronRight className="h-4 w-4 text-[#8c90a0] group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
+
+          {/* Staked coin + live earnings (only shows if the user has a stake) */}
+          <StakedSummaryCard onOpen={() => onNavigate('STAKING_INTERFACE', 'push')} />
 
           {/* Balances */}
           <div className="p-6 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-4">

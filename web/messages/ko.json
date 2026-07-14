@@ -763,6 +763,13 @@
     "accrued": "획득",
     "matures": "만기"
   },
+  "stakedSummary": {
+    "title": "스테이킹",
+    "live": "실시간",
+    "staked": "스테이킹 중",
+    "earning": "실시간 수익",
+    "credited": "지급됨"
+  },
   "adminCoins": {
     "pageTitle": "코인",
     "pageSubtitle": "사용자에게 표시되는 코인을 추가하거나 삭제합니다.",

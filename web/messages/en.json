@@ -763,6 +763,13 @@
     "accrued": "Earned",
     "matures": "Matures"
   },
+  "stakedSummary": {
+    "title": "Staking",
+    "live": "Live",
+    "staked": "Staked",
+    "earning": "Earning now",
+    "credited": "Credited"
+  },
   "adminCoins": {
     "pageTitle": "Coins",
     "pageSubtitle": "Add or remove the coins shown to users.",
