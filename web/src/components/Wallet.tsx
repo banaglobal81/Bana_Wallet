@@ -2,8 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import Decimal from 'decimal.js';
 import { Screen, SystemSettings } from '../types'; // SystemSettings kept for WalletProps signature
-import { getNiaBalance } from '../utils/niaApi';
+import { getNiaBalance, getNiaMarkets } from '../utils/niaApi';
+import { getStakePositions } from '../utils/stakingApi';
+import { getManagedCoins } from '../utils/coinsApi';
 import StakedSummaryCard from './staking/StakedSummaryCard';
 import {
   Wallet as WalletIcon,
@@ -22,24 +25,93 @@ interface WalletProps {
 
 interface BalanceRow { walletType: string; currency: string; balance: string; locked?: string }
 
+/**
+ * Staked principal, as balance rows — one per coin, summed across the user's
+ * ACTIVE positions. Staking never moves funds in the Nia wallet, so this never
+ * appears in the hub's response; without it the table reads "no balances" even
+ * for a user who has coins staked. Reported as locked (not available), because
+ * that is exactly what it is: held until maturity.
+ */
+function stakedRows(positions: { coin: string; principal: string; status: string }[]): BalanceRow[] {
+  const byCoin = new Map<string, Decimal>();
+  for (const p of positions) {
+    if (p.status !== 'ACTIVE') continue;
+    byCoin.set(p.coin, (byCoin.get(p.coin) ?? new Decimal(0)).plus(p.principal || '0'));
+  }
+  return [...byCoin.entries()]
+    .filter(([, total]) => total.gt(0))
+    .map(([currency, total]) => ({
+      walletType: 'staking',
+      currency,
+      balance: '0',
+      locked: total.toFixed(),
+    }));
+}
+
+/**
+ * Every coin the tenant supports — the hub's markets plus admin-added custom
+ * coins (BANA lives there). Used to pad the table with real zero rows, so a coin
+ * you can deposit is visible before you hold any of it.
+ */
+function supportedSymbols(
+  markets: { currencies?: { symbol?: string }[] } | null,
+  managed: { symbol: string }[],
+): string[] {
+  const out = new Set<string>();
+  for (const c of markets?.currencies ?? []) {
+    if (c?.symbol) out.add(c.symbol.toUpperCase());
+  }
+  for (const m of managed) {
+    if (m?.symbol) out.add(m.symbol.toUpperCase());
+  }
+  return [...out];
+}
+
+/** Zero rows for supported coins the user holds none of, so the list is complete. */
+function zeroRows(held: BalanceRow[], symbols: string[]): BalanceRow[] {
+  const present = new Set(held.map((r) => (r.currency ?? '').toUpperCase()));
+  return symbols
+    .filter((s) => !present.has(s))
+    .sort()
+    .map((currency) => ({ walletType: '', currency, balance: '0', locked: '0' }));
+}
+
 export default function Wallet({ onNavigate }: WalletProps) {
   const t = useTranslations('walletPage');
   // User-side balances only — broker/settlement panel lives at /admin/settlement
   const [rows, setRows] = useState<BalanceRow[]>([]);
   const [balState, setBalState] = useState<'loading' | 'ok' | 'error'>('loading');
+  // The server's own reason for a failure (e.g. "not provisioned for wallet
+  // access"). Shown verbatim — a generic "backend unreachable" would misdiagnose
+  // an auth/provisioning problem as an outage and send people chasing the wrong bug.
+  const [balError, setBalError] = useState<string | null>(null);
 
   const loadUser = async () => {
     setBalState('loading');
+    setBalError(null);
     try {
-      const data = await getNiaBalance();
-      const merged: BalanceRow[] = [
+      // Staking (local ledger) and the coin catalogue are fetched alongside the
+      // hub balances. Only getNiaBalance() may fail the panel — the others just
+      // enrich it, so they degrade to empty rather than hiding real balances.
+      const [data, positions, markets, managed] = await Promise.all([
+        getNiaBalance(),
+        getStakePositions().catch(() => []),
+        getNiaMarkets().catch(() => null),
+        getManagedCoins().catch(() => []),
+      ]);
+      const held: BalanceRow[] = [
         ...(Array.isArray(data?.wallets) ? data.wallets : []),
         ...(Array.isArray(data?.tradingBalances) ? data.tradingBalances : []),
         ...(Array.isArray(data) ? data : []),
+        ...stakedRows(positions),
       ];
-      setRows(merged);
+      // Held coins first, then the rest of the catalogue at zero.
+      setRows([...held, ...zeroRows(held, supportedSymbols(markets, managed))]);
       setBalState('ok');
-    } catch { setBalState('error'); }
+    } catch (e) {
+      setBalError((e as Error)?.message?.trim() || null);
+      setBalState('error');
+    }
   };
 
   useEffect(() => { loadUser(); }, []);
@@ -108,7 +180,7 @@ export default function Wallet({ onNavigate }: WalletProps) {
             {balState === 'loading' ? (
               <p className="text-xs font-mono text-[#8c90a0] py-6 text-center">{t('loadingBalances')}</p>
             ) : balState === 'error' ? (
-              <p className="text-xs font-mono text-rose-300 py-6 text-center">{t('backendUnreachable')}</p>
+              <p className="text-xs font-mono text-rose-300 py-6 text-center">{balError ?? t('backendUnreachable')}</p>
             ) : rows.length === 0 ? (
               <div className="py-8 text-center flex flex-col items-center gap-3">
                 <div className="p-3 bg-[#020d24]/60 rounded-full border border-[#1E3559]"><WalletIcon className="h-6 w-6 text-[#8c90a0]" /></div>

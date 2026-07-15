@@ -323,7 +323,7 @@
     "balances": "残高",
     "refreshBalancesAria": "残高を更新",
     "loadingBalances": "BANA から残高を読み込み中…",
-    "backendUnreachable": "バックエンドに接続できませんでした（npm run server を実行してください）。",
+    "backendUnreachable": "残高を読み込めませんでした。しばらくしてからもう一度お試しください。",
     "noBalances": "残高はまだありません",
     "noBalancesBody": "このユーザーには資金がありません。資金のあるユーザーを設定すると、残高がここに自動的に表示されます。",
     "tableWallet": "ウォレット",

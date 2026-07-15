@@ -323,7 +323,7 @@
     "balances": "Số dư",
     "refreshBalancesAria": "Làm mới số dư",
     "loadingBalances": "Đang tải số dư từ BANA…",
-    "backendUnreachable": "Không thể kết nối backend (chạy npm run server).",
+    "backendUnreachable": "Không tải được số dư. Vui lòng thử lại sau giây lát.",
     "noBalances": "Chưa có số dư nào",
     "noBalancesBody": "Người dùng này chưa có tiền. Khi một người dùng đã nạp tiền được cấu hình, số dư sẽ tự động hiển thị ở đây.",
     "tableWallet": "Ví",

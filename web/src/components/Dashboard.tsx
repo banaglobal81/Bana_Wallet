@@ -39,6 +39,16 @@ interface PortfolioAsset {
 
 const STABLECOINS = new Set(['USDT', 'USDC', 'DAI', 'FDUSD', 'TUSD', 'BUSD']);
 
+// The portfolio headline is denominated in this coin rather than USD: every
+// asset's USD value is summed, then divided by this coin's USD price.
+const HEADLINE_COIN = 'BANA';
+
+/** 1234.5 -> "1,234.50" — two decimals with thousands separators. */
+function fmtAmount(d: Decimal): string {
+  const [whole, frac] = d.toFixed(2).split('.');
+  return `${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}.${frac}`;
+}
+
 // ---------------------------------------------------------------------------
 // Balance shape parser (defensive — accepts array OR object with array props)
 // ---------------------------------------------------------------------------
@@ -150,6 +160,8 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [portfolioAssets, setPortfolioAssets] = useState<PortfolioAsset[]>([]);
   const [totalValue, setTotalValue] = useState<Decimal>(new Decimal(0));
+  // USD price of HEADLINE_COIN; null when its market is unavailable.
+  const [headlinePrice, setHeadlinePrice] = useState<Decimal | null>(null);
   const [headline24hChange, setHeadline24hChange] = useState<Decimal>(new Decimal(0));
   const [klinePoints, setKlinePoints] = useState<Decimal[]>([]);
   const [klineLoading, setKlineLoading] = useState(true);
@@ -197,17 +209,23 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
         return;
       }
 
-      // 3. Fetch prices in parallel
-      const priceResults = await Promise.all(
-        nonZero.map(({ currency }) => {
-          if (STABLECOINS.has(currency)) {
-            return Promise.resolve({ price: '1', changePct: '0' } as { price: string; changePct: string } | null);
-          }
-          return getNiaPrice(`SPOT:${currency}_USDT`);
-        }),
-      );
+      // 3. Fetch prices in parallel — per-asset prices, plus BANA's own price so
+      //    the headline total can be denominated in BANA rather than USD.
+      const [priceResults, banaResult] = await Promise.all([
+        Promise.all(
+          nonZero.map(({ currency }) => {
+            if (STABLECOINS.has(currency)) {
+              return Promise.resolve({ price: '1', changePct: '0' } as { price: string; changePct: string } | null);
+            }
+            return getNiaPrice(`SPOT:${currency}_USDT`);
+          }),
+        ),
+        getNiaPrice(`SPOT:${HEADLINE_COIN}_USDT`),
+      ]);
 
       if (cancelled) return;
+
+      setHeadlinePrice(banaResult ? safeDec(banaResult.price) : null);
 
       // 4. Build PortfolioAsset list
       const builtAssets: PortfolioAsset[] = nonZero.map((item, i) => {
@@ -288,6 +306,15 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
 
   // ---- Derived values -----------------------------------------------------
   const donutSlices = buildDonutSlices(portfolioAssets, totalValue);
+
+  // Headline total, denominated in HEADLINE_COIN. An empty portfolio is 0 in any
+  // currency, so it needs no price; otherwise we can only convert when we know
+  // the coin's price — null means "can't express this yet", never a wrong number.
+  const totalInHeadlineCoin: Decimal | null = totalValue.isZero()
+    ? new Decimal(0)
+    : headlinePrice && headlinePrice.gt(0)
+      ? totalValue.div(headlinePrice)
+      : null;
 
   const headlineIsPositive = headline24hChange.gte(0);
 
@@ -566,7 +593,11 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
               ) : (
                 <>
                   <h2 className="text-3xl sm:text-4xl xl:text-5xl font-black font-sans tracking-tight text-white whitespace-nowrap">
-                    {hideBalance ? '••••••' : `$${totalValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`}
+                    {hideBalance
+                      ? '••••••'
+                      : totalInHeadlineCoin
+                        ? `${fmtAmount(totalInHeadlineCoin)} ${HEADLINE_COIN}`
+                        : '—'}
                   </h2>
                   <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${
                     headlineIsPositive

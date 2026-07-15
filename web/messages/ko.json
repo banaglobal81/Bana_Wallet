@@ -323,7 +323,7 @@
     "balances": "잔액",
     "refreshBalancesAria": "잔액 새로고침",
     "loadingBalances": "BANA에서 잔액을 불러오는 중…",
-    "backendUnreachable": "백엔드에 연결할 수 없습니다 (npm run server를 실행하세요).",
+    "backendUnreachable": "잔액을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
     "noBalances": "아직 잔액이 없습니다",
     "noBalancesBody": "이 사용자는 자금이 없습니다. 자금이 있는 사용자가 구성되면 잔액이 여기에 자동으로 표시됩니다.",
     "tableWallet": "지갑",

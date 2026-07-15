@@ -323,7 +323,7 @@
     "balances": "Balances",
     "refreshBalancesAria": "Refresh balances",
     "loadingBalances": "Loading balances from BANA…",
-    "backendUnreachable": "Couldn't reach the backend (run npm run server).",
+    "backendUnreachable": "Could not load balances. Please try again in a moment.",
     "noBalances": "No balances yet",
     "noBalancesBody": "This user has no funds. Once a funded user is configured, balances appear here automatically.",
     "tableWallet": "Wallet",

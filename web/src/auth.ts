@@ -16,6 +16,32 @@ import { decryptSecret } from '@/lib/crypto';
 // so login timing can't be used to enumerate which emails have accounts.
 const DUMMY_HASH = '$2b$12$5VKD3CVrMoBLIAnNfv7KcOro7AwNR3BPrMrj.ADevQHws895P4qEK';
 
+/**
+ * The account's Nia-Hub end-user id, minting one if the account predates
+ * per-user ids.
+ *
+ * EVERY sign-in path must go through this. Without a niaUserId, resolveSessionUserId()
+ * fails closed and every wallet route 403s — permanently, since nothing else
+ * backfills it. Google logins already self-healed; password/passkey ones did not,
+ * so a legacy account could log in fine yet never see its balances.
+ */
+async function ensureNiaUserId(user: { id: string; niaUserId: string | null }): Promise<string> {
+  if (user.niaUserId) return user.niaUserId;
+  const minted = newNiaUserId();
+  // Guarded on niaUserId: null so two concurrent logins can't both mint and
+  // clobber each other — the loser reads back the winner's id instead.
+  const claimed = await prisma.user.updateMany({
+    where: { id: user.id, niaUserId: null },
+    data: { niaUserId: minted },
+  });
+  if (claimed.count === 1) return minted;
+  const fresh = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { niaUserId: true },
+  });
+  return fresh?.niaUserId ?? minted;
+}
+
 // Behind Railway's proxy, Auth.js can't derive its public URL from the request
 // and falls back to the internal http://localhost:8080 (Railway's container
 // port). That wrong base URL is then sent to Google as the OAuth callback and
@@ -80,7 +106,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           if (!secondFactorOk) return null;
         }
 
-        return { id: user.id, email: user.email, role: user.role, niaUserId: user.niaUserId };
+        return { id: user.id, email: user.email, role: user.role, niaUserId: await ensureNiaUserId(user) };
       },
     }),
     // Passwordless biometric login: verify a WebAuthn assertion against a
@@ -131,7 +157,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
           const u = passkey.user;
           if (u.disabled) return null;
-          return { id: u.id, email: u.email, role: u.role, niaUserId: u.niaUserId };
+          return { id: u.id, email: u.email, role: u.role, niaUserId: await ensureNiaUserId(u) };
         } catch (e) {
           console.error('[passkey-login] verification failed:', e);
           return null;
@@ -167,9 +193,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         if (record.disabled) return false;
         // Backfill niaUserId for a legacy Google account created before per-user
         // Nia ids existed — without it, wallet routes fail closed with 403.
-        if (!record.niaUserId) {
-          await prisma.user.update({ where: { id: record.id }, data: { niaUserId: newNiaUserId() } });
-        }
+        await ensureNiaUserId(record);
         return true;
       }
       // Credentials path — authorize() already validated, just allow through.

@@ -323,7 +323,7 @@
     "balances": "余额",
     "refreshBalancesAria": "刷新余额",
     "loadingBalances": "正在从 BANA 加载余额…",
-    "backendUnreachable": "无法连接后端（请运行 npm run server）。",
+    "backendUnreachable": "无法加载余额，请稍后重试。",
     "noBalances": "暂无余额",
     "noBalancesBody": "该用户没有资金。配置好有资金的用户后，余额将自动显示在此处。",
     "tableWallet": "钱包",
