@@ -4,16 +4,8 @@
   "private": true,
   "type": "module",
   "main": "trigger.mjs",
-  "description": "Daily staking-accrual cron for the BANA web app. Runs on Railway (Cron Schedule → `npm start`) or Cloudflare (wrangler deploy).",
+  "description": "Staking-settlement cron for the BANA web app. Runs on Railway (Settings → Cron Schedule → `npm start`). Zero dependencies — plain Node fetch.",
   "scripts": {
-    "start": "node trigger.mjs",
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "typecheck": "tsc --noEmit"
-  },
-  "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240924.0",
-    "typescript": "^5.6.0",
-    "wrangler": "^3.78.0"
+    "start": "node trigger.mjs"
   }
 }

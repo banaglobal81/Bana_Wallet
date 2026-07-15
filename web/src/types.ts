@@ -1,14 +1,12 @@
 export type Screen =
   | 'PORTFOLIO_DASHBOARD'
-  | 'TRANSACTION_SIMULATION'
   | 'SETTINGS_INTERFACE'
   | 'ACTIVITY_HISTORY'
   | 'SWAP_INTERFACE'
   | 'STAKING_INTERFACE'
   | 'WALLET_INTERFACE'
   | 'DEPOSIT_INTERFACE'
-  | 'WITHDRAW_INTERFACE'
-  | 'SCAM_WARNING_MODAL';
+  | 'WITHDRAW_INTERFACE';
 
 export interface Asset {
   id: string;
@@ -37,13 +35,8 @@ export interface Activity {
   gasFee: string;
 }
 
+// Client-side display preferences only. Anything touching real funds (balances,
+// trades, transfers) is server-side via Nia-Hub — never a client setting.
 export interface SystemSettings {
-  mevProtection: boolean;
-  selectedSlippage: '0.1' | '0.5' | '1.0' | 'custom';
-  customSlippage: string;
-  networkGas: 'Standard' | 'Fast' | 'Instant';
-  rpcUrl: string;
-  connectedWallet: string;
-  walletConnected: boolean;
   activeChain: 'Mainnet' | 'Base' | 'Arbitrum';
 }

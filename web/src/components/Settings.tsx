@@ -38,9 +38,6 @@ interface SettingsProps {
 
 export default function Settings({ settings, onUpdateSettings, onNavigate }: SettingsProps) {
   const t = useTranslations('settings');
-  const [rpcInput, setRpcInput] = useState(settings.rpcUrl);
-  const [rpcSaved, setRpcSaved] = useState(false);
-
   // ---- Account info (email / role / auth method) ----
   const [account, setAccount] = useState<AccountInfo | null>(null);
   const [accountError, setAccountError] = useState<string | null>(null);
@@ -122,13 +119,6 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
     return onNotifPrefsChange(() => setNotifPrefs(getNotifPrefs()));
   }, []);
 
-
-
-  const handleUpdateRpc = () => {
-    onUpdateSettings({ rpcUrl: rpcInput });
-    setRpcSaved(true);
-    setTimeout(() => setRpcSaved(false), 2500);
-  };
 
   const handleNav = (target: Screen, dir: 'push' | 'push_back' | 'none') => {
     onNavigate(target, dir);
@@ -292,184 +282,6 @@ export default function Settings({ settings, onUpdateSettings, onNavigate }: Set
                 </button>
               </div>
             </div>
-          </div>
-
-          {/* Section B: Custom RPC Connection */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 bento-hover shadow-lg" hidden>
-            <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider">
-              {t('rpcTitle')}
-            </h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              {t('rpcBody')}
-            </p>
-
-            <div className="flex flex-col gap-2 mt-1">
-              <div className="flex gap-2.5 items-center">
-                <input 
-                  type="text" 
-                  value={rpcInput}
-                  onChange={(e) => setRpcInput(e.target.value)}
-                  className="flex-1 p-3.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs font-mono focus:outline-none text-slate-200 placeholder-slate-600 transition-colors"
-                  placeholder={t('rpcPlaceholder')}
-                />
-                <button 
-                  onClick={handleUpdateRpc}
-                  className="px-5 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl border border-indigo-500/20 font-bold text-xs transition-all cursor-pointer shadow-md select-none shrink-0"
-                >
-                  {t('update')}
-                </button>
-              </div>
-
-              {rpcSaved && (
-                <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-mono font-bold mt-1.5">
-                  <Check className="h-4 w-4 shrink-0" />
-                  {t('rpcSaved')}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Section C: MEV Protection — not applicable to custody (hidden) */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-4 bento-hover shadow-lg" hidden>
-            <div className="flex justify-between items-center pb-2 border-b border-slate-800/60">
-              <div>
-                <h3 className="font-sans font-bold text-slate-100 text-[15px] uppercase tracking-wider">
-                  {t('mevTitle')}
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
-                  {t('mevBody')}
-                </p>
-              </div>
-
-              {/* Status Switch Widget */}
-              <button
-                onClick={() => onUpdateSettings({ mevProtection: !settings.mevProtection })}
-                className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 relative cursor-pointer outline-none border ${
-                  settings.mevProtection 
-                    ? 'bg-emerald-500/10 border-emerald-500/30' 
-                    : 'bg-rose-500/10 border-rose-500/30'
-                }`}
-              >
-                <div className={`w-5.5 h-5.5 rounded-full transition-all duration-300 absolute top-1 ${
-                  settings.mevProtection 
-                    ? 'right-1 bg-emerald-400' 
-                    : 'left-1 bg-rose-400'
-                }`} />
-              </button>
-            </div>
-
-            <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl text-xs text-slate-300 leading-relaxed flex items-center gap-3">
-              <Sparkles className="h-4 w-4 text-indigo-400 shrink-0" />
-              <span>
-                {settings.mevProtection
-                  ? t('mevOn')
-                  : t('mevOff')}
-              </span>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Right Details Info Column - Width 2/5 */}
-        <div className="lg:col-span-2 min-w-0 flex flex-col gap-6">
-          
-          {/* Section D: Gas speed — not applicable to custody (hidden) */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 font-mono text-xs bento-hover shadow-lg" hidden>
-            <h3 className="font-sans font-bold text-slate-100 text-[14px] uppercase tracking-wider mb-1">
-              {t('gasTitle')}
-            </h3>
-            <p className="text-xs font-sans text-slate-400 leading-relaxed">
-              {t('gasBody')}
-            </p>
-
-            <div className="flex flex-col gap-2.5 mt-2 font-sans select-none">
-              {(['Standard', 'Fast', 'Instant'] as const).map((speed) => (
-                <button
-                  key={speed}
-                  onClick={() => onUpdateSettings({ networkGas: speed })}
-                  className={`p-3.5 rounded-xl border text-left font-semibold transition-all flex items-center justify-between cursor-pointer ${
-                    settings.networkGas === speed
-                      ? 'bg-indigo-505/10 border-indigo-500 text-white shadow-md bg-indigo-500/5'
-                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Zap className={`h-4 w-4 ${settings.networkGas === speed ? 'text-indigo-400' : 'text-slate-400'}`} />
-                    <span className="text-[13px]">{t('gasPriority', { speed })}</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-slate-450 font-semibold">
-                    {speed === 'Standard' && '30 Gwei (~$4.50)'}
-                    {speed === 'Fast' && '45 Gwei (~$12.42)'}
-                    {speed === 'Instant' && '80 Gwei (~$25.00)'}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Section E: Slippage — only relevant to (simulated) swap (hidden) */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-3 font-mono text-xs bento-hover shadow-lg" hidden>
-            <h3 className="font-sans font-bold text-slate-100 text-[14px] uppercase tracking-wider mb-1">
-              {t('slippageTitle')}
-            </h3>
-            <p className="text-xs font-sans text-slate-400 leading-relaxed">
-              {t('slippageBody')}
-            </p>
-
-            <div className="grid grid-cols-4 gap-2 text-xs font-sans select-none mt-2">
-              {(['0.1', '0.5', '1.0'] as const).map((preset) => (
-                <button
-                  key={preset}
-                  onClick={() => onUpdateSettings({ selectedSlippage: preset, customSlippage: preset })}
-                  className={`py-2 rounded-lg border text-center font-bold transition-all cursor-pointer ${
-                    settings.selectedSlippage === preset
-                      ? 'bg-indigo-600 text-white border-transparent'
-                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
-                  }`}
-                >
-                  {preset}%
-                </button>
-              ))}
-              <button
-                onClick={() => onUpdateSettings({ selectedSlippage: 'custom' })}
-                className={`py-2 rounded-lg border text-center font-bold transition-all cursor-pointer ${
-                  settings.selectedSlippage === 'custom'
-                    ? 'bg-indigo-600 text-white border-transparent'
-                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
-                }`}
-              >
-                {t('custom')}
-              </button>
-            </div>
-
-            {settings.selectedSlippage === 'custom' && (
-              <div className="mt-2 flex flex-col gap-1.5 font-sans">
-                <div className="relative">
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={settings.customSlippage}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === '' || /^\d*\.?\d*$/.test(v)) onUpdateSettings({ customSlippage: v });
-                    }}
-                    placeholder={t('customPercent')}
-                    className="w-full p-2.5 pr-8 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-lg text-xs font-mono focus:outline-none text-slate-200 placeholder-slate-600 transition-colors"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-mono">%</span>
-                </div>
-                {(() => {
-                  // Validate the custom slippage with decimal.js (rule #2).
-                  let warn: string | null = null;
-                  try {
-                    const d = new Decimal(settings.customSlippage || 0);
-                    if (d.lte(0)) warn = t('slippageGreaterThanZero');
-                    else if (d.gt(50)) warn = t('slippageVeryHigh');
-                  } catch { warn = t('slippageInvalid'); }
-                  return warn ? <span className="text-[10px] font-mono text-amber-400">{warn}</span> : null;
-                })()}
-              </div>
-            )}
           </div>
 
           {/* Section F: Notification preferences */}

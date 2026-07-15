@@ -115,7 +115,6 @@ function buildDonutSlices(assets: PortfolioAsset[], total: Decimal): DonutSlice[
 // ---------------------------------------------------------------------------
 
 interface DashboardProps {
-  assets?: unknown[]; // accepted for API compatibility with App.tsx; not used — we fetch live data
   settings: SystemSettings;
   onNavigate: (toScreen: any, direction: any) => void;
 }

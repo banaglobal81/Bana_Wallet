@@ -5,8 +5,8 @@ import { useScreenNav } from '@/lib/useScreenNav';
 import Deposit from '@/components/Deposit';
 
 export default function DepositPage() {
-  const { assets, settings } = useApp();
+  const { settings } = useApp();
   const navigate = useScreenNav();
 
-  return <Deposit assets={assets} settings={settings} onNavigate={navigate} />;
+  return <Deposit settings={settings} onNavigate={navigate} />;
 }

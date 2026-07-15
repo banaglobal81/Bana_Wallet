@@ -6,13 +6,13 @@ import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
 import { Screen, SystemSettings } from '../types';
 import BanaLogo from './BanaLogo';
+import { useHubOnline } from '@/lib/useHubOnline';
 import {
   Wallet,
   ArrowLeftRight,
   Activity,
   Settings as SettingsIcon,
   Radio,
-  Lock,
   Coins,
   LayoutDashboard,
   X,
@@ -40,6 +40,9 @@ export default function Sidebar({
   const pathname = usePathname();
   const nav = useTranslations('nav');
   const sb = useTranslations('sidebar');
+
+  // Real hub reachability — null until verified, so we never claim a status.
+  const online = useHubOnline();
 
   // Work out transition directions depending on navigation source and destination
   const navigateTo = (target: Screen) => {
@@ -237,21 +240,22 @@ export default function Sidebar({
         <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-700/50 flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-mono text-slate-400 flex items-center gap-1.5 font-bold uppercase tracking-widest">
-              <Radio className="h-3.5 w-3.5 text-indigo-400 animate-pulse" />
+              <Radio className={`h-3.5 w-3.5 ${online === false ? 'text-rose-400' : 'text-indigo-400 animate-pulse'}`} />
               {settings.activeChain} {sb('nodeLabel')}
             </span>
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              {sb('online')}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between text-xs font-medium">
-            <span className="text-slate-400 flex items-center gap-1 font-semibold">
-              <Lock className="h-3 w-3" /> {sb('secureMev')}
-            </span>
-            <span className={`font-bold font-mono ${settings.mevProtection ? 'text-indigo-400' : 'text-rose-400'}`}>
-              {settings.mevProtection ? sb('mevActive') : sb('mevInactive')}
-            </span>
+            {online === null ? (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/10 text-slate-400 border border-slate-500/20">
+                {sb('checking')}
+              </span>
+            ) : (
+              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                online
+                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+              }`}>
+                {online ? sb('online') : sb('offline')}
+              </span>
+            )}
           </div>
         </div>
 

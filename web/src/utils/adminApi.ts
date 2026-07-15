@@ -267,6 +267,23 @@ export async function deleteStakingProduct(id: string): Promise<void> {
   if (!res.ok || body?.ok === false) throw new Error(body?.error || `Request failed (${res.status})`);
 }
 
+/**
+ * ADMIN: grant a staking position to a user by email (bonus/promotion).
+ * No hub balance required — BANA is the platform's own token. Audit-logged.
+ */
+export async function grantStakePosition(input: {
+  email: string; productId: string; amount: string;
+}): Promise<{ id: string }> {
+  const res = await fetch('/api/admin/staking/positions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(input),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || body?.ok === false) throw new Error(body?.error || `Request failed (${res.status})`);
+  return body.data;
+}
+
 export async function listStakingPositions(): Promise<AdminStakePosition[]> {
   const r = await getJson<{ ok: boolean; data: AdminStakePosition[] }>('/api/admin/staking/positions');
   return Array.isArray(r.data) ? r.data : [];

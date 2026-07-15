@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useTranslations } from 'next-intl';
-import { Screen, Asset, SystemSettings } from '../types';
+import { Screen, SystemSettings } from '../types';
 import { getNiaDeposits, createDepositAddress, getNiaMarkets } from '../utils/niaApi';
 import { getManagedCoins } from '../utils/coinsApi';
 import { copyToClipboard } from '../utils/clipboard';
@@ -13,7 +13,6 @@ import Step from './wallet/Step';
 import { CoinSelect, NetworkSelect } from './wallet/Selects';
 
 interface DepositProps {
-  assets: Asset[];
   settings: SystemSettings;
   onNavigate: (toScreen: Screen, direction: 'push' | 'push_back' | 'slide_up' | 'none') => void;
 }

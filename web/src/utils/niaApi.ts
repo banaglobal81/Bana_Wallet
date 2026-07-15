@@ -7,6 +7,8 @@ import Decimal from 'decimal.js';
 export interface NiaStatus {
   ok: boolean;
   configured: boolean;
+  /** True only if the hub answered a live ping just now (backs the status light). */
+  reachable: boolean;
   baseUrl: string;
   brokerId: string | null;
   keyPreview: string | null;

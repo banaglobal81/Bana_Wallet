@@ -22,12 +22,11 @@ import {
 } from 'lucide-react';
 
 interface ActivityHistoryProps {
-  activities: Activity[];
   settings: SystemSettings;
   onNavigate: (toScreen: Screen, direction: 'push' | 'push_back' | 'slide_up' | 'none') => void;
 }
 
-export default function ActivityHistory({ activities, settings, onNavigate }: ActivityHistoryProps) {
+export default function ActivityHistory({ settings, onNavigate }: ActivityHistoryProps) {
   const t = useTranslations('activity');
   const [filter, setFilter] = useState<'All' | 'Completed' | 'Pending'>('All');
   const [copiedTx, setCopiedTx] = useState<string | null>(null);

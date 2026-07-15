@@ -5,6 +5,7 @@ import { Screen, SystemSettings } from '../types';
 import { useSession, signOut } from 'next-auth/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
+import { useHubOnline } from '@/lib/useHubOnline';
 import {
   Settings as SettingsIcon,
   Activity as ActivityIcon,
@@ -28,6 +29,8 @@ const Avatar = ({ className = '' }: { className?: string }) => (
 
 export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) {
   const { data: session } = useSession();
+  // Real hub reachability — null until verified, so we never claim a status.
+  const online = useHubOnline();
   const isAdmin = session?.user?.role === 'ADMIN';
   const pathname = usePathname();
   // Which app are we in? The menu offers admin nav inside /admin, user nav elsewhere —
@@ -102,11 +105,13 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
                 </span>
               )}
               <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                settings.walletConnected
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                  : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                online === null
+                  ? 'bg-slate-500/10 text-slate-400 border-slate-500/20'
+                  : online
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                    : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
               }`}>
-                {settings.walletConnected ? t('connected') : t('offline')}
+                {online === null ? t('checking') : online ? t('connected') : t('offline')}
               </span>
             </div>
           </div>

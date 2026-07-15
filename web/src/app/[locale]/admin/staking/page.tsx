@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Sprout, Plus, Loader2, Check, X, Power, Trash2, Users, Lock, Coins, Pencil, Play } from 'lucide-react';
 import {
   listStakingProducts, createStakingProduct, updateStakingProduct, deleteStakingProduct, listStakingPositions, getStakingStats,
-  runStakingSettlement, getStakingRunStatus, getReferralOverview,
+  runStakingSettlement, getStakingRunStatus, getReferralOverview, grantStakePosition,
   type AdminStakingProduct, type AdminStakePosition, type StakingProductInput, type AdminStakingStat, type StakingRunStatus, type ReferralOverview,
 } from '@/utils/adminApi';
 
@@ -35,6 +35,12 @@ export default function AdminStakingPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<EditForm>({ name: '', dailyRatePct: '', minAmount: '', maxAmount: '', capacity: '' });
 
+  // Grant a staking position to a user (bonus/promotion).
+  const [grantEmail, setGrantEmail] = useState('');
+  const [grantProductId, setGrantProductId] = useState('');
+  const [grantAmount, setGrantAmount] = useState('');
+  const [grantMsg, setGrantMsg] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -48,6 +54,23 @@ export default function AdminStakingPage() {
     finally { setLoading(false); }
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  // Grant a staking position to a user — no hub balance needed (BANA is ours).
+  const grant = async () => {
+    setBusy(true); setError(null); setGrantMsg(null);
+    try {
+      const product = products.find((p) => p.id === grantProductId);
+      await grantStakePosition({ email: grantEmail.trim(), productId: grantProductId, amount: grantAmount.trim() });
+      setGrantMsg(t('grantSuccess', {
+        amount: grantAmount.trim(),
+        coin: product?.coin ?? '',
+        email: grantEmail.trim(),
+      }));
+      setGrantEmail(''); setGrantAmount('');
+      await load();
+    } catch (e) { setError((e as Error).message); }
+    finally { setBusy(false); }
+  };
 
   const runSettlement = async () => {
     setRunning(true); setError(null); setRunMsg(null);
@@ -324,6 +347,52 @@ export default function AdminStakingPage() {
                 </table>
               </div>
             )}
+          </section>
+
+          {/* Grant a staking position to a user (bonus / promotion) */}
+          <section className="flex flex-col gap-3">
+            <div className="p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-3">
+              <div>
+                <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#d8e2ff] flex items-center gap-2">
+                  <Sprout className="h-4 w-4 text-emerald-400" /> {t('grantTitle')}
+                </h2>
+                <p className="text-[11px] text-[#8c90a0] mt-1 leading-relaxed">{t('grantHint')}</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-[2fr_2fr_1fr_auto] gap-2">
+                <input
+                  className={field}
+                  value={grantEmail}
+                  onChange={(e) => setGrantEmail(e.target.value)}
+                  placeholder={t('grantEmailPlaceholder')}
+                />
+                <select
+                  className={field}
+                  value={grantProductId}
+                  onChange={(e) => setGrantProductId(e.target.value)}
+                >
+                  <option value="">{t('grantProductPlaceholder')}</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name} · {p.coin} · {p.termDays}d</option>
+                  ))}
+                </select>
+                <input
+                  className={field}
+                  value={grantAmount}
+                  onChange={(e) => setGrantAmount(e.target.value)}
+                  placeholder={t('grantAmountPlaceholder')}
+                />
+                <button
+                  disabled={busy || !grantEmail.trim() || !grantProductId || !grantAmount.trim()}
+                  onClick={grant}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold cursor-pointer whitespace-nowrap"
+                >
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} {t('grantAction')}
+                </button>
+              </div>
+              {grantMsg && (
+                <p className="text-xs text-emerald-400 font-mono bg-emerald-500/5 border border-emerald-500/20 rounded-lg px-3 py-2">{grantMsg}</p>
+              )}
+            </div>
           </section>
 
           {/* Positions */}

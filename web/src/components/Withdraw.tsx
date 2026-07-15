@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Decimal from 'decimal.js';
 import { useTranslations } from 'next-intl';
-import { Screen, Asset, SystemSettings } from '../types';
+import { Screen, SystemSettings } from '../types';
 import { requestNiaWithdrawal, getNiaBalance, getNiaMarkets } from '../utils/niaApi';
 import { getManagedCoins } from '../utils/coinsApi';
 import { listSavedAddresses, type SavedAddress } from '../utils/accountApi';
@@ -39,7 +39,6 @@ function aggregateBalances(raw: unknown): Map<string, Decimal> {
 }
 
 interface WithdrawProps {
-  assets: Asset[];
   settings: SystemSettings;
   onNavigate: (toScreen: Screen, direction: 'push' | 'push_back' | 'slide_up' | 'none') => void;
 }

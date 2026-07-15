@@ -1,10 +1,11 @@
-// Railway cron entry — the Node/Railway equivalent of the Cloudflare worker.
+// Railway cron entry — the whole worker.
 //
-// Railway has no Cloudflare-style `scheduled()` runtime, so this is a plain
-// one-shot Node script: it calls the web app's daily staking settlement
-// endpoint once, logs the result, and exits. Set a **Cron Schedule** on this
-// Railway service (Settings → Cron Schedule, e.g. `0 0 * * *`) so Railway runs
-// it once a day. Requires zero dependencies — just Node 18+ global fetch.
+// A one-shot Node script: it calls the web app's staking settlement endpoint
+// once, logs the result, and exits. The web app owns all the staking logic; this
+// just triggers it. Zero dependencies — Node 18+ global fetch.
+//
+// The SCHEDULE lives in the Railway dashboard (Settings → Cron Schedule), not in
+// this repo — there is no cron expression in any file here.
 //
 // Required env vars (Railway → Variables):
 //   WEB_URL      = https://banawallet.com      (the deployed web app)

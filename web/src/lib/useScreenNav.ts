@@ -13,8 +13,6 @@ export const SCREEN_TO_PATH: Partial<Record<Screen, string>> = {
   WITHDRAW_INTERFACE: '/withdraw',
   SETTINGS_INTERFACE: '/settings',
   ACTIVITY_HISTORY: '/activity',
-  // TRANSACTION_SIMULATION and SCAM_WARNING_MODAL are NOT routes — they are
-  // modal/local state inside the swap page.  They are handled via overrides.
 };
 
 /**
