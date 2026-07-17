@@ -32,7 +32,6 @@ export interface Activity {
   timestamp: string;
   status: 'Completed' | 'Pending' | 'Rejected' | 'Failed';
   txHash: string;
-  gasFee: string;
 }
 
 // Client-side display preferences only. Anything touching real funds (balances,

@@ -76,7 +76,7 @@ export default function ActivityHistory({ settings, onNavigate }: ActivityHistor
               type: 'Receive', title: `Deposited ${d.amount} ${d.currency}`,
               description: `${d.network || ''} network deposit`,
               fromAmount: '0', fromSymbol: '', toAmount: String(d.amount ?? ''), toSymbol: d.currency || '',
-              timestamp: fmt(d.createdAt ?? d.ts), status: mapStatus(d.status), txHash: d.txHash || d.id || '', gasFee: '—',
+              timestamp: fmt(d.createdAt ?? d.ts), status: mapStatus(d.status), txHash: d.txHash || d.id || '',
             },
           })),
           ...wds.map((w: any): Row => ({
@@ -86,7 +86,7 @@ export default function ActivityHistory({ settings, onNavigate }: ActivityHistor
               type: 'Send', title: `Withdrew ${w.amount} ${w.currency}`,
               description: w.pendingApproval ? t('awaitingApproval') : `${w.network || ''} network withdrawal`,
               fromAmount: String(w.amount ?? ''), fromSymbol: w.currency || '', toAmount: '0', toSymbol: '',
-              timestamp: fmt(w.createdAt ?? w.ts), status: mapStatus(w.status), txHash: w.txHash || w.withdrawalId || w.id || '', gasFee: '—',
+              timestamp: fmt(w.createdAt ?? w.ts), status: mapStatus(w.status), txHash: w.txHash || w.withdrawalId || w.id || '',
             },
           })),
           ...trades.map((t: any): Row => {
@@ -110,7 +110,7 @@ export default function ActivityHistory({ settings, onNavigate }: ActivityHistor
                 description: `${t.symbol || ''}${t.side ? ' ' + String(t.side).toUpperCase() : ''}`.trim(),
                 fromAmount, fromSymbol, toAmount, toSymbol,
                 timestamp: fmt(t.createdAt ?? t.ts), status: mapStatus(t.status),
-                txHash: t.txHash || t.tradeId || t.orderId || t.id || '', gasFee: '—',
+                txHash: t.txHash || t.tradeId || t.orderId || t.id || '',
               },
             };
           }),
@@ -211,7 +211,6 @@ export default function ActivityHistory({ settings, onNavigate }: ActivityHistor
                 <th className="pb-3 pl-2.5 font-semibold">{t('colAction')}</th>
                 <th className="pb-3 font-semibold">{t('colDescription')}</th>
                 <th className="pb-3 font-semibold">{t('colInputsOutputs')}</th>
-                <th className="pb-3 text-right font-semibold">{t('colNetworkGas')}</th>
                 <th className="pb-3 text-right font-semibold">{t('colStatusHash')}</th>
                 <th className="pb-3 text-right font-semibold pr-2.5">{t('colCopy')}</th>
               </tr>
@@ -267,12 +266,6 @@ export default function ActivityHistory({ settings, onNavigate }: ActivityHistor
                       ) : (
                         <span className="text-purple-300">{t('approveSpend')}</span>
                       )}
-                    </td>
-
-                    {/* Gas Fee */}
-                    <td className="py-4 text-right font-mono text-xs text-slate-400">
-                      <div>{act.gasFee}</div>
-                      <span className="text-[9px] uppercase tracking-wide">{t('privateRelayer')}</span>
                     </td>
 
                     {/* Transaction Status Badge */}
@@ -343,7 +336,6 @@ export default function ActivityHistory({ settings, onNavigate }: ActivityHistor
               </>
             )}
           </span>
-          <span className="font-mono">{t('addressIndex')}</span>
         </div>
 
       </section>
