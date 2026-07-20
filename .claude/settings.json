@@ -23,7 +23,9 @@
       "Bash(curl:*)",
       "Bash(ls:*)",
       "Bash(cat:*)",
-      "Bash(date:*)"
+      "Bash(date:*)",
+      "WebSearch",
+      "WebFetch"
     ],
     "deny": [
       "Bash(git push:*)",

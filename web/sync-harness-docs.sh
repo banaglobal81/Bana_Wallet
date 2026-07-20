@@ -6,24 +6,27 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
+# Code paths live under web/ (= $ROOT); .claude/ and CLAUDE.md live at the repo root.
+REPO_ROOT="$(git -C "$ROOT" rev-parse --show-toplevel 2>/dev/null || echo "$ROOT")"
+
 DRIFT=0
 note() { echo "WARN drift: $1"; DRIFT=$((DRIFT+1)); }
 ok()   { echo "ok   $1"; }
 
 echo "== BANA harness doc drift check =="
 
-# 1) Agent file count (expect 15)
-AGENT_COUNT=$(find .claude/agents -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
-if [ "$AGENT_COUNT" = "15" ]; then
-  ok "15 agent files"
+# 1) Agent file count (expect 16)
+AGENT_COUNT=$(find "$REPO_ROOT/.claude/agents" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
+if [ "$AGENT_COUNT" = "16" ]; then
+  ok "16 agent files"
 else
-  note ".claude/agents/ file count = $AGENT_COUNT (expected 15)"
+  note ".claude/agents/ file count = $AGENT_COUNT (expected 16)"
 fi
 
 # 2) Team rows declared in CLAUDE.md vs actual file count
-if [ -f CLAUDE.md ]; then
-  # Count only numbered team rows (| 1 | ... | 15 |) to avoid colliding with the tier table
-  TABLE_ROWS=$(grep -cE '^\| [0-9]+ \|' CLAUDE.md | tr -d ' ')
+if [ -f "$REPO_ROOT/CLAUDE.md" ]; then
+  # Count only numbered team rows (| 1 | ... | 16 |) to avoid colliding with the tier table
+  TABLE_ROWS=$(grep -cE '^\| [0-9]+ \|' "$REPO_ROOT/CLAUDE.md" | tr -d ' ')
   if [ "$TABLE_ROWS" = "$AGENT_COUNT" ]; then
     ok "CLAUDE.md team table rows ($TABLE_ROWS) = agent file count"
   else
@@ -47,7 +50,7 @@ for obsolete in server.js vite.config.ts start.sh stop.sh; do
 done
 
 # 6) Each agent file has a Self-Update Protocol section
-for f in .claude/agents/*.md; do
+for f in "$REPO_ROOT"/.claude/agents/*.md; do
   [ -e "$f" ] || continue
   grep -q 'Self-Update Protocol' "$f" || note "$f missing Self-Update Protocol"
 done

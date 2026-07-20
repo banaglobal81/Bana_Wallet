@@ -65,7 +65,7 @@ package.json          — scripts: dev (next dev -p 3000), build, start, lint (t
 | T2   | sonnet | single-area code read/edit, UI, components, proxy routes, workers |
 | T3   | opus   | custody security, HMAC signing review, balance/withdrawal precision, unclear-root-cause bugs |
 
-## Agent Team (15)
+## Agent Team (16)
 
 | # | Agent | model | Scope | Status |
 |---|-------|-------|-------|--------|
@@ -84,6 +84,7 @@ package.json          — scripts: dev (next dev -p 3000), build, start, lint (t
 | 13 | routine-tasks | haiku | tsc/lint/grep/build | active |
 | 14 | code-compliance-checker | haiku | rule-violation detection | active |
 | 15 | doc-keeper | haiku | doc sync | active |
+| 16 | researcher | sonnet | external web research → `docs/research/` | active |
 
 ## Harness Engineering Principles
 
