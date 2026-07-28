@@ -23,7 +23,7 @@
 3. **No direct Nia-Hub calls from the browser.** The frontend must only call `web/src/utils/niaApi.ts` → `/api/nia/*` (Next.js route handlers). No direct fetch to `api.niawallet.com`.
 4. **The HMAC secret (`NIA_API_SECRET`) lives only in `web/src/lib/nia/*` (server-only).** Never leak the secret into the client bundle, logs, or error responses. The two signing schemes (implemented in `web/src/lib/nia/client.ts` + `web/server/core/nia-signing.js`) are **owned by `web-shared-expert`**.
 5. **Git commits are `deploy-manager` only.** No history rewrites (`git rebase` / `reset --hard`).
-6. **`git push` is user-only — every agent (including `deploy-manager`) is forbidden from pushing.** Agents stop after `git add` + `git commit` and hand push off to the user.
+6. **`git push` to `main` is `deploy-manager`-only.** No other agent may push. `deploy-manager` pushes autonomously after commit (no per-push user confirmation required). No force-push, ever.
 7. **`prisma db push` is absolutely forbidden** (all agents). The DB + Prisma is now live — all schema changes go through migrations only (`prisma migrate dev` / `prisma migrate deploy`). Never run `prisma migrate reset` or drop tables on a shared/production DB.
 8. **Authentication is mandatory on protected routes.** API route handlers serving user/admin data must call `requireUser()` / `requireAdmin()` from `web/src/lib/auth/session.ts`. Never trust a client-supplied user id for authorization — derive it from the session. Passwords are hashed with `bcryptjs`; never store or log plaintext passwords.
 9. **Model tiers are role-based, not uniform — this is a token-cost control, not a formality.** `opus` is reserved for planning/spec-design work only (`pm`, `product-planner`). Every other agent runs on `sonnet` or `haiku` per the Model Tier Strategy table below, chosen by task complexity, not defaulted to `sonnet`. Changing an agent's tier means editing **both** this table **and** that agent's `.claude/agents/*.md` frontmatter `model:` field in the same change — `sync-harness-docs.sh` flags a mismatch.
@@ -52,7 +52,7 @@
 | 9 | product-planner | opus | FRD & screen specs | active |
 | 10 | growth-pm | sonnet | growth & retention | active |
 | 11 | qa-lead | sonnet | QA | active |
-| 12 | deploy-manager | haiku | git commit + Railway (no push) | active |
+| 12 | deploy-manager | haiku | git commit + push + Railway | active |
 | 13 | routine-tasks | haiku | tsc/lint/grep/build | active |
 | 14 | code-compliance-checker | haiku | rule-violation detection | active |
 | 15 | doc-keeper | haiku | doc sync | active |
