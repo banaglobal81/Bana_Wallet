@@ -292,6 +292,7 @@
     "withdrawSubtitle": "Gửi tiền đến một địa chỉ",
     "balances": "Số dư",
     "refreshBalancesAria": "Làm mới số dư",
+    "showAllCoins": "Hiện tất cả coin",
     "loadingBalances": "Đang tải số dư từ BANA…",
     "backendUnreachable": "Không tải được số dư. Vui lòng thử lại sau giây lát.",
     "noBalances": "Chưa có số dư nào",

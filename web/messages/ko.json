@@ -292,6 +292,7 @@
     "withdrawSubtitle": "주소로 자금 보내기",
     "balances": "잔액",
     "refreshBalancesAria": "잔액 새로고침",
+    "showAllCoins": "전체 코인 보기",
     "loadingBalances": "BANA에서 잔액을 불러오는 중…",
     "backendUnreachable": "잔액을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
     "noBalances": "아직 잔액이 없습니다",

@@ -292,6 +292,7 @@
     "withdrawSubtitle": "アドレスへ資金を送金",
     "balances": "残高",
     "refreshBalancesAria": "残高を更新",
+    "showAllCoins": "全コインを表示",
     "loadingBalances": "BANA から残高を読み込み中…",
     "backendUnreachable": "残高を読み込めませんでした。しばらくしてからもう一度お試しください。",
     "noBalances": "残高はまだありません",
