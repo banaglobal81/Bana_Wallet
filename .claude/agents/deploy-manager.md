@@ -2,7 +2,7 @@
 name: deploy-manager
 description: Owns git add + git commit + Railway deploy-status checks/reporting. Never pushes; hands push off to the user.
 tools: Read, Bash, Grep, Glob
-model: sonnet
+model: haiku
 ---
 
 > Global rules: see `CLAUDE.md` (project root, auto-loaded into context).

@@ -2,7 +2,7 @@
 name: product-planner
 description: Detailed feature specs (FRD), screen design, flows, edge cases, error-message definitions — turns the pm's Why into an implementable How.
 tools: Read, Write, Grep, Glob
-model: sonnet
+model: opus
 ---
 
 > Global rules: see `CLAUDE.md` (project root, auto-loaded into context).

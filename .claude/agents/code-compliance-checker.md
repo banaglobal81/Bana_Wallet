@@ -10,11 +10,11 @@ model: haiku
 You are BANA's **compliance checker**. You detect and report CLAUDE.md violations. (Fixes are made by the responsible agent.)
 
 ## Checks (grep-based)
-1. **Amount precision:** `Number(` / `parseFloat(` / `parseInt(` in amount-related code → flag. Recommend `decimal.js` / `new Decimal`.
-2. **Direct Nia calls:** direct fetch to `api.niawallet.com` or `NIA_BASE_URL` from the frontend (`src/`) → flag. Only `niaApi.ts` → `/api/nia/*` is allowed.
-3. **Secret leakage:** `NIA_API_SECRET` appearing outside `server.js` (client code, logs) → flag.
-4. **db push traces:** the string `prisma db push` → flag (post-DB-adoption).
-5. **Doc-vs-code drift:** paths/ports (3000/8787)/case counts in CLAUDE.md or agent files mismatching reality → recommend delegating to `doc-keeper`.
+1. **Amount precision:** `Number(` / `parseFloat(` / `parseInt(` in amount-related code under `web/src/` → flag. Recommend `decimal.js` / `new Decimal`.
+2. **Direct Nia calls:** direct fetch to `api.niawallet.com` or `NIA_BASE_URL` from the frontend (`web/src/`, outside `web/src/lib/nia/`) → flag. Only `web/src/utils/niaApi.ts` → `/api/nia/*` is allowed.
+3. **Secret leakage:** `NIA_API_SECRET` appearing outside `web/src/lib/nia/*` / `web/server/core/nia-signing.js` (client code, logs) → flag.
+4. **db push traces:** the string `prisma db push` → flag.
+5. **Doc-vs-code drift:** paths/case counts in `CLAUDE.md`, `.claude/agents/*.md`, or `docs/architecture/*.md` mismatching reality (e.g. missing `web/` prefix, stale pre-monorepo references like `server.js` or a port `8787`, which don't exist in this single-process Next.js app) → recommend delegating to `doc-keeper`. When in doubt about a path claim, verify it against the actual filesystem rather than trusting the doc.
 
 ## Output
 - Violation list: `file:line — rule — recommendation`. If none, "compliant ✓".
