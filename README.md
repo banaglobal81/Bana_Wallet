@@ -43,6 +43,92 @@ npm run dev        # http://localhost:3000
 
 ---
 
+## Local Development Setup (Detailed)
+
+### Create a Local PostgreSQL Database
+
+If you don't have a local PostgreSQL instance, create one:
+
+```bash
+# macOS (using Homebrew)
+brew install postgresql
+brew services start postgresql
+
+# Linux (Ubuntu/Debian)
+sudo apt-get install postgresql postgresql-contrib
+sudo systemctl start postgresql
+
+# Create the local database and user
+createuser -P bana          # (will prompt for password; you can use a simple one for dev)
+createdb -O bana bana_wallet_dev
+
+# Or if using "trust" auth (no password required locally):
+sudo -u postgres createuser -d bana
+sudo -u postgres createdb -O bana bana_wallet_dev
+```
+
+### Set Up `.env` — Method 1: Manual (Standalone)
+
+If you're running standalone (no Railway CLI access), manually fill `.env`:
+
+```bash
+cp .env.example .env
+```
+
+Edit `web/.env` and set at minimum:
+
+- `DATABASE_URL="postgresql://bana:PASSWORD@localhost:5432/bana_wallet_dev"` (or adjust to your local DB name/credentials)
+- `AUTH_SECRET` — generate with `openssl rand -base64 32`
+- `APP_URL="http://localhost:3000"`
+- `ADMIN_EMAIL` / `ADMIN_PASSWORD` — used by `npm run db:seed`
+- `NIA_API_KEY`, `NIA_API_SECRET`, `NIA_BROKER_ID` — obtain from Nia-Hub Broker Dashboard (required to run locally; use dummy values if testing auth only)
+
+### Set Up `.env` — Method 2: From Railway (With Railway CLI)
+
+If you have Railway CLI access and a Railway project linked:
+
+```bash
+# Install Railway CLI (if not already installed)
+npm install -g @railway/cli
+
+# Login to Railway and link the project
+railway login
+railway link <project-name>
+
+# Pull all env vars from the Railway service
+railway variables --service <service-name> --kv > web/.env.tmp
+
+# Copy the output, then manually edit web/.env to override the DATABASE_URL:
+# DATABASE_URL="postgresql://bana:PASSWORD@localhost:5432/bana_wallet_dev"
+```
+
+Then delete `web/.env.tmp` — you now have a `.env` file with all the Nia-Hub secrets and other config, but with a local database.
+
+---
+
+### Run Migrations & Seed
+
+From the `web/` directory:
+
+```bash
+# Apply all pending migrations
+npm run db:deploy
+
+# Create the first admin user
+npm run db:seed
+
+# (Optional) Seed staking products for testing
+npm run db:seed:staking
+```
+
+Then run the dev server:
+
+```bash
+npm run dev        # http://localhost:3000
+```
+
+---
+
 ## Environment Variables (`.env`)
 
 | Variable | Purpose |

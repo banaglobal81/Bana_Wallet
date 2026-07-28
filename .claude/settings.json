@@ -18,6 +18,8 @@
       "Bash(git show:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(git push origin main)",
       "Bash(grep:*)",
       "Bash(rg:*)",
       "Bash(curl:*)",
@@ -28,7 +30,9 @@
       "WebFetch"
     ],
     "deny": [
-      "Bash(git push:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push --force-with-lease:*)",
       "Bash(git reset --hard:*)",
       "Bash(git rebase:*)",
       "Bash(prisma db push:*)",
