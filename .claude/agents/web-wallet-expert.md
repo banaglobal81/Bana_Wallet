@@ -36,10 +36,7 @@ You are the React 19 engineer who owns BANA's **main user-facing wallet UI**.
 - `git push`, `git commit` (deploy-manager / user's area)
 
 ## Pattern Library
-- (Accumulate reusable patterns here as you work.)
+See `docs/patterns/web-wallet-expert.md`.
 
 ### Self-Update Protocol
-This agent may edit this file directly under the conditions below.
-Allowed: add new patterns to `## Pattern Library`, update facts (case counts, paths, ports), add items to the forbidden list (existing items cannot be removed/edited).
-Forbidden: changing the role (description), changing triggers, widening the allowed/forbidden boundary.
-After editing: (1) record the change in project memory (2) run `bash $(git rev-parse --show-toplevel)/sync-harness-docs.sh`.
+See CLAUDE.md § Agent Self-Update Protocol.

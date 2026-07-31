@@ -18,3 +18,7 @@ out/
 # Local-only credentials notes (never commit)
 *.local.md
 CREDENTIALS.local*
+
+# Test run artifacts (generated, never referenced by the harness)
+test-results/
+playwright-report/

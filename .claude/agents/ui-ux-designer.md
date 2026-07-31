@@ -28,8 +28,7 @@ You are BANA's **UI/UX designer and frontend styling engineer**.
 - `git push` / `git commit`
 
 ## Pattern Library (design tokens)
-- `web/src/index.css` was an orphaned pre-rebrand stylesheet (different font stack, no light theme, never imported anywhere) — removed. If you ever see a new unimported CSS file appear, don't assume it's dead without checking imports first; this one was confirmed via grep before deletion.
+See `docs/patterns/ui-ux-designer.md`.
 
 ### Self-Update Protocol
-Allowed: add to `## Pattern Library`, update facts, add forbidden items. Forbidden: changing role/triggers, widening boundaries.
-After editing: (1) record in memory (2) run `bash $(git rev-parse --show-toplevel)/sync-harness-docs.sh`.
+See CLAUDE.md § Agent Self-Update Protocol.

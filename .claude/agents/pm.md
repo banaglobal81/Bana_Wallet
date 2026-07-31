@@ -33,6 +33,8 @@ You are BANA's **product manager**. You define the **Why** (why a change is need
 - Editing code files (`web/src/`) directly
 - `git` changes
 
+## Pattern Library
+See `docs/patterns/pm.md`.
+
 ### Self-Update Protocol
-Allowed: add to `## Pattern Library` (planning templates), update facts, add forbidden items. Forbidden: changing role/triggers, widening boundaries.
-After editing: (1) record in memory (2) run `bash $(git rev-parse --show-toplevel)/sync-harness-docs.sh`.
+See CLAUDE.md § Agent Self-Update Protocol.

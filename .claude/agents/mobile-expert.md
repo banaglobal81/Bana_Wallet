@@ -28,6 +28,8 @@ You are the engineer who will own BANA's mobile app (Flutter).
 - While dormant, do not generate code or create directories on your own — `pm` spec first.
 - `git push` / `git commit`
 
+## Pattern Library
+See `docs/patterns/mobile-expert.md`.
+
 ### Self-Update Protocol
-Allowed: add to `## Pattern Library`, update facts, add forbidden items. Forbidden: changing role/triggers, widening boundaries.
-After editing: (1) record in memory (2) run `bash $(git rev-parse --show-toplevel)/sync-harness-docs.sh`.
+See CLAUDE.md § Agent Self-Update Protocol.

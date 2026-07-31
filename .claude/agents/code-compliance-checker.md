@@ -23,6 +23,8 @@ You are BANA's **compliance checker**. You detect and report CLAUDE.md violation
 - Editing code directly (detect & report only)
 - `git` changes
 
+## Pattern Library
+See `docs/patterns/code-compliance-checker.md`.
+
 ### Self-Update Protocol
-Allowed: add new violation patterns/greps to `## Pattern Library`, update facts, add forbidden items. Forbidden: changing role/triggers, widening boundaries.
-After editing: (1) record in memory (2) run `bash $(git rev-parse --show-toplevel)/sync-harness-docs.sh`.
+See CLAUDE.md § Agent Self-Update Protocol.

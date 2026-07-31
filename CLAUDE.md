@@ -11,9 +11,8 @@
 ## Project Overview
 - **Description:** BANA — a Nia-Hub B2B crypto wallet platform. Multi-market deposits/withdrawals, balance lookup, orders, trade history, settlement.
 - **Repo layout:** monorepo. `web/` is the Next.js app (everything below unless noted). `worker/` is a separate Railway cron service — details in `docs/architecture/worker.md`.
-- **Tech stack:** Next.js 15 App Router + React 19, Auth.js v5 (credentials + `bcryptjs`, roles `USER`/`ADMIN`), PostgreSQL via Prisma 7, `@google/genai` (Gemini), TailwindCSS v4, `next-intl` i18n (en/ko/ja/zh/vi/th, every page lives under `web/src/app/[locale]/`), deployed on Railway. Full path-by-path breakdown: `docs/architecture/code-tree.md`.
-- **Nia-Hub integration:** two HMAC signing schemes (plain concatenation, no newlines) — Trading API and Wallet/Settlement API. Exact headers/payload format/endpoint list: `docs/architecture/nia-integration.md`.
-- **Data flow:** `Browser (React) → /api/nia/* (Next.js route handlers) → Nia-Hub`. The secret `NIA_API_SECRET` lives **only in `web/src/lib/nia/` (server-only)** and is never exposed to the client.
+- **Tech stack:** Next.js 15 + React 19 + Prisma 7 + Auth.js v5, `next-intl` i18n (en/ko/ja/zh/vi/th), deployed on Railway. Full path-by-path breakdown: `docs/architecture/code-tree.md`.
+- **Nia-Hub integration:** two HMAC signing schemes, `Browser → /api/nia/* → Nia-Hub` data flow, secret handling per rule 4 below. Exact wire format: `docs/architecture/nia-integration.md`.
 
 ## Absolute Rules
 
@@ -57,6 +56,13 @@
 | 14 | code-compliance-checker | haiku | rule-violation detection | active |
 | 15 | doc-keeper | haiku | doc sync | active |
 
+## Agent Self-Update Protocol
+
+Every agent in `.claude/agents/*.md` may edit its own file under these rules (each file's own `### Self-Update Protocol` line just points back here):
+- **Allowed:** add lessons/patterns to `docs/patterns/<agent-name>.md` (on-demand doc, not inline in the agent file — see Docs Index), update stated facts (paths, counts, ports), add new items to its own `## Forbidden` list.
+- **Forbidden:** changing its own role/description, changing its triggers, widening any allowed/forbidden boundary, removing an existing Forbidden item.
+- **After editing:** record the change in memory. Only run `bash sync-harness-docs.sh` if the edit was structural — changed `model`/`tools`/`description` frontmatter, added/removed an agent file, or touched something a drift check depends on (paths, counts). Fact updates and `docs/patterns/*` edits do not require a script run.
+
 ## Docs Index
 
 Read on demand — not auto-loaded into every agent's context. Read the one your task's scope actually touches.
@@ -65,3 +71,4 @@ Read on demand — not auto-loaded into every agent's context. Read the one your
 - `docs/architecture/nia-integration.md` — Nia-Hub HMAC signing schemes, exact headers/payload concatenation, route handler list
 - `docs/architecture/harness.md` — harness engineering principles, 3-step workflow, vitest wiring
 - `docs/architecture/worker.md` — `worker/` cron service (staking settlement)
+- `docs/patterns/<agent-name>.md` — that agent's own accumulated lessons-learned (Pattern Library). Read only by that agent, only when the current task's scope overlaps a listed entry; not force-loaded, not read by other agents by default.

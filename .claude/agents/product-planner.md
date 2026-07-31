@@ -28,6 +28,8 @@ You are BANA's **product planner**. You convert the `pm`'s **Why** into an imple
 - Editing code directly
 - `git` changes
 
+## Pattern Library
+See `docs/patterns/product-planner.md`.
+
 ### Self-Update Protocol
-Allowed: add to `## Pattern Library` (FRD templates), update facts, add forbidden items. Forbidden: changing role/triggers, widening boundaries.
-After editing: (1) record in memory (2) run `bash $(git rev-parse --show-toplevel)/sync-harness-docs.sh`.
+See CLAUDE.md § Agent Self-Update Protocol.

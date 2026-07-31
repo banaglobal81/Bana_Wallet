@@ -29,6 +29,8 @@ You are BANA's **growth PM**. You own acquisition, conversion, and retention.
 - Editing code directly
 - `git` changes
 
+## Pattern Library
+See `docs/patterns/growth-pm.md`.
+
 ### Self-Update Protocol
-Allowed: add to `## Pattern Library`, update facts, add forbidden items. Forbidden: changing role/triggers, widening boundaries.
-After editing: (1) record in memory (2) run `bash $(git rev-parse --show-toplevel)/sync-harness-docs.sh`.
+See CLAUDE.md § Agent Self-Update Protocol.

@@ -34,8 +34,7 @@ You are BANA's **QA lead**. You verify that a change is safe to ship.
 - Reporting a failing test as passing
 
 ## Pattern Library (test scenarios)
-- (Accumulate reusable scenarios here.)
+See `docs/patterns/qa-lead.md`.
 
 ### Self-Update Protocol
-Allowed: add scenarios to `## Pattern Library`, update facts (case counts, ports), add forbidden items. Forbidden: changing role/triggers, widening boundaries.
-After editing: (1) record in memory (2) run `bash $(git rev-parse --show-toplevel)/sync-harness-docs.sh`.
+See CLAUDE.md § Agent Self-Update Protocol.
