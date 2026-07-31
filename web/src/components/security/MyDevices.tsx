@@ -27,7 +27,7 @@ export default function MyDevices({ settingsPath = '/settings' }: { settingsPath
   const fmt = (iso: string) => new Date(iso).toISOString().slice(0, 19).replace('T', ' ');
 
   return (
-    <div className="flex-1 min-h-full bg-[#020617] text-slate-100 p-4 sm:p-6 lg:p-8 flex flex-col gap-5 overflow-y-auto">
+    <div className="bana-page flex-1 min-h-full bg-[#020617] text-slate-100 p-4 sm:p-6 lg:p-8 flex flex-col gap-5 overflow-y-auto">
       <Link href={`${settingsPath}/security`} className="self-start flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200 font-semibold transition-colors">
         <ChevronLeft className="h-4 w-4" /> Security
       </Link>

@@ -132,7 +132,7 @@ export default function Swap({ onNavigate }: SwapProps) {
   const reviewing = stage === 'review';
 
   return (
-    <div className="flex-1 min-h-full bg-[#06132a] text-[#d8e2ff] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
+    <div className="bana-page flex-1 min-h-full bg-[#06132a] text-[#d8e2ff] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
       <header className="pb-2 border-b border-[#1E3559]/40">
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
           <ArrowLeftRight className="h-7 w-7 text-[#528dff]" /> {t('pageTitle')}

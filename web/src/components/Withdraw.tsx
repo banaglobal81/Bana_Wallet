@@ -170,7 +170,7 @@ export default function Withdraw({ onNavigate }: WithdrawProps) {
   const savedForNet = savedAddrs.filter((a) => a.network === selectedNetwork);
 
   return (
-    <div className="flex-1 min-h-full bg-[#06132a] text-[#d8e2ff] p-4 sm:p-6 lg:p-8 overflow-y-auto">
+    <div className="bana-page flex-1 min-h-full bg-[#06132a] text-[#d8e2ff] p-4 sm:p-6 lg:p-8 overflow-y-auto">
       <div className="flex items-center justify-end mb-4">
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-lg text-emerald-400 font-semibold text-xs font-mono select-none">
           <ShieldCheck className="h-4 w-4" /> {t('niaSecured')}

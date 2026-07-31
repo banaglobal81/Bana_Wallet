@@ -131,7 +131,7 @@ export default function Wallet({ onNavigate }: WalletProps) {
   const visibleRows = showAll ? [...rows, ...allZeroRows] : rows;
 
   return (
-    <div className="flex-1 min-h-full bg-[#06132a] text-[#d8e2ff] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
+    <div className="bana-page flex-1 min-h-full bg-[#06132a] text-[#d8e2ff] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
 
       {/* Header */}
       <header className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center pb-2 border-b border-[#1E3559]/40">

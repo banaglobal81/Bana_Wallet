@@ -510,10 +510,13 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
   // ---- Main render --------------------------------------------------------
 
   return (
-    <div className="flex-1 min-h-full bg-[#020617] text-slate-100 p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
+    <div className="bana-page flex-1 min-h-full bg-[#020617] text-slate-100 p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
 
       {/* 1. Header Bar */}
-      <header className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center bg-[#020617]">
+      {/* No background of its own — it repaints the page colour, which was
+          invisible when the page was flat but reads as a dark slab now that the
+          page carries a translucent tint over the nebula. */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex flex-wrap items-center gap-2">
             {t('pageTitle')}

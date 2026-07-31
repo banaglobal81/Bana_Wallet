@@ -265,3 +265,103 @@ html:not(.light) .from-\[\#0059c7\]:hover {
 html:not(.light) .text-indigo-400 { color: #d3d9e1 !important; }
 html:not(.light) .bg-indigo-500\/10 { background-color: rgba(206, 212, 221, 0.12) !important; }
 html:not(.light) .border-indigo-500\/20 { border-color: rgba(206, 212, 221, 0.30) !important; }
+
+/* ============================================================================
+   NEBULA PAGE BACKGROUND
+   ============================================================================
+   <BanaBackground> mounts a fixed WebGL canvas into .bana-bg at z-index -1.
+
+   The layer stack, and why the UI cannot go invisible again:
+     html        solid base colour        <- always painted
+     .bana-bg    the nebula canvas        <- z-index -1
+     .bana-page  TRANSLUCENT tint         <- never 0 alpha
+     cards/text  opaque surfaces
+
+   The page wrappers keep a real background colour, just a translucent one, so
+   the nebula reads through them. If the canvas never mounts (no WebGL, phone,
+   context lost) the result is a tint over the solid html colour — the ordinary
+   app look. At no point is content left with nothing behind it. The previous
+   version set these wrappers to fully transparent, which is what blanked the
+   signed-in screens.
+
+   This also normalises the base colour: the app shipped two different page
+   colours (#020617 and #06132a) and both are overridden here.
+   ========================================================================= */
+.bana-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+html:not(.light) { background-color: #06132a; }
+html:not(.light) body { background-color: transparent; }
+/* Pure layout boxes (app shell + <main>). They hold no content of their own —
+   they only wrap the page wrapper — so clearing them is what lets the nebula
+   reach .bana-page. The wrapper below still carries a tint, so content is
+   never left over nothing. */
+html:not(.light) .bana-shell { background-color: transparent; }
+html:not(.light) .bana-page { background-color: rgba(6, 19, 42, 0.62); }
+
+.light { background-color: #f4f7fb; }
+.light body { background-color: transparent; }
+.light .bana-shell { background-color: transparent; }
+/* Lower alpha than dark: light veining is lower-contrast to begin with, so it
+   needs less tint over it to stay legible. */
+.light .bana-page { background-color: rgba(244, 247, 251, 0.52); }
+
+/* --- Icon legibility ---------------------------------------------------------
+   lucide-react renders `<svg class="lucide lucide-*" stroke="currentColor"
+   stroke-width="2">`, so icons inherit whatever muted text colour they carry —
+   text-slate-500/400 and #8c90a0 dominate, which sits dim against the page.
+
+   Scoped to `svg.lucide` on purpose: the multi-colour Google mark and the QR
+   code are plain <svg> with no lucide class, so they are never touched. Only
+   the muted greys are lifted — coloured status icons (emerald/rose/blue) keep
+   their meaning. Stroke goes 2 → 2.15, enough to read as more solid without
+   turning into a heavier icon set.
+   -------------------------------------------------------------------------- */
+svg.lucide { stroke-width: 2.15px; }
+
+html:not(.light) svg.lucide.text-slate-500 { color: #8b98ad; }
+html:not(.light) svg.lucide.text-slate-400 { color: #a7b3c6; }
+html:not(.light) svg.lucide.text-\[\#8c90a0\] { color: #a6aab8; }
+html:not(.light) svg.lucide.text-slate-600 { color: #7c8798; }
+
+.light svg.lucide.text-slate-500,
+.light svg.lucide.text-slate-600 { color: #47536a; }
+.light svg.lucide.text-slate-400,
+.light svg.lucide.text-\[\#8c90a0\] { color: #4d586c; }
+
+/* --- Graphite accent (light theme) ------------------------------------------
+   The mirror of the silver block above. Dark turns indigo into brushed silver;
+   light was left on stock indigo, so the same button was metal on one theme and
+   bright violet on the other. Silver cannot work here — a near-white button on
+   a near-white page has no contrast — so light gets the same idea inverted:
+   dark brushed metal, same material family, easy contrast on paper.
+   -------------------------------------------------------------------------- */
+.light .bg-\[\#2E7DFF\],
+.light .bg-indigo-600,
+.light .bg-indigo-500,
+.light .from-\[\#0059c7\] {
+  background-image: linear-gradient(180deg, #39435a 0%, #232c40 52%, #161d2c 100%) !important;
+  color: #ffffff !important;
+  border-color: #2b3548 !important;
+}
+.light .hover\:bg-\[\#1a6aff\]:hover,
+.light .hover\:bg-indigo-500:hover,
+.light .from-\[\#0059c7\]:hover {
+  background-image: linear-gradient(180deg, #4a566f 0%, #313b52 52%, #1f2739 100%) !important;
+}
+.light .text-indigo-400,
+.light .text-indigo-300 { color: #2b3446 !important; }
+.light .hover\:text-indigo-300:hover,
+.light .hover\:text-indigo-400:hover { color: #161d2c !important; }
+.light .bg-indigo-500\/10 { background-color: rgba(45, 55, 75, 0.09) !important; }
+.light .bg-indigo-500\/5 { background-color: rgba(45, 55, 75, 0.05) !important; }
+.light .border-indigo-500\/20,
+.light .border-indigo-500\/25 { border-color: rgba(45, 55, 75, 0.22) !important; }
+.light .border-indigo-500\/40 { border-color: rgba(45, 55, 75, 0.34) !important; }
+.light .focus\:border-indigo-500:focus { border-color: #39435a !important; }
+.light .focus\:ring-indigo-500\/50:focus { --tw-ring-color: rgba(57, 67, 90, 0.45) !important; }
+.light .text-\[\#afc6ff\] { color: #39435a; }

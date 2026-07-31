@@ -49,7 +49,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const currentScreen = pathToScreen(pathname);
 
   return (
-    <div className="flex w-screen h-screen bg-[#06132a] text-[#d8e2ff] overflow-hidden leading-normal font-sans antialiased selection:bg-[#2E7DFF]/30 selection:text-white">
+    <div className="bana-shell flex w-screen h-screen bg-[#06132a] text-[#d8e2ff] overflow-hidden leading-normal font-sans antialiased selection:bg-[#2E7DFF]/30 selection:text-white">
       {/* Sidebar — static on desktop, off-canvas drawer on mobile */}
       <Sidebar
         currentScreen={currentScreen}
@@ -91,7 +91,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Main content area — extra bottom space on mobile for the fixed nav bar */}
-        <main className="flex-1 min-w-0 relative overflow-hidden bg-[#06132a] pb-16 lg:pb-0">
+        <main className="bana-shell flex-1 min-w-0 relative overflow-hidden bg-[#06132a] pb-16 lg:pb-0">
           {children}
         </main>
       </div>

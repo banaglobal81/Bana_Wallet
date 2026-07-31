@@ -7,6 +7,7 @@ import { ThemeProvider } from 'next-themes';
 import { auth } from '@/auth';
 import { routing } from '@/i18n/routing';
 import { Providers } from '../providers';
+import BanaBackground from '@/components/BanaBackground';
 import '../globals.css';
 
 export function generateStaticParams() {
@@ -28,6 +29,9 @@ export default async function LocaleLayout({
     <html lang={locale} suppressHydrationWarning>
       <body className="antialiased">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
+          {/* Mounted once here, never per-page: WebGL contexts are expensive
+              and browsers cap how many can be live at once. */}
+          <BanaBackground />
           <NextIntlClientProvider>
             <SessionProvider session={session}>
               <Providers>{children}</Providers>
