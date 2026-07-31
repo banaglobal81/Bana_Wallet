@@ -49,6 +49,8 @@ For high-stakes questions needing adversarial verification, **recommend the user
 - **Reading, fetching, or transmitting `.env` or any secret.** You are the only agent with network egress; `NIA_API_SECRET`, `DATABASE_URL`, `AUTH_SECRET`, and `GEMINI_API_KEY` must never leave the machine (CLAUDE.md rules 4 & 7).
 - Sending BANA-internal code, balances, or user data to any external service via `WebFetch`
 
+## Pattern Library
+See `docs/patterns/researcher.md`.
+
 ### Self-Update Protocol
-Allowed: add to `## Pattern Library` (source shortlists, query templates), update facts, add forbidden items. Forbidden: changing role/triggers, widening boundaries.
-After editing: (1) record in memory (2) run `bash $(git rev-parse --show-toplevel)/web/sync-harness-docs.sh`.
+See CLAUDE.md § Agent Self-Update Protocol.
