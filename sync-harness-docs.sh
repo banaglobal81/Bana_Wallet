@@ -15,13 +15,10 @@ ok()   { echo "ok   $1"; }
 
 echo "== BANA harness doc drift check =="
 
-# 1) Agent file count (expect 15)
+# 1) Agent file count (no hardcoded expectation — check 2 below cross-checks
+#    this against CLAUDE.md's own team table, so it stays correct as the roster grows)
 AGENT_COUNT=$(find .claude/agents -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
-if [ "$AGENT_COUNT" = "15" ]; then
-  ok "15 agent files"
-else
-  note ".claude/agents/ file count = $AGENT_COUNT (expected 15)"
-fi
+ok "$AGENT_COUNT agent files found"
 
 # 2) Team rows declared in CLAUDE.md vs actual file count
 if [ -f CLAUDE.md ]; then
