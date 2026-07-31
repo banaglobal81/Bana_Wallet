@@ -27,15 +27,19 @@ interface BalanceRow { walletType: string; currency: string; balance: string; lo
 
 /**
  * Staked principal, as balance rows — one per coin, summed across the user's
- * ACTIVE positions. Staking never moves funds in the Nia wallet, so this never
- * appears in the hub's response; without it the table reads "no balances" even
- * for a user who has coins staked. Reported as locked (not available), because
- * that is exactly what it is: held until maturity.
+ * positions that still hold funds. Staking never moves funds in the Nia wallet,
+ * so this never appears in the hub's response; without it the table reads "no
+ * balances" even for a user who has coins staked. Reported as locked (not
+ * available), because that is exactly what it is.
+ *
+ * ACTIVE and MATURED both still hold the principal — only PAID has settled it
+ * back to the wallet. Filtering to ACTIVE alone made a matured stake disappear
+ * from the balances entirely, which is exactly when the user most wants to see it.
  */
 function stakedRows(positions: { coin: string; principal: string; status: string }[]): BalanceRow[] {
   const byCoin = new Map<string, Decimal>();
   for (const p of positions) {
-    if (p.status !== 'ACTIVE') continue;
+    if (p.status === 'PAID') continue;
     byCoin.set(p.coin, (byCoin.get(p.coin) ?? new Decimal(0)).plus(p.principal || '0'));
   }
   return [...byCoin.entries()]
@@ -79,7 +83,12 @@ function zeroRows(held: BalanceRow[], symbols: string[]): BalanceRow[] {
 export default function Wallet({ onNavigate }: WalletProps) {
   const t = useTranslations('walletPage');
   // User-side balances only — broker/settlement panel lives at /admin/settlement
+  // `rows` = coins the user actually holds or has staked. `allZeroRows` = the
+  // rest of the supported catalogue, shown only when the user asks for it —
+  // a wall of zeros buries the balances that matter.
   const [rows, setRows] = useState<BalanceRow[]>([]);
+  const [allZeroRows, setAllZeroRows] = useState<BalanceRow[]>([]);
+  const [showAll, setShowAll] = useState(false);
   const [balState, setBalState] = useState<'loading' | 'ok' | 'error'>('loading');
   // The server's own reason for a failure (e.g. "not provisioned for wallet
   // access"). Shown verbatim — a generic "backend unreachable" would misdiagnose
@@ -105,8 +114,10 @@ export default function Wallet({ onNavigate }: WalletProps) {
         ...(Array.isArray(data) ? data : []),
         ...stakedRows(positions),
       ];
-      // Held coins first, then the rest of the catalogue at zero.
-      setRows([...held, ...zeroRows(held, supportedSymbols(markets, managed))]);
+      setRows(held);
+      // Kept separate from `rows` so the toggle never re-fetches: the catalogue
+      // is only *displayed* on demand, not loaded on demand.
+      setAllZeroRows(zeroRows(held, supportedSymbols(markets, managed)));
       setBalState('ok');
     } catch (e) {
       setBalError((e as Error)?.message?.trim() || null);
@@ -115,6 +126,9 @@ export default function Wallet({ onNavigate }: WalletProps) {
   };
 
   useEffect(() => { loadUser(); }, []);
+
+  // Held coins always first; the zero catalogue only when asked for.
+  const visibleRows = showAll ? [...rows, ...allZeroRows] : rows;
 
   return (
     <div className="flex-1 min-h-full bg-[#06132a] text-[#d8e2ff] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
@@ -173,15 +187,30 @@ export default function Wallet({ onNavigate }: WalletProps) {
           <div className="p-6 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h3 className="font-sans font-extrabold text-[#d8e2ff] text-sm uppercase tracking-wider">{t('balances')}</h3>
-              <button onClick={loadUser} aria-label={t('refreshBalancesAria')} className="p-2 bg-[#020d24]/60 hover:bg-[#1e3459] border border-[#1E3559] rounded-lg text-[#8c90a0] hover:text-white transition-colors cursor-pointer">
-                <RefreshCw className={`h-4 w-4 ${balState === 'loading' ? 'animate-spin' : ''}`} />
-              </button>
+              <div className="flex items-center gap-2">
+                {balState === 'ok' && allZeroRows.length > 0 && (
+                  <button
+                    onClick={() => setShowAll((v) => !v)}
+                    aria-pressed={showAll}
+                    className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-mono font-bold cursor-pointer transition-colors ${
+                      showAll
+                        ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300'
+                        : 'border-[#1E3559] bg-[#020d24]/60 text-[#8c90a0] hover:text-white'
+                    }`}
+                  >
+                    {t('showAllCoins')}
+                  </button>
+                )}
+                <button onClick={loadUser} aria-label={t('refreshBalancesAria')} className="p-2 bg-[#020d24]/60 hover:bg-[#1e3459] border border-[#1E3559] rounded-lg text-[#8c90a0] hover:text-white transition-colors cursor-pointer">
+                  <RefreshCw className={`h-4 w-4 ${balState === 'loading' ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
             </div>
             {balState === 'loading' ? (
               <p className="text-xs font-mono text-[#8c90a0] py-6 text-center">{t('loadingBalances')}</p>
             ) : balState === 'error' ? (
               <p className="text-xs font-mono text-rose-300 py-6 text-center">{balError ?? t('backendUnreachable')}</p>
-            ) : rows.length === 0 ? (
+            ) : visibleRows.length === 0 ? (
               <div className="py-8 text-center flex flex-col items-center gap-3">
                 <div className="p-3 bg-[#020d24]/60 rounded-full border border-[#1E3559]"><WalletIcon className="h-6 w-6 text-[#8c90a0]" /></div>
                 <p className="text-sm font-bold text-white">{t('noBalances')}</p>
@@ -205,7 +234,7 @@ export default function Wallet({ onNavigate }: WalletProps) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#1E3559]/40">
-                    {rows.map((r, i) => (
+                    {visibleRows.map((r, i) => (
                       <tr key={i} className="hover:bg-[#020d24]/40 transition-colors">
                         <td className="py-3.5 font-mono text-xs text-[#afc6ff]">{r.walletType || t('depositWallet')}</td>
                         <td className="py-3.5 font-sans text-sm font-bold text-white">{r.currency}</td>

@@ -292,6 +292,7 @@
     "withdrawSubtitle": "ส่งเงินไปยังที่อยู่",
     "balances": "ยอดคงเหลือ",
     "refreshBalancesAria": "รีเฟรชยอดคงเหลือ",
+    "showAllCoins": "แสดงเหรียญทั้งหมด",
     "loadingBalances": "กำลังโหลดยอดคงเหลือจาก BANA…",
     "backendUnreachable": "ไม่สามารถโหลดยอดคงเหลือได้ กรุณาลองใหม่อีกครั้งในภายหลัง",
     "noBalances": "ยังไม่มียอดคงเหลือ",

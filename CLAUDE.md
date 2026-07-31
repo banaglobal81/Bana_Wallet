@@ -36,7 +36,7 @@
 | T2   | sonnet | code read/edit across wallet/admin/shared/DB layers, custody security review, QA scenario design, growth/retention analysis |
 | T3   | opus   | product planning & spec design only — PRDs, FRDs, feature/screen design |
 
-## Agent Team (15)
+## Agent Team (16)
 
 | # | Agent | model | Scope | Status |
 |---|-------|-------|-------|--------|
@@ -55,6 +55,7 @@
 | 13 | routine-tasks | haiku | tsc/lint/grep/build | active |
 | 14 | code-compliance-checker | haiku | rule-violation detection | active |
 | 15 | doc-keeper | haiku | doc sync | active |
+| 16 | researcher | sonnet | external web research → `docs/research/` | active |
 
 ## Agent Self-Update Protocol
 

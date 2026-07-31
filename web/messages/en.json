@@ -292,6 +292,7 @@
     "withdrawSubtitle": "Send funds to an address",
     "balances": "Balances",
     "refreshBalancesAria": "Refresh balances",
+    "showAllCoins": "Show all coins",
     "loadingBalances": "Loading balances from BANA…",
     "backendUnreachable": "Could not load balances. Please try again in a moment.",
     "noBalances": "No balances yet",

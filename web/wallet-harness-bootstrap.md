@@ -41,7 +41,7 @@ Generate the CLAUDE.md and all .claude/agents/ agent files for a new wallet plat
 | T2   | sonnet | single-area code read/edit, UI, schema, workers  |
 | T3   | opus   | custody security, HMAC review, balance precision, unclear-root-cause bugs |
 
-## Agent team (15 — each created as a .md file under .claude/agents/)
+## Agent team (16 — each created as a .md file under .claude/agents/)
 
 Each file format:
 ---
@@ -124,6 +124,11 @@ Scope: detect CLAUDE.md rule violations (non-decimal.js math, db push traces, di
 ### 15. doc-keeper (haiku)
 Scope: auto-sync docs after code changes — detect & fix drift in case counts, ports, paths, agent declarations
 
+### 16. researcher (sonnet)
+Scope: external web research — competitor wallets, chain/token landscape, per-market KYC & regulation, pricing benchmarks
+Tools: Read, Write, Grep, Glob, WebSearch, WebFetch (the only agent with network egress)
+Output: cited reports at `docs/research/<YYYY-MM-DD>-<topic>.md`. Supplies findings; `pm` owns the decision.
+
 ## Harness Engineering
 
 Principles: Test-Harness First · Encapsulation · Observability · Validation
@@ -171,7 +176,7 @@ Also generate:
 ## Post-generation checklist
 
 - CLAUDE.md exists + includes the agent-team table
-- 15 .md files exist under .claude/agents/
+- 16 .md files exist under .claude/agents/
 - each agent has --- frontmatter (name/description/tools/model)
 - pm.md includes the temp creation procedure (changes.md + status.md)
 - qa-lead.md includes the npm run dev → test → deploy-manager flow

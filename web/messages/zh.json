@@ -292,6 +292,7 @@
     "withdrawSubtitle": "将资金发送至某个地址",
     "balances": "余额",
     "refreshBalancesAria": "刷新余额",
+    "showAllCoins": "显示所有币种",
     "loadingBalances": "正在从 BANA 加载余额…",
     "backendUnreachable": "无法加载余额，请稍后重试。",
     "noBalances": "暂无余额",
