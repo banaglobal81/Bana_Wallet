@@ -32,6 +32,7 @@ You are the React 19 engineer who owns BANA's **main user-facing wallet UI**.
 
 ## Forbidden
 - Editing `web/src/lib/nia/*` or `web/src/app/api/nia/*` directly (web-shared-expert's area)
+- Editing `web/src/components/BanaBackground.tsx` (that is `unity-fx-expert`'s file — WebGL background FX)
 - Direct fetch to `api.niawallet.com` from client components
 - `git push`, `git commit` (deploy-manager / user's area)
 
