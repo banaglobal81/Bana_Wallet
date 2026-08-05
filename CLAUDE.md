@@ -33,10 +33,10 @@
 | Tier | Model  | Trigger |
 |------|--------|---------|
 | T1   | haiku  | `tsc --noEmit`, lint, grep, log/build checks, git commit + deploy-status checks, templated Tailwind/design-token work, dormant-agent stubs |
-| T2   | sonnet | code read/edit across wallet/admin/shared/DB layers, custody security review, QA scenario design, growth/retention analysis |
+| T2   | sonnet | code read/edit across wallet/admin/shared/DB layers, custody security review, QA scenario design, growth/retention analysis, in-app WebGL/shader FX |
 | T3   | opus   | product planning & spec design only — PRDs, FRDs, feature/screen design |
 
-## Agent Team (16)
+## Agent Team (18)
 
 | # | Agent | model | Scope | Status |
 |---|-------|-------|-------|--------|
@@ -56,6 +56,8 @@
 | 14 | code-compliance-checker | haiku | rule-violation detection | active |
 | 15 | doc-keeper | haiku | doc sync | active |
 | 16 | researcher | sonnet | external web research → `docs/research/` | active |
+| 17 | unity-fx-expert | sonnet | game-feel WebGL/canvas FX (owns `BanaBackground.tsx`) | active |
+| 18 | unity-expert | haiku | real Unity engine / WebGL build | **dormant** |
 
 ## Agent Self-Update Protocol
 
