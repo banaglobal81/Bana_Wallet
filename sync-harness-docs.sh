@@ -145,5 +145,19 @@ MSG_COUNT=$(find "$WEB/messages" -name '*.json' -type f 2>/dev/null | wc -l | tr
 #     guard against the ownership mix-up found in an earlier audit.
 [ -f "$WEB/src/components/Settings.tsx" ] && ok "web/src/components/Settings.tsx present" || note "web/src/components/Settings.tsx missing"
 
+# 16) Per-agent enforcement hook (rule 5/6 + review-only Bash boundary) is present,
+#     executable, and still wired into settings.json — see docs/architecture/harness.md
+if [ -f "$ROOT/.claude/hooks/enforce-agent-boundaries.sh" ]; then
+  ok "docs/architecture/harness.md hook script present"
+  [ -x "$ROOT/.claude/hooks/enforce-agent-boundaries.sh" ] || note ".claude/hooks/enforce-agent-boundaries.sh exists but is not executable"
+else
+  note ".claude/hooks/enforce-agent-boundaries.sh missing — rule 5/6 and review-only Bash boundary have no technical enforcement"
+fi
+if grep -q 'enforce-agent-boundaries.sh' "$ROOT/.claude/settings.json" 2>/dev/null; then
+  ok "settings.json wires up enforce-agent-boundaries.sh"
+else
+  note "settings.json does not reference enforce-agent-boundaries.sh — hook is not wired up"
+fi
+
 echo "== done: $DRIFT drift item(s) =="
 exit 0

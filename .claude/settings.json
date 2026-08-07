@@ -37,5 +37,18 @@
       "Bash(git rebase:*)",
       "Read(.env)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/enforce-agent-boundaries.sh"
+          }
+        ]
+      }
+    ]
   }
 }
