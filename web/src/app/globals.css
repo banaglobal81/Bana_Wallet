@@ -365,3 +365,54 @@ html:not(.light) svg.lucide.text-slate-600 { color: #7c8798; }
 .light .focus\:border-indigo-500:focus { border-color: #39435a !important; }
 .light .focus\:ring-indigo-500\/50:focus { --tw-ring-color: rgba(57, 67, 90, 0.45) !important; }
 .light .text-\[\#afc6ff\] { color: #39435a; }
+
+/* --------------------------------------------------------------------------
+   Custom hover cursor
+   A smooth vector pointing hand — white fill, dark outline, soft shadow — so
+   the hover cursor reads the same on macOS, Windows and Linux instead of each
+   OS drawing its own.
+   SVG is served first (Chrome/Firefox/Edge); Safari ignores SVG cursors and
+   falls through to the PNG. `pointer` is the final fallback if both fail.
+   Hotspot 8 2 = the index fingertip.
+   Gated on a real hovering pointer so touch devices are untouched.
+   -------------------------------------------------------------------------- */
+@media (hover: hover) and (pointer: fine) {
+  a[href],
+  button,
+  summary,
+  label[for],
+  select,
+  [role="button"],
+  [role="link"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"],
+  [role="switch"],
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="submit"],
+  input[type="button"],
+  input[type="file"],
+  input[type="range"],
+  input[type="color"],
+  .cursor-pointer {
+    cursor:
+      url("/cursors/bana-pointer.svg") 8 2,
+      image-set(
+        url("/cursors/bana-pointer.png") 1x,
+        url("/cursors/bana-pointer@2x.png") 2x
+      ) 8 2,
+      url("/cursors/bana-pointer.png") 8 2,
+      pointer;
+  }
+
+  /* Disabled controls keep their native affordance — the hand would read as
+     "clickable" on something that isn't. Listed after so it wins on ties. */
+  button:disabled,
+  select:disabled,
+  input:disabled,
+  [aria-disabled="true"],
+  .cursor-not-allowed {
+    cursor: not-allowed;
+  }
+}
