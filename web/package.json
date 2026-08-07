@@ -23,6 +23,12 @@
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
+  "overrides": {
+    "next-auth": {
+      "@simplewebauthn/browser": "$@simplewebauthn/browser",
+      "@simplewebauthn/server": "$@simplewebauthn/server"
+    }
+  },
   "dependencies": {
     "@google/genai": "^2.4.0",
     "@prisma/adapter-pg": "^7.8.0",
