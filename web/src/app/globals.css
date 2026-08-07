@@ -368,12 +368,14 @@ html:not(.light) svg.lucide.text-slate-600 { color: #7c8798; }
 
 /* --------------------------------------------------------------------------
    Custom hover cursor
-   A smooth vector pointing hand — white fill, dark outline, soft shadow — so
-   the hover cursor reads the same on macOS, Windows and Linux instead of each
-   OS drawing its own.
+   The classic pointing hand — 20x23 pixel grid, 1px black outline, white fill,
+   no shadow — so the hover cursor reads the same on macOS, Windows and Linux
+   instead of each OS drawing its own.
    SVG is served first (Chrome/Firefox/Edge); Safari ignores SVG cursors and
    falls through to the PNG. `pointer` is the final fallback if both fail.
-   Hotspot 8 2 = the index fingertip.
+   The 2x PNG is a nearest-neighbour double, so the pixel edges stay hard on
+   retina rather than being smoothed into the blur the art is avoiding.
+   Hotspot 7 0 = the index fingertip.
    Gated on a real hovering pointer so touch devices are untouched.
    -------------------------------------------------------------------------- */
 @media (hover: hover) and (pointer: fine) {
@@ -397,12 +399,12 @@ html:not(.light) svg.lucide.text-slate-600 { color: #7c8798; }
   input[type="color"],
   .cursor-pointer {
     cursor:
-      url("/cursors/bana-pointer.svg") 8 2,
+      url("/cursors/bana-pointer.svg") 7 0,
       image-set(
         url("/cursors/bana-pointer.png") 1x,
         url("/cursors/bana-pointer@2x.png") 2x
-      ) 8 2,
-      url("/cursors/bana-pointer.png") 8 2,
+      ) 7 0,
+      url("/cursors/bana-pointer.png") 7 0,
       pointer;
   }
 
