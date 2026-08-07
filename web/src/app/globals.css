@@ -377,6 +377,12 @@ html:not(.light) svg.lucide.text-slate-600 { color: #7c8798; }
    retina rather than being smoothed into the blur the art is avoiding.
    Hotspot 7 0 = the index fingertip.
    Gated on a real hovering pointer so touch devices are untouched.
+
+   The `?v=N` on each URL is a cache-buster and MUST be bumped whenever the
+   cursor art is redrawn. Files under public/ are served with a stable filename
+   and `cache-control: max-age=14400`, and Cloudflare caches them at the edge —
+   so without a new URL, browsers keep the old art for hours after a deploy even
+   though the CSS bundle (content-hashed) updates immediately.
    -------------------------------------------------------------------------- */
 @media (hover: hover) and (pointer: fine) {
   a[href],
@@ -399,12 +405,12 @@ html:not(.light) svg.lucide.text-slate-600 { color: #7c8798; }
   input[type="color"],
   .cursor-pointer {
     cursor:
-      url("/cursors/bana-pointer.svg") 7 0,
+      url("/cursors/bana-pointer.svg?v=3") 7 0,
       image-set(
-        url("/cursors/bana-pointer.png") 1x,
-        url("/cursors/bana-pointer@2x.png") 2x
+        url("/cursors/bana-pointer.png?v=3") 1x,
+        url("/cursors/bana-pointer@2x.png?v=3") 2x
       ) 7 0,
-      url("/cursors/bana-pointer.png") 7 0,
+      url("/cursors/bana-pointer.png?v=3") 7 0,
       pointer;
   }
 
