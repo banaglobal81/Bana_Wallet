@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "main": "trigger.mjs",
-  "description": "Staking-settlement cron for the BANA web app. Runs on Railway (Settings → Cron Schedule → `npm start`). Zero dependencies — plain Node fetch.",
+  "description": "Always-on staking-settlement worker for the BANA web app. Schedule is admin-configurable (Admin → Settings), not a Railway Cron Schedule. Zero dependencies — plain Node fetch.",
   "scripts": {
     "start": "node trigger.mjs"
   }

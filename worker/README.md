@@ -27,8 +27,8 @@ Railway builds this folder as a Node service and runs it as an always-on process
 2. Service **Settings**:
    - **Root Directory:** `worker`
    - **Cron Schedule:** **Clear this field** (remove any cron expression). The service now loops internally instead.
-   - **Start Command:** `node trigger.mjs` (set in `railway.json`).
-   - **Deployment:** `restartPolicyType` is set to `ON_FAILURE` in `railway.json` so transient errors don't break the loop.
+   - **Start Command:** leave default — Railway's Nixpacks Node builder runs `npm start`, which is `node trigger.mjs` (see `package.json`).
+   - **Restart Policy:** set to `ON_FAILURE` in the service's Settings, so a crash restarts the loop instead of leaving it dead. (No `railway.json` in this folder — this service's dashboard settings are authoritative and override any repo config file for a Cron-configured service, so config lives in the dashboard, not in code.)
 3. Service **Variables** — both required, or the script exits with an error at startup:
    - `WEB_URL` = `https://banawallet.com`
    - `CRON_SECRET` = **the same value** as the web app's `CRON_SECRET`.
