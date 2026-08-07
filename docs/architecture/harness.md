@@ -14,7 +14,8 @@
 ## Per-agent enforcement: `.claude/hooks/enforce-agent-boundaries.sh`
 `permissions.allow`/`deny` in `.claude/settings.json` gate by tool+command pattern
 only — there is no concept of "only agent X may run this" at that layer, so it cannot
-by itself enforce CLAUDE.md rules 5/6 (git commit/push is `deploy-manager`-only) or the
+by itself enforce CLAUDE.md rules 5/6 (git commit/push is `deploy-manager`-only), rule 6's
+Railway-control clause (any `railway` CLI call is also `deploy-manager`-only), or the
 "Bash must not write files" boundary for review/detect-only agents
 (`wallet-security-expert`, `code-compliance-checker`, `routine-tasks`).
 
@@ -26,6 +27,11 @@ hook (`.claude/hooks/enforce-agent-boundaries.sh`) denies:
 - `git commit`/`git add`/`git push` when `agent_type` isn't `deploy-manager` (covers the
   main thread too — rule 5/6 says "no other agent may push", and the orchestrating
   thread isn't `deploy-manager` either)
+- any `railway` CLI invocation when `agent_type` isn't `deploy-manager` (same main-thread
+  coverage as above). This only enforces *who* may call Railway — the further rule that
+  `deploy-manager` itself must get user confirmation before a redeploy/restart is
+  conversation-level convention (`deploy-manager.md`), not something a stdin-only hook
+  can see or enforce.
 - write-shaped commands (`sed -i`, `mv`, `cp`, `rm`, `mkdir`, `touch`, `tee`, `dd`,
   `install`, `truncate`, `xargs`, `>`/`>>`), general-purpose script interpreters
   (`python`/`node`/`ruby`/`perl`/`osascript`/`php` — none of these agents' documented

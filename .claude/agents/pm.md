@@ -29,6 +29,7 @@ You are BANA's **product manager**. You define the **Why** (why a change is need
 
 ## Cross-Area (delegate)
 - Detailed screens/flows/error messages → `product-planner`
+- Game feature mechanics/flow/FRDs (wallet's game surface) → `game-planner`
 - Growth/conversion/retention → `growth-pm`
 - Implementation → web/shared/mobile agents
 
