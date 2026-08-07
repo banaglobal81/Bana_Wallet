@@ -367,11 +367,13 @@ html:not(.light) svg.lucide.text-slate-600 { color: #7c8798; }
 .light .text-\[\#afc6ff\] { color: #39435a; }
 
 /* --------------------------------------------------------------------------
-   Game-feel hover cursor
-   Swaps the OS pointing hand for the BANA pixel glove on interactive elements.
+   Custom hover cursor
+   A smooth vector pointing hand — white fill, dark outline, soft shadow — so
+   the hover cursor reads the same on macOS, Windows and Linux instead of each
+   OS drawing its own.
    SVG is served first (Chrome/Firefox/Edge); Safari ignores SVG cursors and
    falls through to the PNG. `pointer` is the final fallback if both fail.
-   Hotspot 9 0 = the index fingertip.
+   Hotspot 8 2 = the index fingertip.
    Gated on a real hovering pointer so touch devices are untouched.
    -------------------------------------------------------------------------- */
 @media (hover: hover) and (pointer: fine) {
@@ -395,12 +397,16 @@ html:not(.light) svg.lucide.text-slate-600 { color: #7c8798; }
   input[type="color"],
   .cursor-pointer {
     cursor:
-      url("/cursors/bana-pointer.svg") 9 0,
-      url("/cursors/bana-pointer.png") 9 0,
+      url("/cursors/bana-pointer.svg") 8 2,
+      image-set(
+        url("/cursors/bana-pointer.png") 1x,
+        url("/cursors/bana-pointer@2x.png") 2x
+      ) 8 2,
+      url("/cursors/bana-pointer.png") 8 2,
       pointer;
   }
 
-  /* Disabled controls keep their native affordance — the glove would read as
+  /* Disabled controls keep their native affordance — the hand would read as
      "clickable" on something that isn't. Listed after so it wins on ties. */
   button:disabled,
   select:disabled,
