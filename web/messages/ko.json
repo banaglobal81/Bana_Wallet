@@ -568,7 +568,15 @@
     "identityBody": "사용자에게 표시되는 표시 이름과 지원 이메일.",
     "displayNamePlaceholder": "표시 이름 (예: BANA Wallet)",
     "supportEmailPlaceholder": "support@yourdomain.com",
-    "amountPlaceholder": "예: 100"
+    "amountPlaceholder": "예: 100",
+    "stakingWorkerTitle": "스테이킹 정산 스케줄",
+    "stakingWorkerBody": "백그라운드 워커가 스테이킹 이자를 지급하는 주기를 제어합니다. 워커는 수동 실행 없이 계속 동작합니다.",
+    "stakingWorkerModeInterval": "간격",
+    "stakingWorkerModeDaily": "매일",
+    "stakingWorkerIntervalCaption": "N분마다 정산합니다 (1~1440).",
+    "stakingWorkerIntervalPlaceholder": "예: 5",
+    "stakingWorkerMinutesUnit": "분",
+    "stakingWorkerDailyCaption": "지정한 시각에 하루 한 번 정산합니다. 시간은 UTC 기준입니다."
   },
   "walletFlow": {
     "depositCrypto": "암호화폐 입금",

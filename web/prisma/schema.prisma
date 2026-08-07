@@ -56,6 +56,14 @@ model PlatformSetting {
   // Platform identity shown to users.
   supportEmail          String?
   displayName           String?
+  // Turns the persistent staking settlement worker on/off entirely.
+  stakingWorkerEnabled         Boolean @default(true)
+  // "INTERVAL" | "DAILY"
+  stakingWorkerMode            String  @default("INTERVAL")
+  // How often the worker runs when mode = INTERVAL.
+  stakingWorkerIntervalMinutes Int     @default(5)
+  // "HH:mm", UTC — used when mode = DAILY
+  stakingWorkerDailyTime       String  @default("00:00")
   updatedAt             DateTime @updatedAt
 }
 

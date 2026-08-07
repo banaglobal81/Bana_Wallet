@@ -10,7 +10,7 @@
 
 ## Project Overview
 - **Description:** BANA — a Nia-Hub B2B crypto wallet platform. Multi-market deposits/withdrawals, balance lookup, orders, trade history, settlement.
-- **Repo layout:** monorepo. `web/` is the Next.js app (everything below unless noted). `worker/` is a separate Railway cron service — details in `docs/architecture/worker.md`.
+- **Repo layout:** monorepo. `web/` is the Next.js app (everything below unless noted). `worker/` is a separate Railway always-on service (staking settlement) — details in `docs/architecture/worker.md`.
 - **Tech stack:** Next.js 15 + React 19 + Prisma 7 + Auth.js v5, `next-intl` i18n (en/ko/ja/zh/vi/th), deployed on Railway. Full path-by-path breakdown: `docs/architecture/code-tree.md`.
 - **Nia-Hub integration:** two HMAC signing schemes, `Browser → /api/nia/* → Nia-Hub` data flow, secret handling per rule 4 below. Exact wire format: `docs/architecture/nia-integration.md`.
 
@@ -72,5 +72,5 @@ Read on demand — not auto-loaded into every agent's context. Read the one your
 - `docs/architecture/code-tree.md` — full path-by-path breakdown of `web/src`, `web/prisma`, etc.
 - `docs/architecture/nia-integration.md` — Nia-Hub HMAC signing schemes, exact headers/payload concatenation, route handler list
 - `docs/architecture/harness.md` — harness engineering principles, 3-step workflow, vitest wiring
-- `docs/architecture/worker.md` — `worker/` cron service (staking settlement)
+- `docs/architecture/worker.md` — `worker/` always-on service (staking settlement with configurable schedule)
 - `docs/patterns/<agent-name>.md` — that agent's own accumulated lessons-learned (Pattern Library). Read only by that agent, only when the current task's scope overlaps a listed entry; not force-loaded, not read by other agents by default.

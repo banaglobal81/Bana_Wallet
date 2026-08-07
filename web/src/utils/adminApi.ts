@@ -174,6 +174,10 @@ export interface PlatformPolicy {
   signupsEnabled: boolean;
   supportEmail: string | null;
   displayName: string | null;
+  stakingWorkerEnabled: boolean;
+  stakingWorkerMode: 'INTERVAL' | 'DAILY';
+  stakingWorkerIntervalMinutes: number;
+  stakingWorkerDailyTime: string;
 }
 
 /** Read the platform withdrawal policy. */

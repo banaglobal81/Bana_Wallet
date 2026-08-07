@@ -568,7 +568,15 @@
     "identityBody": "ชื่อที่แสดงและอีเมลฝ่ายสนับสนุนที่แสดงต่อผู้ใช้",
     "displayNamePlaceholder": "ชื่อที่แสดง (เช่น BANA Wallet)",
     "supportEmailPlaceholder": "support@yourdomain.com",
-    "amountPlaceholder": "เช่น 100"
+    "amountPlaceholder": "เช่น 100",
+    "stakingWorkerTitle": "ตารางการชำระสเตกกิ้ง",
+    "stakingWorkerBody": "ควบคุมความถี่ที่เวิร์กเกอร์เบื้องหลังจ่ายดอกเบี้ยสเตกกิ้ง เวิร์กเกอร์ทำงานต่อเนื่องโดยไม่ต้องสั่งด้วยตนเอง",
+    "stakingWorkerModeInterval": "ตามช่วงเวลา",
+    "stakingWorkerModeDaily": "รายวัน",
+    "stakingWorkerIntervalCaption": "ชำระทุก N นาที (1–1440)",
+    "stakingWorkerIntervalPlaceholder": "เช่น 5",
+    "stakingWorkerMinutesUnit": "นาที",
+    "stakingWorkerDailyCaption": "ชำระวันละครั้งตามเวลานี้ เวลาเป็น UTC"
   },
   "walletFlow": {
     "depositCrypto": "ฝากคริปโต",

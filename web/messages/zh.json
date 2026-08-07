@@ -568,7 +568,15 @@
     "identityBody": "向用户显示的名称和支持邮箱。",
     "displayNamePlaceholder": "显示名称（如 BANA Wallet）",
     "supportEmailPlaceholder": "support@yourdomain.com",
-    "amountPlaceholder": "例如 100"
+    "amountPlaceholder": "例如 100",
+    "stakingWorkerTitle": "质押结算计划",
+    "stakingWorkerBody": "控制后台工作进程发放质押利息的频率。工作进程持续运行，无需手动触发。",
+    "stakingWorkerModeInterval": "间隔",
+    "stakingWorkerModeDaily": "每日",
+    "stakingWorkerIntervalCaption": "每 N 分钟结算一次（1–1440）。",
+    "stakingWorkerIntervalPlaceholder": "例如 5",
+    "stakingWorkerMinutesUnit": "分钟",
+    "stakingWorkerDailyCaption": "每天在此时间结算一次。时间为 UTC。"
   },
   "walletFlow": {
     "depositCrypto": "数字货币充值",

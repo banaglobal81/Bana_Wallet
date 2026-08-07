@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { SlidersHorizontal, ShieldCheck, Zap, Wrench, Gauge, UserPlus, AtSign, Check, Loader2, Users, ArrowUpRight } from 'lucide-react';
+import { SlidersHorizontal, ShieldCheck, Zap, Wrench, Gauge, UserPlus, AtSign, Check, Loader2, Users, ArrowUpRight, Timer } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { getPlatformPolicy, setPlatformPolicy, type PlatformPolicy } from '@/utils/adminApi';
 
@@ -14,6 +14,8 @@ export default function AdminSettingsPage() {
   const [dailyLimit, setDailyLimit] = useState('');
   const [supportEmail, setSupportEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [workerInterval, setWorkerInterval] = useState('');
+  const [workerDailyTime, setWorkerDailyTime] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +27,8 @@ export default function AdminSettingsPage() {
     setDailyLimit(p.dailyWithdrawalLimitUsd ?? '');
     setSupportEmail(p.supportEmail ?? '');
     setDisplayName(p.displayName ?? '');
+    setWorkerInterval(String(p.stakingWorkerIntervalMinutes ?? ''));
+    setWorkerDailyTime(p.stakingWorkerDailyTime ?? '00:00');
   };
 
   const load = useCallback(async () => {
@@ -165,6 +169,85 @@ export default function AdminSettingsPage() {
               <button disabled={saving} onClick={() => save({ dailyWithdrawalLimitUsd: dailyLimit.trim() || null })} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold cursor-pointer">{saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} {t('save')}</button>
             </div>
             <p className="text-[11px] font-mono text-[#8c90a0]">{policy.dailyWithdrawalLimitUsd ? t('dailyLimitOn', { amount: policy.dailyWithdrawalLimitUsd }) : t('dailyLimitOff')}</p>
+          </div>
+
+          {/* Staking worker schedule */}
+          <div className={card}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col gap-1">
+                <h3 className="font-sans font-bold text-white text-sm flex items-center gap-2"><Timer className="h-4 w-4 text-[#528dff]" /> {t('stakingWorkerTitle')}</h3>
+                <p className="text-xs text-[#8c90a0] leading-relaxed">{t('stakingWorkerBody')}</p>
+              </div>
+              <Toggle on={policy.stakingWorkerEnabled} onClick={() => save({ stakingWorkerEnabled: !policy.stakingWorkerEnabled })} />
+            </div>
+
+            <div className="flex items-center gap-2 mt-1">
+              <button
+                disabled={saving}
+                onClick={() => save({ stakingWorkerMode: 'INTERVAL' })}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 ${
+                  policy.stakingWorkerMode === 'INTERVAL' ? 'bg-indigo-600 text-white' : 'bg-[#020d24]/60 border border-[#1E3559] text-[#8c90a0] hover:text-white'
+                }`}
+              >
+                {t('stakingWorkerModeInterval')}
+              </button>
+              <button
+                disabled={saving}
+                onClick={() => save({ stakingWorkerMode: 'DAILY' })}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 ${
+                  policy.stakingWorkerMode === 'DAILY' ? 'bg-indigo-600 text-white' : 'bg-[#020d24]/60 border border-[#1E3559] text-[#8c90a0] hover:text-white'
+                }`}
+              >
+                {t('stakingWorkerModeDaily')}
+              </button>
+            </div>
+
+            {policy.stakingWorkerMode === 'INTERVAL' ? (
+              <>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="relative flex-1 max-w-[220px]">
+                    <input
+                      value={workerInterval}
+                      onChange={(e) => { const v = e.target.value; if (v === '' || /^\d*$/.test(v)) setWorkerInterval(v); }}
+                      placeholder={t('stakingWorkerIntervalPlaceholder')}
+                      inputMode="numeric"
+                      className="w-full pl-3 pr-12 py-2.5 rounded-xl bg-[#020d24]/60 border border-[#1E3559] text-sm font-mono text-[#d8e2ff] placeholder-[#8c90a0] focus:outline-none focus:border-[#528dff]/60 transition-colors"
+                    />
+                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#8c90a0] text-xs font-mono">{t('stakingWorkerMinutesUnit')}</span>
+                  </div>
+                  <button
+                    disabled={saving}
+                    onClick={() => {
+                      const n = Math.min(1440, Math.max(1, parseInt(workerInterval, 10) || 1));
+                      save({ stakingWorkerIntervalMinutes: n });
+                    }}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold cursor-pointer"
+                  >
+                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} {t('save')}
+                  </button>
+                </div>
+                <p className="text-[11px] font-mono text-[#8c90a0]">{t('stakingWorkerIntervalCaption')}</p>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 mt-1">
+                  <input
+                    type="time"
+                    value={workerDailyTime}
+                    onChange={(e) => setWorkerDailyTime(e.target.value)}
+                    className="px-3 py-2.5 rounded-xl bg-[#020d24]/60 border border-[#1E3559] text-sm font-mono text-[#d8e2ff] focus:outline-none focus:border-[#528dff]/60 transition-colors"
+                  />
+                  <button
+                    disabled={saving}
+                    onClick={() => save({ stakingWorkerDailyTime: workerDailyTime || '00:00' })}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold cursor-pointer"
+                  >
+                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} {t('save')}
+                  </button>
+                </div>
+                <p className="text-[11px] font-mono text-[#8c90a0]">{t('stakingWorkerDailyCaption')}</p>
+              </>
+            )}
           </div>
 
           {/* Platform identity */}

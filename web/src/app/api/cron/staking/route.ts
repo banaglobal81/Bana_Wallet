@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { runStakingSettlement } from '@/lib/stakingSettle';
+import { getPlatformSettings } from '@/lib/platformSettings';
 
 // POST /api/cron/staking — the daily settlement job, called by the worker.
 // Protected by a shared secret (x-cron-secret). Delegates to the shared
@@ -22,12 +23,26 @@ export async function POST(req: Request): Promise<NextResponse> {
   return NextResponse.json({ ok: true, data: result });
 }
 
-// GET — lightweight health/manual-check (still requires the secret).
+// GET — health check + schedule config, polled by the persistent worker loop
+// each cycle so admin-panel schedule changes take effect without a redeploy
+// (still requires the secret).
 export async function GET(req: Request): Promise<NextResponse> {
   const secret = process.env.CRON_SECRET;
   if (!secret || req.headers.get('x-cron-secret') !== secret) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
   }
   const active = await prisma.stakePosition.count({ where: { status: 'ACTIVE' } });
-  return NextResponse.json({ ok: true, data: { activePositions: active } });
+  const settings = await getPlatformSettings();
+  return NextResponse.json({
+    ok: true,
+    data: {
+      activePositions: active,
+      schedule: {
+        enabled: settings.stakingWorkerEnabled,
+        mode: settings.stakingWorkerMode,
+        intervalMinutes: settings.stakingWorkerIntervalMinutes,
+        dailyTime: settings.stakingWorkerDailyTime,
+      },
+    },
+  });
 }

@@ -11,6 +11,7 @@ import { recordAudit } from '@/lib/audit';
 function publicShape(s: {
   whitelistOnly: boolean; autoApproveUnderUsd: string | null; maintenanceMode: boolean;
   dailyWithdrawalLimitUsd: string | null; signupsEnabled: boolean; supportEmail: string | null; displayName: string | null;
+  stakingWorkerEnabled: boolean; stakingWorkerMode: string; stakingWorkerIntervalMinutes: number; stakingWorkerDailyTime: string;
 }) {
   return {
     whitelistOnly: s.whitelistOnly,
@@ -20,6 +21,10 @@ function publicShape(s: {
     signupsEnabled: s.signupsEnabled,
     supportEmail: s.supportEmail,
     displayName: s.displayName,
+    stakingWorkerEnabled: s.stakingWorkerEnabled,
+    stakingWorkerMode: s.stakingWorkerMode,
+    stakingWorkerIntervalMinutes: s.stakingWorkerIntervalMinutes,
+    stakingWorkerDailyTime: s.stakingWorkerDailyTime,
   };
 }
 
@@ -95,6 +100,34 @@ export async function POST(req: Request): Promise<NextResponse> {
   if ('displayName' in body) {
     data.displayName = String(body.displayName ?? '').trim().slice(0, 60) || null;
     changes.push('Display name updated');
+  }
+
+  if (typeof body.stakingWorkerEnabled === 'boolean') {
+    data.stakingWorkerEnabled = body.stakingWorkerEnabled;
+    changes.push(`Staking worker ${body.stakingWorkerEnabled ? 'enabled' : 'disabled'}`);
+  }
+  if ('stakingWorkerMode' in body) {
+    if (body.stakingWorkerMode !== 'INTERVAL' && body.stakingWorkerMode !== 'DAILY') {
+      return NextResponse.json({ ok: false, error: 'Staking worker mode must be INTERVAL or DAILY' }, { status: 400 });
+    }
+    data.stakingWorkerMode = body.stakingWorkerMode;
+    changes.push(`Staking worker mode: ${body.stakingWorkerMode}`);
+  }
+  if ('stakingWorkerIntervalMinutes' in body) {
+    const n = Number(body.stakingWorkerIntervalMinutes);
+    if (!Number.isInteger(n) || n < 1 || n > 1440) {
+      return NextResponse.json({ ok: false, error: 'Staking worker interval must be an integer between 1 and 1440' }, { status: 400 });
+    }
+    data.stakingWorkerIntervalMinutes = n;
+    changes.push(`Staking worker schedule: every ${n}min`);
+  }
+  if ('stakingWorkerDailyTime' in body) {
+    const v = String(body.stakingWorkerDailyTime ?? '');
+    if (!/^([01]\d|2[0-3]):([0-5]\d)$/.test(v)) {
+      return NextResponse.json({ ok: false, error: 'Staking worker daily time must be HH:mm' }, { status: 400 });
+    }
+    data.stakingWorkerDailyTime = v;
+    changes.push(`Staking worker schedule: daily at ${v} UTC`);
   }
 
   try {

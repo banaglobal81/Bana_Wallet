@@ -568,7 +568,15 @@
     "identityBody": "ユーザーに表示される表示名とサポートメール。",
     "displayNamePlaceholder": "表示名（例：BANA Wallet）",
     "supportEmailPlaceholder": "support@yourdomain.com",
-    "amountPlaceholder": "例: 100"
+    "amountPlaceholder": "例: 100",
+    "stakingWorkerTitle": "ステーキング精算スケジュール",
+    "stakingWorkerBody": "バックグラウンドワーカーがステーキング利息を支払う頻度を制御します。ワーカーは手動操作なしで継続的に実行されます。",
+    "stakingWorkerModeInterval": "間隔",
+    "stakingWorkerModeDaily": "毎日",
+    "stakingWorkerIntervalCaption": "N分ごとに精算します（1〜1440）。",
+    "stakingWorkerIntervalPlaceholder": "例: 5",
+    "stakingWorkerMinutesUnit": "分",
+    "stakingWorkerDailyCaption": "指定した時刻に1日1回精算します。時刻はUTCです。"
   },
   "walletFlow": {
     "depositCrypto": "暗号資産の入金",

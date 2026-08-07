@@ -568,7 +568,15 @@
     "identityBody": "Tên hiển thị và email hỗ trợ hiển thị cho người dùng.",
     "displayNamePlaceholder": "Tên hiển thị (vd: BANA Wallet)",
     "supportEmailPlaceholder": "support@yourdomain.com",
-    "amountPlaceholder": "vd: 100"
+    "amountPlaceholder": "vd: 100",
+    "stakingWorkerTitle": "Lịch quyết toán staking",
+    "stakingWorkerBody": "Kiểm soát tần suất worker nền trả lãi staking. Worker chạy liên tục, không cần kích hoạt thủ công.",
+    "stakingWorkerModeInterval": "Theo khoảng",
+    "stakingWorkerModeDaily": "Hằng ngày",
+    "stakingWorkerIntervalCaption": "Quyết toán mỗi N phút (1–1440).",
+    "stakingWorkerIntervalPlaceholder": "vd: 5",
+    "stakingWorkerMinutesUnit": "phút",
+    "stakingWorkerDailyCaption": "Quyết toán một lần mỗi ngày vào giờ này. Giờ theo UTC."
   },
   "walletFlow": {
     "depositCrypto": "Nạp tiền mã hóa",

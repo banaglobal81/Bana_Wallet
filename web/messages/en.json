@@ -568,7 +568,15 @@
     "identityBody": "Display name and support email shown to users.",
     "displayNamePlaceholder": "Display name (e.g. BANA Wallet)",
     "supportEmailPlaceholder": "support@yourdomain.com",
-    "amountPlaceholder": "e.g. 100"
+    "amountPlaceholder": "e.g. 100",
+    "stakingWorkerTitle": "Staking settlement schedule",
+    "stakingWorkerBody": "Controls how often the background worker pays out staking interest. The worker runs continuously — no manual trigger needed.",
+    "stakingWorkerModeInterval": "Interval",
+    "stakingWorkerModeDaily": "Daily",
+    "stakingWorkerIntervalCaption": "Settle every N minutes (1–1440).",
+    "stakingWorkerIntervalPlaceholder": "e.g. 5",
+    "stakingWorkerMinutesUnit": "min",
+    "stakingWorkerDailyCaption": "Settle once per day at this time. Time is in UTC."
   },
   "walletFlow": {
     "depositCrypto": "Deposit Crypto",
