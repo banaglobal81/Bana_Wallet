@@ -159,5 +159,19 @@ else
   note "settings.json does not reference enforce-agent-boundaries.sh — hook is not wired up"
 fi
 
+# 17) The hook's own regression/bypass suite must pass — a silently-broken hook is
+#     worse than a missing one (it looks enforced but isn't). See
+#     .claude/hooks/test-enforce-agent-boundaries.sh.
+if [ -x "$ROOT/.claude/hooks/test-enforce-agent-boundaries.sh" ]; then
+  if bash "$ROOT/.claude/hooks/test-enforce-agent-boundaries.sh" >/tmp/enforce-hook-test.$$ 2>&1; then
+    ok "enforce-agent-boundaries.sh regression suite passes"
+  else
+    note "enforce-agent-boundaries.sh regression suite FAILED — run: bash .claude/hooks/test-enforce-agent-boundaries.sh"
+  fi
+  rm -f /tmp/enforce-hook-test.$$
+else
+  note ".claude/hooks/test-enforce-agent-boundaries.sh missing or not executable — hook boundary has no regression coverage"
+fi
+
 echo "== done: $DRIFT drift item(s) =="
 exit 0

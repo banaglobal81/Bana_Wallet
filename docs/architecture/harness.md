@@ -28,17 +28,30 @@ hook (`.claude/hooks/enforce-agent-boundaries.sh`) denies:
   main thread too — rule 5/6 says "no other agent may push", and the orchestrating
   thread isn't `deploy-manager` either)
 - any `railway` CLI invocation when `agent_type` isn't `deploy-manager` (same main-thread
-  coverage as above). This only enforces *who* may call Railway — the further rule that
-  `deploy-manager` itself must get user confirmation before a redeploy/restart is
-  conversation-level convention (`deploy-manager.md`), not something a stdin-only hook
-  can see or enforce.
+  coverage as above)
 - write-shaped commands (`sed -i`, `mv`, `cp`, `rm`, `mkdir`, `touch`, `tee`, `dd`,
   `install`, `truncate`, `xargs`, `>`/`>>`), general-purpose script interpreters
   (`python`/`node`/`ruby`/`perl`/`osascript`/`php` — none of these agents' documented
   tasks need one), and `curl`/`wget` with `-o`/`-O`/`--output`, when `agent_type` is one
   of the three review/detect-only agents above
 
-It's a text-pattern heuristic on `tool_input.command`, not a shell-aware parser — it can
-false-positive on a redirect-looking string that isn't really a file write. That's an
-acceptable tradeoff (denial is recoverable, silent bypass isn't). Extending the
-allow/deny-by-agent set means editing this script, not `.claude/settings.json` permissions.
+The hook also **asks** (forces a live user permission prompt, distinct from allow/deny)
+rather than auto-allowing when `deploy-manager` runs a `railway` command that isn't on
+the read-only allowlist (`status`/`logs`/`whoami`/`list`/`help`). This makes CLAUDE.md
+rule 6's "redeploy/restart needs explicit user confirmation first" technically enforced
+instead of resting purely on `deploy-manager.md` convention — the hook still can't see
+conversation state (so it can't tell whether confirmation already happened this turn),
+but it can force the harness's own permission prompt on every non-read-only Railway call,
+which achieves the same outcome (a human sees it before it runs).
+
+It's a text-pattern/regex heuristic on `tool_input.command`, not a shell-aware parser —
+detection matches the git/railway/write-vector tokens anywhere in the command string
+(not just as the literal first token) specifically to resist the common wrapper-command
+bypass class (`eval '...'`, `sh -c '...'`, `xargs`, newline-joined commands). It cannot
+and does not try to catch bypasses that break up the literal token itself (a quoted
+command name, a renamed/symlinked binary, a command built from string concatenation at
+runtime) — closing that would need real shell tokenization. See
+`.claude/hooks/test-enforce-agent-boundaries.sh` for the regression suite covering both
+what's caught and what's a documented, knowingly-open gap. That's an acceptable tradeoff
+(denial is recoverable, silent bypass isn't). Extending the allow/deny-by-agent set means
+editing this script, not `.claude/settings.json` permissions.
