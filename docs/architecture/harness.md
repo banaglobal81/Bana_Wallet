@@ -11,14 +11,25 @@
 - Test runner: **vitest**, from `web/` (`npm test` / `npx vitest run`). `web/vitest.config.ts`'s `include` must cover both `src/**/*.test.ts` (co-located unit tests, e.g. `web/src/lib/stakingMath.test.ts`) and `tests/harness/**/*.test.js` (the harness suite) — verify after touching that config, since a narrowed `include` will silently drop one of the two suites from `npm test` with no error.
 - Doc-drift check: `sync-harness-docs.sh` lives at the **repo root** (sibling to `CLAUDE.md` and `.claude/`) and checks `web/`-relative paths internally — run it from the repo root, not from `web/`.
 
-## Known limitation: `.claude/settings.json` permissions are not per-agent
-`permissions.allow`/`deny` in `.claude/settings.json` gate by tool+command pattern only —
-there is no concept of "only agent X may run this." So CLAUDE.md rules 5/6 (git
-commit/push is `deploy-manager`-only) are enforced by each agent's own `## Forbidden`
-prose, not by a technical permission gate: any agent with the `Bash` tool can
-technically invoke `git commit`/`git push` (both are in the global `allow` list, needed
-so `deploy-manager` isn't interactively prompted on every push per rule 6). Treat this as
-an accepted tradeoff of the current harness, not a bug to silently "fix" by removing
-those commands from `allow` — doing so would just make `deploy-manager` prompt on every
-push, which rule 6 explicitly says not to do. If this ever needs real enforcement, it
-requires a `PreToolUse` hook that can identify the calling agent, not a settings.json edit.
+## Per-agent enforcement: `.claude/hooks/enforce-agent-boundaries.sh`
+`permissions.allow`/`deny` in `.claude/settings.json` gate by tool+command pattern
+only — there is no concept of "only agent X may run this" at that layer, so it cannot
+by itself enforce CLAUDE.md rules 5/6 (git commit/push is `deploy-manager`-only) or the
+"Bash must not write files" boundary for review/detect-only agents
+(`wallet-security-expert`, `code-compliance-checker`, `routine-tasks`).
+
+That enforcement instead lives in a `PreToolUse` hook on the `Bash` matcher
+(wired in `.claude/settings.json` → `hooks`). A subagent's Bash tool call carries an
+`agent_type` field in the hook's stdin JSON (a main-thread call does not) — that's the
+only place caller identity is available, discovered by probing hook stdin directly. The
+hook (`.claude/hooks/enforce-agent-boundaries.sh`) denies:
+- `git commit`/`git add`/`git push` when `agent_type` isn't `deploy-manager` (covers the
+  main thread too — rule 5/6 says "no other agent may push", and the orchestrating
+  thread isn't `deploy-manager` either)
+- write-shaped commands (`sed -i`, `mv`, `cp`, `rm`, `mkdir`, `touch`, `tee`, `>`/`>>`)
+  when `agent_type` is one of the three review/detect-only agents above
+
+It's a text-pattern heuristic on `tool_input.command`, not a shell-aware parser — it can
+false-positive on a redirect-looking string that isn't really a file write. That's an
+acceptable tradeoff (denial is recoverable, silent bypass isn't). Extending the
+allow/deny-by-agent set means editing this script, not `.claude/settings.json` permissions.

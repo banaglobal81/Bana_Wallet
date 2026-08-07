@@ -63,6 +63,7 @@
 Every agent in `.claude/agents/*.md` may edit its own file under these rules (each file's own `### Self-Update Protocol` line just points back here):
 - **Allowed:** add lessons/patterns to `docs/patterns/<agent-name>.md` (on-demand doc, not inline in the agent file — see Docs Index), update stated facts (paths, counts, ports), add new items to its own `## Forbidden` list.
 - **Forbidden:** changing its own role/description, changing its triggers, widening any allowed/forbidden boundary, removing an existing Forbidden item.
+- **No Edit/Write tool (`deploy-manager`, `routine-tasks`, `code-compliance-checker`, `wallet-security-expert`):** these are intentionally review/detect/ops-only roles, so granting Edit/Write just to satisfy this protocol would undo that boundary. Instead, they report the lesson/fact-update in their output and `doc-keeper` applies it on their behalf.
 - **After editing:** record the change in memory. Only run `bash sync-harness-docs.sh` if the edit was structural — changed `model`/`tools`/`description` frontmatter, added/removed an agent file, or touched something a drift check depends on (paths, counts). Fact updates and `docs/patterns/*` edits do not require a script run.
 
 ## Docs Index
