@@ -26,8 +26,11 @@ hook (`.claude/hooks/enforce-agent-boundaries.sh`) denies:
 - `git commit`/`git add`/`git push` when `agent_type` isn't `deploy-manager` (covers the
   main thread too — rule 5/6 says "no other agent may push", and the orchestrating
   thread isn't `deploy-manager` either)
-- write-shaped commands (`sed -i`, `mv`, `cp`, `rm`, `mkdir`, `touch`, `tee`, `>`/`>>`)
-  when `agent_type` is one of the three review/detect-only agents above
+- write-shaped commands (`sed -i`, `mv`, `cp`, `rm`, `mkdir`, `touch`, `tee`, `dd`,
+  `install`, `truncate`, `xargs`, `>`/`>>`), general-purpose script interpreters
+  (`python`/`node`/`ruby`/`perl`/`osascript`/`php` — none of these agents' documented
+  tasks need one), and `curl`/`wget` with `-o`/`-O`/`--output`, when `agent_type` is one
+  of the three review/detect-only agents above
 
 It's a text-pattern heuristic on `tool_input.command`, not a shell-aware parser — it can
 false-positive on a redirect-looking string that isn't really a file write. That's an

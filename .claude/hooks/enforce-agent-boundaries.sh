@@ -25,11 +25,20 @@ if echo "$cmd" | grep -qE '(^|[;&|]\s*)git\s+(commit|push|add)\b' && [ "$agent" 
   deny "CLAUDE.md rule 5/6: git commit/add/push is deploy-manager-only (caller: $agent)."
 fi
 
-# Review/detect-only agents: Bash is for read-only inspection, never for writing files
+# Review/detect-only agents: Bash is for read-only inspection, never for writing files.
+# This is a text-pattern heuristic, not a shell-aware parser (documented in
+# docs/architecture/harness.md) — it covers the obvious write vectors: direct
+# redirects/file-editing commands, general-purpose script interpreters (none of
+# these agents' documented tasks need one — grep/read/tsc/npm test cover it all),
+# and network-download-to-file.
 case "$agent" in
   wallet-security-expert|code-compliance-checker|routine-tasks)
-    if echo "$cmd" | grep -qE '(^|[;&|]\s*)(sed\s+-i|mv|cp|rm|mkdir|touch|tee)\b|(^|[^0-9])>{1,2}(\s|$)'; then
-      deny "$agent is review/detect-only — Bash may not write, move, or delete files (CLAUDE.md § Forbidden)."
+    write_pattern='(^|[;&|]\s*)(sed\s+-i|mv|cp|rm|mkdir|touch|tee|dd|install|truncate|xargs)\b'
+    write_pattern+='|(^|[^0-9])>{1,2}\|?(\s|$)'
+    write_pattern+='|(^|[;&|]\s*)(python3?|node|ruby|perl|osascript|php)\b'
+    write_pattern+='|(^|[;&|]\s*)(curl|wget)\b[^;&|]*(-o\b|--output\b|-O\b)'
+    if echo "$cmd" | grep -qE "$write_pattern"; then
+      deny "$agent is review/detect-only — Bash may not write, move, or delete files, run a general-purpose script interpreter, or download to a file (CLAUDE.md § Forbidden)."
     fi
     ;;
 esac
