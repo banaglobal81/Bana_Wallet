@@ -21,8 +21,8 @@ const STRINGS = {
   poolNote:
     'Fast Start is per-sale; the others scale with network volume. This bar shows allocation, not individual earnings.',
   capHeading: 'Every package sale',
-  capPayout: 'Payout pool',
-  capNetwork: 'Retained by network',
+  capPayout: '35% Goes to Partners',
+  capNetwork: '65% Funds Network',
   legendLabel: 'Bonus allocation legend',
   barLabel: 'Allocation of the 35% payout pool across five bonus lines',
   capBarLabel: 'Split of each package sale between payout pool and network',

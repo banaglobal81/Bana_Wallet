@@ -1,27 +1,29 @@
 // Mock compensation data for the D1 (presentational) build. No API exists yet
-// for rank, weak-leg CV, active slots, or binary volume — these values stand in
-// so the components can be built and compliance-reviewed against real screens.
+// for rank, weak-leg CV, or active slots — these values stand in so the
+// components can be built and compliance-reviewed against real screens.
 //
-// Everything here is display-only. When the real endpoints land, pass a live
-// `RankSnapshot` as a prop and these are bypassed entirely.
+// Everything here is display-only. When the real endpoints land, build a
+// RankSnapshot from live values and pass it in; these are bypassed entirely.
 import Decimal from 'decimal.js';
 import type { RankSnapshot, RequirementProgress } from '@/types/compensation-plan';
 import { getNextRank, getRankRequirements, progressPercent } from './calc';
 
 /**
- * The demo user's measured values — a Relay working toward Beacon.
+ * The demo user: a Relay who has just met Relay's own thresholds and is
+ * working toward Beacon (10 customers / $25,000 CV / 110 slots).
  *
- * NOTE: `weeklyBinaryVolume` ($5,200) exceeds Relay's own $2,500/week binary
- * cap. It is carried as specified so the 87% progress figure renders, but the
- * plan owner should confirm whether this row measures *volume* (uncapped) or
- * *paid binary* (which cannot exceed the current rank's cap).
+ * Binary cap is intentionally absent. It is a payout ceiling defined by rank —
+ * read from `RANKS` via `getRankRequirements()` — not a value a user
+ * accumulates, so it is neither stored here nor shown as progress.
  */
-export const FIXTURE_USER = Object.freeze({
+export const mockRelayUser = Object.freeze({
   currentRank: 'relay' as const,
-  personalCustomers: 8,
-  weakLegCV: new Decimal('20000'),
-  activeSlots: 100,
-  weeklyBinaryVolume: new Decimal('5200'),
+  /** 6 of Beacon's 10 → 60% */
+  personalCustomers: 6,
+  /** $10,000 of Beacon's $25,000 → 40% */
+  weakLegCV: new Decimal('10000'),
+  /** 45 of Beacon's 110 → 41% */
+  activeSlots: 45,
 });
 
 /** Fires a dev-only console warning once per component, so mock data is never mistaken for live data. */
@@ -40,28 +42,27 @@ export function warnFixtureUsage(componentName: string): void {
   warnedComponents.add(componentName);
   console.warn(
     `[compensation] ${componentName} is rendering FIXTURE data, not live values. ` +
-      'Pass real props once the compensation API exists.',
+      'Pass a real RankSnapshot once the compensation API exists.',
   );
 }
 
 /**
- * Build a rank snapshot from measured values, computing progress toward the next rank.
+ * Build a {@link RankSnapshot} from measured values, computing progress toward
+ * the next rank for the three measurable requirements.
  *
- * Any argument left undefined falls back to {@link FIXTURE_USER}, and the
- * returned snapshot is flagged `isFixture` unless every value was supplied.
+ * Any argument left undefined falls back to {@link mockRelayUser}, and the
+ * snapshot is flagged `isFixture` unless every value was supplied.
  *
  * @param currentRank       Rank id the user currently holds.
  * @param personalCustomers Personally enrolled customers.
  * @param weakLegCV         Weaker-leg commissionable volume in USD.
  * @param activeSlots       Active slots in the organization.
- * @param weeklyBinaryVolume Weekly binary volume in USD.
  */
 export function buildRankSnapshot(
   currentRank?: string,
   personalCustomers?: number,
   weakLegCV?: Decimal | string | number,
   activeSlots?: number,
-  weeklyBinaryVolume?: Decimal | string | number,
 ): RankSnapshot {
   const isFixture =
     currentRank === undefined ||
@@ -69,16 +70,15 @@ export function buildRankSnapshot(
     weakLegCV === undefined ||
     activeSlots === undefined;
 
-  const rank = getRankRequirements(currentRank ?? FIXTURE_USER.currentRank)
-    ?? getRankRequirements(FIXTURE_USER.currentRank);
-  // getRankRequirements only returns null for unknown ids; the fallback is a known id.
-  const resolvedRank = rank!;
+  // Falls back to a known-good id, so the lookup cannot fail.
+  const resolvedRank =
+    getRankRequirements(currentRank ?? mockRelayUser.currentRank) ??
+    getRankRequirements(mockRelayUser.currentRank)!;
   const nextRank = getNextRank(resolvedRank.id);
 
-  const customers = new Decimal(personalCustomers ?? FIXTURE_USER.personalCustomers);
-  const cv = new Decimal(weakLegCV ?? FIXTURE_USER.weakLegCV);
-  const slots = new Decimal(activeSlots ?? FIXTURE_USER.activeSlots);
-  const binary = new Decimal(weeklyBinaryVolume ?? FIXTURE_USER.weeklyBinaryVolume);
+  const customers = new Decimal(personalCustomers ?? mockRelayUser.personalCustomers);
+  const cv = new Decimal(weakLegCV ?? mockRelayUser.weakLegCV);
+  const slots = new Decimal(activeSlots ?? mockRelayUser.activeSlots);
 
   const requirements: RequirementProgress[] = [
     buildRequirement(
@@ -94,7 +94,6 @@ export function buildRankSnapshot(
       nextRank?.activeSlots != null ? new Decimal(nextRank.activeSlots) : null,
       'count',
     ),
-    buildRequirement('Binary Cap', binary, nextRank?.binaryCap ?? null, 'usdPerWeek'),
   ];
 
   return { currentRank: resolvedRank, nextRank, requirements, isFixture };
@@ -117,5 +116,5 @@ function buildRequirement(
   };
 }
 
-/** The default fixture snapshot: Relay, ~80–91% of the way to Beacon. */
+/** The default fixture snapshot: Relay, 60% / 40% / 41% of the way to Beacon. */
 export const FIXTURE_RANK_SNAPSHOT: RankSnapshot = buildRankSnapshot();

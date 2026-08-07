@@ -130,7 +130,15 @@ export interface UserEarnings {
   readonly disclaimer: string;
 }
 
-/** A user's measured value against one rank requirement, plus progress to the next rank. */
+/**
+ * A user's measured value against one rank requirement, plus progress to the
+ * next rank.
+ *
+ * Binary cap is deliberately NOT modelled here. It is a ceiling on what a rank
+ * may be paid, not something a user accumulates toward, so showing it as
+ * progress would imply that earning more binary advances your rank. It is
+ * rendered as an informational value read straight off {@link Rank.binaryCap}.
+ */
 export interface RequirementProgress {
   /** Requirement label, e.g. "Personal Customers". */
   readonly label: string;
@@ -142,14 +150,21 @@ export interface RequirementProgress {
   readonly progressPercent: Decimal | null;
   /** True once `current >= required`. */
   readonly met: boolean;
-  /** How to render the values — currency, plain count, or weekly USD cap. */
-  readonly format: 'usd' | 'count' | 'usdPerWeek';
+  /** How to render the values — currency or plain count. */
+  readonly format: 'usd' | 'count';
 }
 
-/** Everything `RankTracker` needs. Sourced from fixtures today; from the API later. */
+/**
+ * Everything `RankTracker` needs, as one object.
+ *
+ * Passed as a single prop so callers cannot silently mis-name a field: a typo
+ * in one key of a spread would leave that value `undefined` and fall back to
+ * fixture data without any error. Sourced from fixtures today; from the API later.
+ */
 export interface RankSnapshot {
   readonly currentRank: Rank;
   readonly nextRank: Rank | null;
+  /** The three measurable requirements, in display order. Never includes binary cap. */
   readonly requirements: readonly RequirementProgress[];
   /** True when the values came from fixtures rather than a live source. */
   readonly isFixture: boolean;

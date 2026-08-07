@@ -1,17 +1,21 @@
 'use client';
 
-// Current rank, the four requirements for the next rank with progress, and the
-// monthly-requalification warning.
+// Current rank, progress toward the next rank, and the monthly-requalification
+// warning.
 //
-// The red requalification banner sits ABOVE the progress bars deliberately: a
-// user who reads only the top of the card must still see that rank is not
-// permanent and that offline slots earn nothing.
+// Two deliberate choices:
+//  - The red requalification banner sits ABOVE the progress bars, so a user who
+//    reads only the top of the card still sees that rank is not permanent and
+//    that offline slots earn nothing.
+//  - Binary cap is shown as an informational value, NOT a progress bar. It is a
+//    ceiling on what a rank may be paid, not something you accumulate toward;
+//    a progress bar would imply that earning more binary advances your rank.
 import { useEffect } from 'react';
-import { AlertTriangle, Award, Check } from 'lucide-react';
+import { AlertTriangle, Award, Check, Info } from 'lucide-react';
 import Decimal from 'decimal.js';
 import type { RankSnapshot, RequirementProgress } from '@/types/compensation-plan';
 import { formatCount, formatUsd, getRankTable } from '@/lib/compensation/calc';
-import { buildRankSnapshot, warnFixtureUsage } from '@/lib/compensation/fixtures';
+import { FIXTURE_RANK_SNAPSHOT, warnFixtureUsage } from '@/lib/compensation/fixtures';
 
 /** English-locked UI + compliance copy (decision B2). */
 const STRINGS = {
@@ -26,6 +30,12 @@ const STRINGS = {
   colCurrent: 'Current',
   colRequired: 'Required',
   colProgress: 'Progress',
+  binaryCapLabel: 'Binary Earning Cap',
+  binaryCapNote: 'A weekly payout ceiling set by your rank — not a target to reach.',
+  binaryCapNext: 'raises it to',
+  perWeek: '/week',
+  limitSuffix: 'limit',
+  poolSharesLabel: 'Pool shares',
   ladderHeading: 'Rank ladder',
   colRank: 'Rank',
   colCustomers: 'Customers',
@@ -33,8 +43,6 @@ const STRINGS = {
   colSlots: 'Slots',
   colBinaryCap: 'Binary Cap / wk',
   colShares: 'Shares',
-  poolShares: 'pool shares',
-  binaryCap: 'binary cap',
   none: '—',
   met: 'Met',
   fixtureNote: 'Showing example data. Live rank figures are not connected yet.',
@@ -43,53 +51,35 @@ const STRINGS = {
 } as const;
 
 export interface RankTrackerProps {
-  /** Rank id the user currently holds, e.g. `'relay'`. */
-  currentRank?: string;
-  /** Personally enrolled customers. */
-  personalSales?: number;
-  /** Weaker-leg commissionable volume in USD. */
-  weakLegCV?: number;
-  /** Active slots in the organization. */
-  activeSlots?: number;
-  /** Weekly binary volume in USD. */
-  weeklyBinaryVolume?: number;
+  /**
+   * Everything the tracker renders, as one object. Omit to use fixture data.
+   * Build one with `buildRankSnapshot()` from raw values.
+   */
+  snapshot?: RankSnapshot;
 }
 
 /** Render one requirement value in its declared format, or an em dash when absent. */
 function formatRequirement(value: Decimal | null, format: RequirementProgress['format']): string {
   if (value === null) return STRINGS.none;
-  if (format === 'usd') return formatUsd(value, 0);
-  if (format === 'usdPerWeek') return `${formatUsd(value, 0)}/wk`;
-  return formatCount(value);
+  return format === 'usd' ? formatUsd(value, 0) : formatCount(value);
 }
 
 /**
- * Rank badge, next-rank progress, and the full seven-rank ladder.
+ * Rank badge, next-rank progress, the informational binary cap, and the full
+ * seven-rank ladder.
  *
- * Falls back to fixture data (Relay, ~80–91% toward Beacon) when no props are
- * supplied, and warns once in development so mock values are never mistaken
- * for live ones.
+ * Falls back to the fixture snapshot (Relay, 60% / 40% / 41% toward Beacon)
+ * when no `snapshot` is given, and warns once in development so mock values are
+ * never mistaken for live ones.
  */
-export function RankTracker({
-  currentRank,
-  personalSales,
-  weakLegCV,
-  activeSlots,
-  weeklyBinaryVolume,
-}: RankTrackerProps) {
-  const snapshot: RankSnapshot = buildRankSnapshot(
-    currentRank,
-    personalSales,
-    weakLegCV,
-    activeSlots,
-    weeklyBinaryVolume,
-  );
+export function RankTracker({ snapshot }: RankTrackerProps) {
+  const data = snapshot ?? FIXTURE_RANK_SNAPSHOT;
 
   useEffect(() => {
-    if (snapshot.isFixture) warnFixtureUsage('RankTracker');
-  }, [snapshot.isFixture]);
+    if (data.isFixture) warnFixtureUsage('RankTracker');
+  }, [data.isFixture]);
 
-  const { currentRank: rank, nextRank, requirements } = snapshot;
+  const { currentRank: rank, nextRank, requirements } = data;
   const isMaxRank = nextRank === null;
   const ladder = getRankTable();
 
@@ -120,14 +110,9 @@ export function RankTracker({
             </span>
           )}
         </div>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-mono text-[#8c90a0]">
-          <span>
-            {STRINGS.binaryCap}: <span className="text-[#afc6ff] font-bold">{formatUsd(rank.binaryCap, 0)}/wk</span>
-          </span>
-          <span>
-            {STRINGS.poolShares}:{' '}
-            <span className="text-[#afc6ff] font-bold">{rank.poolShares ?? STRINGS.none}</span>
-          </span>
+        <div className="text-[11px] font-mono text-[#8c90a0]">
+          {STRINGS.poolSharesLabel}:{' '}
+          <span className="text-[#afc6ff] font-bold">{rank.poolShares ?? STRINGS.none}</span>
         </div>
       </div>
 
@@ -141,7 +126,7 @@ export function RankTracker({
         <p className="text-sm font-bold text-rose-300 leading-relaxed">{STRINGS.requalWarning}</p>
       </div>
 
-      {snapshot.isFixture && (
+      {data.isFixture && (
         <p className="text-[11px] font-mono text-[#8c90a0] px-1">{STRINGS.fixtureNote}</p>
       )}
 
@@ -152,11 +137,10 @@ export function RankTracker({
             {STRINGS.requirementsHeading}
           </h3>
           {isMaxRank ? (
-            <span className="text-xs font-mono text-emerald-400 font-bold">{STRINGS.maxRankNote}</span>
+            <span className="text-xs font-mono text-emerald-400 font-bold">{STRINGS.maxRankLabel}</span>
           ) : (
             <span className="text-xs font-mono text-[#8c90a0]">
-              {STRINGS.nextRankLabel}:{' '}
-              <span className="text-[#afc6ff] font-bold">{nextRank.name}</span>
+              {STRINGS.nextRankLabel}: <span className="text-[#afc6ff] font-bold">{nextRank.name}</span>
             </span>
           )}
         </div>
@@ -225,6 +209,32 @@ export function RankTracker({
             </table>
           </div>
         )}
+
+        {/* Binary cap — informational only. No progress bar: it is a ceiling, not a target. */}
+        <div
+          className="flex flex-col gap-1 pt-3 border-t border-[#1E3559]/60"
+          data-testid="binary-cap-info"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-xs font-medium text-[#8c90a0] flex items-center gap-1.5">
+              <Info className="h-3.5 w-3.5" aria-hidden="true" /> {STRINGS.binaryCapLabel}
+            </span>
+            <span className="text-xs font-mono font-bold text-[#d8e2ff]">
+              {formatUsd(rank.binaryCap, 0)}
+              {STRINGS.perWeek} ({rank.name} {STRINGS.limitSuffix})
+            </span>
+          </div>
+          <p className="text-[11px] font-mono text-[#8c90a0] leading-relaxed">
+            {STRINGS.binaryCapNote}
+            {nextRank && (
+              <>
+                {' '}
+                {nextRank.name} {STRINGS.binaryCapNext} {formatUsd(nextRank.binaryCap, 0)}
+                {STRINGS.perWeek}.
+              </>
+            )}
+          </p>
+        </div>
       </div>
 
       {/* Full ladder */}
