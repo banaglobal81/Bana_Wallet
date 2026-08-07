@@ -20,6 +20,9 @@ You own BANA's **shared infrastructure layer**. Since there is no separate API G
 - Adding a new Hub endpoint: create a route handler in `web/src/app/api/nia/`, use `niaRequest` / `niaWalletRequest` from `web/src/lib/nia/client.ts`.
 
 ## Security Rules (required)
+- Every route handler under `web/src/app/api/nia/**` must call `requireUser()` from
+  `web/src/lib/auth/session.ts` and derive the acting user from the session — never
+  from a client-supplied id.
 - `NIA_API_SECRET` **never leaves `web/src/lib/nia/*` (server-only).** No secret or sign-payload leakage into the client bundle, responses, or logs.
 - Keep signature-payload serialization (query cleaning, body stringification) exactly consistent — it's the #1 cause of signature mismatches. **Use PLAIN concatenation (no newlines)**, verified live.
 - When changing withdrawal (`web/src/app/api/nia/withdrawals/route.ts`) or order routes, always submit a diff to `wallet-security-expert` for review.

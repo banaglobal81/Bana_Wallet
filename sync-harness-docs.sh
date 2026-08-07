@@ -60,6 +60,16 @@ for f in .claude/agents/*.md; do
   grep -q 'Self-Update Protocol' "$f" || note "$f missing Self-Update Protocol"
 done
 
+# 7b) Each agent file's docs/patterns/<name>.md reference actually exists
+#     (a dangling reference here means the Pattern Library section points nowhere)
+for f in .claude/agents/*.md; do
+  [ -e "$f" ] || continue
+  ref=$(grep -o 'docs/patterns/[a-zA-Z0-9_-]*\.md' "$f" | head -1)
+  if [ -n "$ref" ] && [ ! -f "$ROOT/$ref" ]; then
+    note "$f references $ref but it does not exist"
+  fi
+done
+
 # 8) Route handler count (13 expected: address, balance, deposits, withdrawals,
 #    transfer, orders, trades, markets, klines, wallet-history, notifications,
 #    status, webhook)

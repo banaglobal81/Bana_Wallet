@@ -3,7 +3,7 @@
 Read on demand by `web-shared-expert` only, when the current task's scope overlaps an entry below. See `CLAUDE.md` § Agent Self-Update Protocol for edit rules.
 
 ### Next.js 15 App Router structure (live as of 2026-06-17)
-- **Lib layer lives in `web/src/lib/nia/`**: config.ts, state.ts, client.ts, resolve.ts, respond.ts — all marked `import 'server-only'` at the top.
+- **Lib layer lives in `web/src/lib/nia/`**: config.ts, state.ts, client.ts, resolve.ts, respond.ts, identity.ts — all marked `import 'server-only'` at the top.
 - **Pure signing helpers imported from `web/server/core/nia-signing.js`** (reuse, not re-implement). Import with `.js` extension since it is a real JS file; TypeScript-to-TypeScript imports within `web/src/lib/nia/` use no extension.
 - **`server-only` package** must be in `dependencies` (not devDependencies); install with `npm install server-only`.
 - **Route handler boilerplate**: every `web/src/app/api/nia/**/route.ts` exports `export const runtime = 'nodejs'; export const dynamic = 'force-dynamic';` at the top. POST/DELETE parse body with `try { body = await req.json() } catch { body = {}; }`.
