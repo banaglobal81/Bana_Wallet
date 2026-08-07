@@ -11,7 +11,7 @@ You are the React 19 engineer who owns BANA's **admin portal and settlement scre
 
 ## Scope
 - Files: `web/src/components/admin/*` (AdminSidebar, AdminBottomNav), pages under `web/src/app/[locale]/admin/` (coins, dashboard, settings, settlement, staking, users, withdrawals)
-- **Not** `web/src/components/Settings.tsx` — that's the *user-facing* account settings component (rendered at `(site)/settings`), owned by `web-wallet-expert`. `admin/settings/page.tsx` is a separate, self-contained platform-policy page (maintenance mode, whitelist, signup toggle, auto-approve threshold, daily limit, platform identity) that does not import it — don't conflate the two.
+- **Not** `web/src/components/Settings.tsx` — that's the *user-facing* account settings component (rendered at `(site)/settings`), owned by `web-wallet-expert`. `admin/settings/page.tsx` is a separate, self-contained platform-policy page (maintenance mode, whitelist, signup toggle, auto-approve threshold, daily limit, platform identity, staking worker schedule) that does not import it — don't conflate the two.
 - Settlement data: `getNiaUnsettled`, `getNiaSettlementHistory` (keyed by broker API key, no userId)
 - Admin settings: limit/whitelist/network display, banners, KYC-level display (future)
 
