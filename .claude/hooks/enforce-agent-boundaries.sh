@@ -7,8 +7,13 @@
 # only real enforcement point.
 #
 # 1) CLAUDE.md rules 5/6: git commit/add/push is deploy-manager-only.
-# 2) Review/detect-only agents (no Edit/Write in their tools:) must not use Bash to
-#    route around that — wallet-security-expert, code-compliance-checker, routine-tasks.
+# 2) Review/detect/ops-only agents (no Edit/Write in their tools:) must not use Bash to
+#    route around that — wallet-security-expert, code-compliance-checker, routine-tasks,
+#    deploy-manager (deploy-manager's job is git/Railway CLI calls, not file edits).
+# 3) CLAUDE.md rule 6 (Railway control): any `railway` CLI invocation is deploy-manager-only.
+#    Redeploy/restart also needs a live user confirmation within deploy-manager's own
+#    turn — this hook can't see conversation state, so it only enforces the caller-identity
+#    half; the confirmation half is convention enforced by deploy-manager.md itself.
 set -uo pipefail
 
 input="$(cat)"
@@ -25,6 +30,11 @@ if echo "$cmd" | grep -qE '(^|[;&|]\s*)git\s+(commit|push|add)\b' && [ "$agent" 
   deny "CLAUDE.md rule 5/6: git commit/add/push is deploy-manager-only (caller: $agent)."
 fi
 
+# Rule 6 (Railway control)
+if echo "$cmd" | grep -qE '(^|[;&|]\s*)railway\b' && [ "$agent" != "deploy-manager" ]; then
+  deny "CLAUDE.md rule 6: Railway control (status/logs/redeploy/restart) is deploy-manager-only (caller: $agent)."
+fi
+
 # Review/detect-only agents: Bash is for read-only inspection, never for writing files.
 # This is a text-pattern heuristic, not a shell-aware parser (documented in
 # docs/architecture/harness.md) — it covers the obvious write vectors: direct
@@ -32,7 +42,7 @@ fi
 # these agents' documented tasks need one — grep/read/tsc/npm test cover it all),
 # and network-download-to-file.
 case "$agent" in
-  wallet-security-expert|code-compliance-checker|routine-tasks)
+  wallet-security-expert|code-compliance-checker|routine-tasks|deploy-manager)
     write_pattern='(^|[;&|]\s*)(sed\s+-i|mv|cp|rm|mkdir|touch|tee|dd|install|truncate|xargs)\b'
     write_pattern+='|(^|[^0-9])>{1,2}\|?(\s|$)'
     write_pattern+='|(^|[;&|]\s*)(python3?|node|ruby|perl|osascript|php)\b'

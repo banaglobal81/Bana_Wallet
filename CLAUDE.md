@@ -23,18 +23,19 @@
 4. **The HMAC secret (`NIA_API_SECRET`) lives only in `web/src/lib/nia/*` (server-only).** Never leak the secret into the client bundle, logs, or error responses. The two signing schemes (implemented in `web/src/lib/nia/client.ts` + `web/server/core/nia-signing.js`) are **owned by `web-shared-expert`**.
 5. **Git commits are `deploy-manager` only.** No history rewrites (`git rebase` / `reset --hard`).
 6. **`git push` to `main` is `deploy-manager`-only.** No other agent may push. `deploy-manager` pushes autonomously after commit (no per-push user confirmation required). No force-push, ever.
+   - **Railway control is also `deploy-manager`-only, scoped to redeploy/restart triggers and log/status queries.** Status/log queries run autonomously; a redeploy or restart requires explicit user confirmation first (it can affect live traffic). Env var/secret changes and creating/deleting Railway services stay human-only — `deploy-manager` may not perform them regardless of confirmation. Details: `docs/architecture/deploy.md`.
 7. **`prisma db push` is absolutely forbidden** (all agents). The DB + Prisma is now live — all schema changes go through migrations only (`prisma migrate dev` / `prisma migrate deploy`). Never run `prisma migrate reset` or drop tables on a shared/production DB.
 8. **Authentication is mandatory on protected routes.** API route handlers serving user/admin data must call `requireUser()` / `requireAdmin()` from `web/src/lib/auth/session.ts`. Never trust a client-supplied user id for authorization — derive it from the session. Passwords are hashed with `bcryptjs`; never store or log plaintext passwords.
-9. **Model tiers are role-based, not uniform — this is a token-cost control, not a formality.** `opus` is reserved for planning/spec-design work only (`pm`, `product-planner`). Every other agent runs on `sonnet` or `haiku` per the Model Tier Strategy table below, chosen by task complexity, not defaulted to `sonnet`. Changing an agent's tier means editing **both** this table **and** that agent's `.claude/agents/*.md` frontmatter `model:` field in the same change — `sync-harness-docs.sh` flags a mismatch.
+9. **Model tiers are role-based, not uniform — this is a token-cost control, not a formality.** `opus` is reserved for planning/spec-design work only (`pm`, `product-planner`, `game-planner`). Every other agent runs on `sonnet` or `haiku` per the Model Tier Strategy table below, chosen by task complexity, not defaulted to `sonnet`. Changing an agent's tier means editing **both** this table **and** that agent's `.claude/agents/*.md` frontmatter `model:` field in the same change — `sync-harness-docs.sh` flags a mismatch.
 10. **Keep this file atomized.** `CLAUDE.md` holds rules + tables only. Anything descriptive/detailed (path lists, wire-format specs, workflow prose) belongs in `docs/architecture/*.md`, read on demand by the agents whose scope needs it — not force-loaded into every agent's context. `doc-keeper` enforces this on request.
 
 ## Model Tier Strategy
 
 | Tier | Model  | Trigger |
 |------|--------|---------|
-| T1   | haiku  | `tsc --noEmit`, lint, grep, log/build checks, git commit + deploy-status checks, templated Tailwind/design-token work, dormant-agent stubs |
-| T2   | sonnet | code read/edit across wallet/admin/shared/DB layers, custody security review, QA scenario design, growth/retention analysis, in-app WebGL/shader FX |
-| T3   | opus   | product planning & spec design only — PRDs, FRDs, feature/screen design |
+| T1   | haiku  | `tsc --noEmit`, lint, grep, log/build checks, git commit + deploy-status checks + Railway redeploy/restart triggers, templated Tailwind/design-token work, dormant-agent stubs |
+| T2   | sonnet | code read/edit across wallet/admin/shared/DB layers, custody security review, QA scenario design, growth/retention analysis |
+| T3   | opus   | product planning & spec design only — PRDs, FRDs, feature/screen design (incl. game feature design) |
 
 ## Agent Team (17)
 
@@ -56,7 +57,7 @@
 | 14 | code-compliance-checker | haiku | rule-violation detection | active |
 | 15 | doc-keeper | haiku | doc sync | active |
 | 16 | researcher | sonnet | external web research → `docs/research/` | active |
-| 17 | unity-fx-expert | sonnet | game-feel WebGL/canvas FX (owns `BanaBackground.tsx`) | active |
+| 17 | game-planner | opus | game feature design — mechanics, flow, FRDs for the wallet's game surface | active |
 
 ## Agent Self-Update Protocol
 
@@ -74,4 +75,5 @@ Read on demand — not auto-loaded into every agent's context. Read the one your
 - `docs/architecture/nia-integration.md` — Nia-Hub HMAC signing schemes, exact headers/payload concatenation, route handler list
 - `docs/architecture/harness.md` — harness engineering principles, 3-step workflow, vitest wiring
 - `docs/architecture/worker.md` — `worker/` always-on service (staking settlement with configurable schedule)
+- `docs/architecture/deploy.md` — Railway service setup, required env vars, migrate/start command, first-admin seed, post-deploy verification (owned by `deploy-manager`)
 - `docs/patterns/<agent-name>.md` — that agent's own accumulated lessons-learned (Pattern Library). Read only by that agent, only when the current task's scope overlaps a listed entry; not force-loaded, not read by other agents by default.

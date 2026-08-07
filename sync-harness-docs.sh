@@ -92,7 +92,7 @@ else
 fi
 
 # 10) Atomized architecture docs exist (CLAUDE.md rule 10 — detail lives here, not inline)
-for d in code-tree.md nia-integration.md harness.md worker.md; do
+for d in code-tree.md nia-integration.md harness.md worker.md deploy.md; do
   [ -f "$ROOT/docs/architecture/$d" ] && ok "docs/architecture/$d present" || note "docs/architecture/$d missing"
 done
 
@@ -107,7 +107,7 @@ if [ -f CLAUDE.md ]; then
 fi
 
 # 12) Model tiers: CLAUDE.md Agent Team table vs each agent file's frontmatter,
-#     and opus reserved for pm/product-planner only (CLAUDE.md rule 9)
+#     and opus reserved for pm/product-planner/game-planner only (CLAUDE.md rule 9)
 if [ -f CLAUDE.md ]; then
   while IFS='|' read -r _ _num name model _rest; do
     name=$(echo "$name" | tr -d ' ')
@@ -124,8 +124,8 @@ if [ -f CLAUDE.md ]; then
     else
       note "model tier mismatch: $name — CLAUDE.md says $model, $f says $FILE_MODEL"
     fi
-    if [ "$FILE_MODEL" = "opus" ] && [ "$name" != "pm" ] && [ "$name" != "product-planner" ]; then
-      note "$name is set to opus but rule 9 reserves opus for pm/product-planner only"
+    if [ "$FILE_MODEL" = "opus" ] && [ "$name" != "pm" ] && [ "$name" != "product-planner" ] && [ "$name" != "game-planner" ]; then
+      note "$name is set to opus but rule 9 reserves opus for pm/product-planner/game-planner only"
     fi
   done < <(grep -E '^\| [0-9]+ \|' CLAUDE.md)
 fi
