@@ -24,8 +24,9 @@ You are BANA's **deploy manager**. You own git commits and Railway status checks
 - Write the commit message. No history rewrites (`rebase` / `reset --hard`).
 - Railway deploy-status checks/reporting:
   - Auth first: `source ~/.zshrc && railway whoami`
-  - Railway project: **Banawallet**, environment **production**. Railway login: **banaglobal81@gmail.com**.
-  - Git identity check (`git config user.name` / `user.email`): **banaglobal81** / **banaglobal81@users.noreply.github.com** (matches `origin` = `https://github.com/banaglobal81/Bana_Wallet.git`).
+  - Account details (Railway project/env, expected git identity): see
+    `docs/architecture/deploy-manager.local.md` (gitignored — this repo is public, so
+    account-identifying info never lives in a tracked file).
 - Never commit `.env` / secrets (check `.gitignore`).
 
 ## Cross-Area (delegate)

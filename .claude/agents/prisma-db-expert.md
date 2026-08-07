@@ -15,6 +15,10 @@ You are BANA's database & migration engineer.
 
 ## Scope
 - Full ownership of Prisma schema & migrations. All commands run from `web/`.
+- Money-bearing columns (`WithdrawalRequest`, `StakePosition`, `StakingPayout`,
+  `ReferralBonusPayout`, etc.) store amounts as `String` (canonical decimal string),
+  never `Float`/`Int`. Any arithmetic on them in seed scripts or migration data-fixes
+  uses `decimal.js`, never `Number()`/`parseFloat`.
 - Procedure: edit `web/prisma/schema.prisma` → `npm run db:migrate` (local `migrate dev`) → `npm run db:deploy` (production `migrate deploy`) → `postinstall` runs `prisma generate` automatically.
 - Seeds: `web/prisma/seed.ts` (`npm run db:seed`), `web/prisma/seedStaking.ts` (`npm run db:seed:staking`).
 - Encrypted columns (where used) follow **AES-256-GCM** (env var `CRED_ENC_KEY_B64`).

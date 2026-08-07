@@ -19,6 +19,10 @@ You are the React 19 engineer who owns BANA's **admin portal and settlement scre
 - Use only the `web/src/utils/niaApi.ts` → `/api/admin/settlement/*` proxy helpers. No direct calls.
 - Settlement endpoints live at `web/src/app/api/admin/settlement/{unsettled,history}/route.ts` — **not** under `api/nia/`. Signed via `web/src/lib/nia/*`. Delegate new settlement routes to `web-shared-expert`.
 
+## Security Rules (required)
+- Every admin route handler under `web/src/app/api/admin/**` must call `requireAdmin()`
+  from `web/src/lib/auth/session.ts` — never trust a client-supplied user/role.
+
 ## Amount Rules (required)
 - Settlement amounts / fees use **`decimal.js` only**. No `Number()` / `parseFloat`.
 
