@@ -2,7 +2,7 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { verifyRegistrationResponse } from '@simplewebauthn/server';
-import type { RegistrationResponseJSON } from '@simplewebauthn/types';
+import type { RegistrationResponseJSON } from '@simplewebauthn/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { rpFromRequest } from '@/lib/webauthn';
@@ -41,9 +41,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'Passkey could not be verified.' }, { status: 400 });
   }
 
-  const { credentialID, credentialPublicKey, counter } = verification.registrationInfo;
-  const credentialId = Buffer.from(credentialID).toString('base64url');
-  const publicKey = Buffer.from(credentialPublicKey).toString('base64url');
+  // v11+ nests these under `registrationInfo.credential` (WebAuthnCredential);
+  // `credential.id` is already a base64url string (no Buffer re-encoding needed).
+  const { credential } = verification.registrationInfo;
+  const credentialId = credential.id;
+  const publicKey = Buffer.from(credential.publicKey).toString('base64url');
+  const counter = credential.counter;
 
   const existing = await prisma.passkey.findUnique({ where: { credentialId } });
   if (existing) {

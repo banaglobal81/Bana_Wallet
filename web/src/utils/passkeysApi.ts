@@ -1,5 +1,5 @@
 import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
-import type { PublicKeyCredentialCreationOptionsJSON, PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/types';
+import type { PublicKeyCredentialCreationOptionsJSON, PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/browser';
 
 // Client for WebAuthn passkeys (biometric). Identity is the server session.
 export interface PasskeyInfo {
@@ -38,7 +38,8 @@ export function deletePasskey(id: string): Promise<void> {
 /** Register a new biometric passkey on this device (prompts Face ID/fingerprint). */
 export async function registerPasskey(deviceName: string): Promise<void> {
   const options = await req<PublicKeyCredentialCreationOptionsJSON>('/api/auth/passkeys/register/options', 'POST');
-  const response = await startRegistration(options);
+  // v10+ wraps options in { optionsJSON } instead of taking them bare.
+  const response = await startRegistration({ optionsJSON: options });
   await req<void>('/api/auth/passkeys/register/verify', 'POST', { response, deviceName });
 }
 
@@ -48,6 +49,6 @@ export async function registerPasskey(deviceName: string): Promise<void> {
  */
 export async function getPasskeyAssertion(): Promise<string> {
   const options = await req<PublicKeyCredentialRequestOptionsJSON>('/api/auth/passkeys/authenticate/options', 'POST');
-  const assertion = await startAuthentication(options);
+  const assertion = await startAuthentication({ optionsJSON: options });
   return JSON.stringify(assertion);
 }

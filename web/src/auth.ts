@@ -87,7 +87,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           if (!code) return null; // client must collect + resubmit the code
           let secondFactorOk = false;
           try {
-            secondFactorOk = verifyTotp(code, decryptSecret(user.totpSecret));
+            secondFactorOk = await verifyTotp(code, decryptSecret(user.totpSecret));
           } catch { secondFactorOk = false; }
           if (!secondFactorOk) {
             // Fall back to a one-time backup code, consumed ATOMICALLY: the update
@@ -142,9 +142,12 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             expectedOrigin: origin,
             expectedRPID: rpID,
             requireUserVerification: true,
-            authenticator: {
-              credentialID: new Uint8Array(Buffer.from(passkey.credentialId, 'base64url')),
-              credentialPublicKey: new Uint8Array(Buffer.from(passkey.publicKey, 'base64url')),
+            // v11+ renamed `authenticator` -> `credential` (type WebAuthnCredential:
+            // { id, publicKey, counter, transports? }, replacing the old
+            // { credentialID, credentialPublicKey, counter } AuthenticatorDevice shape).
+            credential: {
+              id: passkey.credentialId,
+              publicKey: new Uint8Array(Buffer.from(passkey.publicKey, 'base64url')),
               counter: passkey.counter,
             },
           });

@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   try { secret = decryptSecret(user.totpSecret); }
   catch { return NextResponse.json({ ok: false, error: 'Setup expired — please restart enrollment.' }, { status: 400 }); }
 
-  if (!verifyTotp(code, secret)) {
+  if (!(await verifyTotp(code, secret))) {
     return NextResponse.json({ ok: false, error: 'Invalid code. Check your authenticator app and try again.' }, { status: 400 });
   }
 

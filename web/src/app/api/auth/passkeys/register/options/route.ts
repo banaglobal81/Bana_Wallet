@@ -2,6 +2,7 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { generateRegistrationOptions } from '@simplewebauthn/server';
+import { isoUint8Array } from '@simplewebauthn/server/helpers';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { RP_NAME, rpFromRequest } from '@/lib/webauthn';
@@ -21,13 +22,16 @@ export async function POST(req: Request) {
   const options = await generateRegistrationOptions({
     rpName: RP_NAME,
     rpID,
-    userID: user.id,
+    // v10+ requires userID as raw bytes (not a plain string) — our internal
+    // cuid is opaque/non-PII, so UTF-8 encoding it is safe. We never need to
+    // decode it back since lookups key off credentialId, not userHandle.
+    userID: isoUint8Array.fromUTF8String(user.id),
     userName: user.email,
     attestationType: 'none',
-    // Don't let the same authenticator enroll twice.
+    // Don't let the same authenticator enroll twice. v10+ excludeCredentials
+    // entries take the base64url credential id string directly (no `type`).
     excludeCredentials: user.passkeys.map((p) => ({
-      id: new Uint8Array(Buffer.from(p.credentialId, 'base64url')),
-      type: 'public-key' as const,
+      id: p.credentialId,
     })),
     authenticatorSelection: {
       // Use the device's built-in authenticator (Face ID / Touch ID / Android

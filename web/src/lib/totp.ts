@@ -1,29 +1,32 @@
 import 'server-only';
-import { authenticator } from 'otplib';
+import { generateSecret, generateURI, verify } from 'otplib';
 import { randomBytes } from 'node:crypto';
 import { sha256Hex } from './crypto';
 
-// Allow ±1 time step (±30s) for clock drift between the phone and server.
-authenticator.options = { window: 1 };
+// otplib v13 dropped the `authenticator` singleton (and its `.options.window`
+// steps-based knob) for a functional API where tolerance is passed per call,
+// in seconds. ±1 legacy "step" at the default 30s period == ±30s.
+const EPOCH_TOLERANCE_SECONDS = 30;
 
 export const TOTP_ISSUER = 'BANA Wallet';
 
 /** New base32 TOTP secret for enrollment (Google Authenticator compatible). */
 export function generateTotpSecret(): string {
-  return authenticator.generateSecret();
+  return generateSecret();
 }
 
 /** otpauth:// URI encoded into the enrollment QR code. */
 export function totpKeyUri(accountLabel: string, secret: string): string {
-  return authenticator.keyuri(accountLabel, TOTP_ISSUER, secret);
+  return generateURI({ issuer: TOTP_ISSUER, label: accountLabel, secret });
 }
 
 /** Verify a 6-digit code against the secret. */
-export function verifyTotp(token: string, secret: string): boolean {
+export async function verifyTotp(token: string, secret: string): Promise<boolean> {
   const t = String(token).replace(/\D/g, '');
   if (t.length !== 6) return false;
   try {
-    return authenticator.verify({ token: t, secret });
+    const result = await verify({ secret, token: t, epochTolerance: EPOCH_TOLERANCE_SECONDS });
+    return result.valid;
   } catch {
     return false;
   }

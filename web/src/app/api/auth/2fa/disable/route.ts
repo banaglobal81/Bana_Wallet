@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   }
 
   let ok = false;
-  try { ok = verifyTotp(code, decryptSecret(user.totpSecret)); } catch { ok = false; }
+  try { ok = await verifyTotp(code, decryptSecret(user.totpSecret)); } catch { ok = false; }
   if (!ok && matchBackupCode(code, user.totpBackupCodes)) ok = true;
   if (!ok) {
     return NextResponse.json({ ok: false, error: 'Invalid code — enter a current 6-digit code or a backup code.' }, { status: 400 });
