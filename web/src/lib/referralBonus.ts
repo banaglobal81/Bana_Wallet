@@ -10,7 +10,7 @@ import { computeBonus } from '@/lib/referralBonusMath';
 // 대·소실적 매칭 + 유니레벨 부스트 (in BANA). Idempotent per (user, dayKey).
 //
 // GATED: does nothing unless REFERRAL_BONUS_ENABLED=true. OFF in production until
-// the senior's spec is finalized and legal review is cleared.
+// the senior's spec is finalized.
 export function referralBonusEnabled(): boolean {
   return String(process.env.REFERRAL_BONUS_ENABLED ?? '').toLowerCase() === 'true';
 }

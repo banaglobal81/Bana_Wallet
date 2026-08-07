@@ -170,12 +170,6 @@ As specced it warns on every render, in every build, and repeats on each re-rend
 **★ Recommendation:** `if (process.env.NODE_ENV !== 'production')`, fired once via `useEffect`
 with an empty dep array.
 
-### 5.3 `STRINGS` const vs `next-intl`
-The repo uses `next-intl` in 17 of 22 components. A local `STRINGS` const is the right call for
-**English-locked compliance text** (decision B2) — but it also freezes button labels and headings
-in English. **★ Recommendation:** `STRINGS.legal.*` stays a local const (English-locked,
-never translated); UI chrome goes through `next-intl` like every other component.
-
 ---
 
 ## 6. Spec ambiguities I will not guess

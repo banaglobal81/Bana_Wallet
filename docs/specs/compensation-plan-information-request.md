@@ -1,7 +1,7 @@
 # Compensation Plan — Information Request (copy-paste prompt)
 
 > Send everything between the `---` markers to whoever owns the compensation plan
-> (AI assistant, plan architect, or compliance counsel). It is self-contained.
+> (AI assistant or plan architect). It is self-contained.
 > Answers feed directly into [compensation-plan-ui-plan.md](compensation-plan-ui-plan.md).
 
 ---
@@ -40,8 +40,7 @@ guess numbers.** A wrong number in a compliance component is worse than a missin
 
 ### 1.1 Full plan text
 Provide the complete compensation plan document, verbatim. I need the actual source text
-for a compliance reference modal. I will not paraphrase legal or compensation language
-into a disclosure component.
+for a compliance reference modal.
 
 ### 1.2 The "8 Hard Rules"
 Provide all 8, verbatim and numbered. These render as expandable items in the compliance
@@ -122,10 +121,6 @@ outright**).
 State:
 - Which markets this plan is cleared to operate in, and by whom.
 - Whether the **`zh` locale should ship at all**. I need an explicit yes/no.
-- Whether counsel has reviewed the plan, and per market or globally.
-
-I am not asking for legal advice — I am asking what has already been decided so the UI
-matches it.
 
 ### 3.3 Prohibited language
 Confirm the terms that must never appear in the UI. My default deny-list is: *investment,
@@ -154,7 +149,6 @@ prospect.
 **B. Disclaimer translation.** A disclaimer that renders in English to a Vietnamese or Korean
 user fails at the one job it has.
 - **B1** — Translate all compliance strings, human-reviewed per market (correct, slowest).
-- ★ **B2** — English-locked legal text + translated UI chrome (common in fintech; defensible).
 - **B3** — English only (not recommended).
 
 **C. Relationship to the existing referral system.** BANA already ships a *different* live

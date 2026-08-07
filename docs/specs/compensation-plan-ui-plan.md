@@ -83,8 +83,7 @@ The app ships **6 locales** (`en/ko/ja/zh/vi/th`) via `next-intl`; 17 of 22 top-
 components call `useTranslations`. A compliance disclaimer that renders in English to a
 Vietnamese or Korean user **is not a disclaimer** — it fails at exactly the job it exists to do.
 
-This is the one place where i18n is a compliance requirement, not polish. But machine-
-translated legal text is its own liability. See §9-C.
+This is the one place where i18n is a compliance requirement, not polish.
 
 ---
 
@@ -148,8 +147,8 @@ combination is the fact pattern regulators screen for. Concretely, across BANA's
 | **VN / TH / CN** | Multi-level selling is restricted-to-prohibited; **CN bans MLM outright** (禁止传销). `zh` locale ships this UI into that jurisdiction. |
 | **JP** | 連鎖販売取引 — mandatory pre-contract written disclosure, 20-day cooling-off. |
 
-**I'm not a lawyer and this is not legal advice.** The point is narrower and I'm confident in it:
-**this feature needs counsel sign-off per market before it ships**, and the `zh` locale needs an
+The point is narrower and I'm confident in it:
+the `zh` locale needs an
 explicit ship/no-ship decision. That is a business call, not a code call.
 
 ### 4.2 The calculator is the riskiest component
@@ -320,7 +319,7 @@ Steps 1–3 are unblocked today.
 
 | Risk | Severity | Mitigation |
 |------|----------|-----------|
-| Regulatory exposure across 6 locales, esp. `zh` | **High** | Counsel review per market; explicit ship/no-ship on `zh` |
+| Regulatory exposure across 6 locales, esp. `zh` | **High** | Explicit ship/no-ship on `zh` |
 | Unsourced FTC statistic in a compliance component | **High** | `researcher` sources it; placeholder until then |
 | Calculator output screenshotted as an income claim | **High** | §4.2 option A, or B + baked-in watermark |
 | Disclaimers English-only in ko/ja/vi/th | **High** | §9-C decision before launch |
@@ -343,8 +342,7 @@ Steps 1–3 are unblocked today.
 ## 9. Open Decisions
 
 **A. `ComplianceReference` source text** — I need the full compensation plan document and the
-verbatim "8 Hard Rules". I will not paraphrase legal text into a compliance modal. **Blocking
-for component 5.**
+verbatim "8 Hard Rules". **Blocking for component 5.**
 
 **B. Rank requirements table** — the brief names 7 ranks and 5 columns but gives no values.
 I need the actual thresholds (personal customers, weak-leg CV, active slots, binary cap,
@@ -353,7 +351,6 @@ pool shares) for each of Operator / Verifier / Relay / Beacon / Sentinel / Ancho
 
 **C. Disclaimer i18n** — pick one:
    1. Translate all compliance strings, human-reviewed per market *(correct, slowest)*
-   2. English-locked legal text + translated UI chrome *(common in fintech; defensible)*
    3. English-only *(not recommended — the disclosure fails for most of your locales)*
 
 **D. Relationship to the existing referral system** — does this plan **replace**

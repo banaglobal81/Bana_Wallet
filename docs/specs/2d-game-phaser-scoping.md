@@ -67,7 +67,7 @@ profile, and success metric:
 | **"It would be cool"** | — | — (valid answer; changes the budget conversation, not the project) |
 
 Everything downstream — bundle budget, route placement, whether it ships to all six
-locales, whether legal has to look at it — is determined by this answer. **I am not going
+locales — is determined by this answer. **I am not going
 to invent one.**
 
 ### Q2 — Does game outcome touch money?
@@ -106,8 +106,8 @@ once. It is also exactly the sort of thing that reads badly in a regulator's scr
 - A game whose outcome is **cosmetic/informational only** (score, progress, badge, no
   economic value) is a normal product decision, decidable by us.
 - A game whose outcome **credits BANA, points redeemable for value, rank progress, or
-  emission** is **not** a UI feature. It requires a server-authoritative ledger, anti-abuse
-  design, and a legal review per market before a single line is written. It does not get
+  emission** is **not** a UI feature. It requires a server-authoritative ledger and anti-abuse
+  design before a single line is written. It does not get
   approved in a framework-selection conversation.
 
 ## 6. Recommendation

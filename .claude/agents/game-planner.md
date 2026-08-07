@@ -23,7 +23,7 @@ wallet, scoped specifically to game features.
 - `pm`'s scoping note set a hard fork: **cosmetic-outcome game mechanics are a normal
   design call you can make yourself; any mechanic where the game outcome credits BANA
   tokens/points/rank/emission is not a UI feature** — it needs a server-authoritative
-  ledger, anti-abuse design, and per-market legal review before you spec it in detail.
+  ledger and anti-abuse design before you spec it in detail.
 - Do not design reward/payout mechanics past a rough concept until `pm` has explicitly
   signed off on the money-outcome question for that mechanic.
 
