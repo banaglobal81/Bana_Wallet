@@ -10,6 +10,21 @@
 > project + Unity WebGL build into the BANA monorepo.
 > Re-evaluate when §8 triggers fire. This doc is written so a future proposal starts
 > from §7/§8 rather than from zero.
+>
+> **Updated 2026-08-07 — the `unity-expert` agent stub has been retired** and
+> `.claude/agents/unity-expert.md` no longer exists (team is now 17 agents).
+> **The decision in §1 is unchanged**; removing a dormant stub that this doc had already
+> ruled must not activate changes nothing about the analysis. Consequences for readers:
+> - **This doc is now the sole record of the three activation gates.** They are restated
+>   in full in §1's table; the file §1 cites as their source is gone.
+> - Body text below still refers to `unity-expert` in the present tense (§5.3, §6, §7.2,
+>   the §7.1 ladder). That is preserved deliberately as the historical record — read it as
+>   "the agent that would be recreated", not as a live agent.
+> - **A future proposal must recreate the agent file as step one**, carrying forward its
+>   Forbidden list (no committed build artifacts) and Hub Call Rules (no `NIA_API_SECRET`
+>   in the build, all data via `/api/nia/*`) — both cited as load-bearing in §5.3 — plus
+>   the Gate 4 custody/audit requirement proposed in §6, which was never merged into the
+>   agent file before removal.
 
 ---
 

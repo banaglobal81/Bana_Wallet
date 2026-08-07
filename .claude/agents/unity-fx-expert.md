@@ -41,7 +41,10 @@ Keep FX dependency-free raw WebGL/canvas by default. Adding a heavy 3D dependenc
 - **No state, no data flow, no amount math.** If an effect should trigger on a real event
   (withdrawal succeeded, balance updated), expose a prop/callback and let
   `web-wallet-expert` / `web-admin-expert` wire it.
-- Any actual Unity engine / Unity WebGL build work → `unity-expert` (dormant).
+- **Real Unity engine / Unity WebGL build work is out of scope and has no owner.** The
+  `unity-expert` agent stub was retired 2026-08-07; the decision to stay WebGL-only is
+  recorded in `docs/specs/unity-engine-evaluation.md`. Any Unity proposal goes to `pm`
+  against §8 of that doc — do not start Unity work yourself.
 
 ## Cross-Area (delegate)
 - Design tokens, Tailwind, static styling → `ui-ux-designer`
