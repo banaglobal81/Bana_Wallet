@@ -206,9 +206,27 @@ export async function assertExecutionAllowed(
 // §4.4 — deposit-address gating (X-7)
 // ---------------------------------------------------------------------------
 
+// Nia-Hub's actual /api/v1/markets response shape is `{ currencies: [...] }` — NOT
+// a flat array (confirmed live + matches web/src/components/Deposit.tsx's parsing
+// and web/src/utils/niaApi.ts's getNiaMarkets()). Each currency entry carries its
+// own `networks[]`; there is no top-level flat currency array. Bug history: an
+// earlier version of this file assumed a flat array and `Array.isArray(markets)`
+// was always false, so every deposit-address request 403'd — see coinAuthority.test.ts.
+interface HubMarketNetwork {
+  networkCode?: string;
+  depositEnabled?: boolean;
+  [key: string]: unknown;
+}
+
 interface HubMarket {
   symbol?: string;
   currency?: string;
+  networks?: HubMarketNetwork[];
+  [key: string]: unknown;
+}
+
+interface HubMarketsResponse {
+  currencies?: HubMarket[];
   [key: string]: unknown;
 }
 
@@ -254,7 +272,16 @@ export async function assertDepositAddressAllowed(symbol: string): Promise<void>
     );
   }
 
-  const list = Array.isArray(markets) ? (markets as HubMarket[]) : [];
+  // Parse the real `{ currencies: [...] }` shape — NOT a flat array (see the
+  // HubMarketsResponse comment above). This function's job (X-7) is only "does the
+  // hub currently know this asset at all" — it deliberately does NOT also require a
+  // specific network's depositEnabled=true, because it's called with just the
+  // currency symbol (web/src/app/api/nia/address/route.ts never passes a network
+  // into this gate); a network-level depositEnabled check belongs at the route/UI
+  // layer (already enforced there — see Deposit.tsx's networks.filter(depositEnabled)),
+  // not duplicated here with a signature change.
+  const response = markets as HubMarketsResponse | null | undefined;
+  const list: HubMarket[] = Array.isArray(response?.currencies) ? response!.currencies! : [];
   const listed = list.some((m) => (m.symbol ?? m.currency) === symbol);
   if (!listed) {
     await recordAudit({
