@@ -216,8 +216,6 @@
     "amountExceedsBalance": "Số lượng vượt quá số dư ví của bạn.",
     "max": "Tối đa",
     "balance": "Số dư: {amount} {asset}",
-    "comingSoonTitle": "Staking sắp ra mắt",
-    "comingSoonBody": "Nhận thưởng từ tài sản của bạn. Chúng tôi đang hoàn thiện staking — sẽ sớm có tại đây.",
     "backToPortfolio": "Quay lại Bảng điều khiển",
     "loading": "Đang tải…",
     "earnTitle": "Kiếm lãi",
@@ -973,7 +971,7 @@
       "activeN": "{n} đang hoạt động",
       "runNow": "Chạy tích lũy ngay",
       "runNowTitle": "Ghi nhận lãi hôm nay vào sổ sách (thao tác lặp lại không đổi kết quả). Không gửi bất kỳ khoản nào vào ví người dùng.",
-      "runResult": "Đã ghi nhận {amount} {coin} vào sổ sách qua {days} ngày; {matured} vị thế đáo hạn. Không có khoản nào được gửi vào ví người dùng.",
+      "runResult": "Đã ghi nhận {amount} {coin} vào sổ sách qua {days} ngày; {matured} vị thế đáo hạn, {deferred} vị thế hoãn gia hạn. Không có khoản nào được gửi vào ví người dùng.",
       "runResultNoop": "Đã cập nhật — không có gì mới để ghi nhận ({n} đang hoạt động)."
     },
     "autoRenewWarning": {

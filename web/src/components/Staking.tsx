@@ -10,7 +10,7 @@ import {
   type StakingProduct, type StakePosition, type StakingRewards, type DeepCoreGameState,
 } from '../utils/stakingApi';
 import { getNiaBalance } from '../utils/niaApi';
-import DeepCoreEmbed from './staking/deep-core/DeepCoreEmbed';
+import DeepCoreEmbed, { DeepCoreControlBar, deriveDeepCoreCrewState, useDeepCoreHidden } from './staking/deep-core/DeepCoreEmbed';
 import YieldPanel, { type YieldPanelRow } from './staking/YieldPanel';
 import VaultControlBar from './staking/VaultControlBar';
 import InlineNotices from './staking/InlineNotices';
@@ -91,6 +91,11 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
 
   // S3 — bump to force a re-check of localStorage dismissal state.
   const [noticeVersion, setNoticeVersion] = useState(0);
+
+  // Shared "hide DEEP CORE" preference — DeepCoreEmbed (B1) gates its own
+  // render on this internally; B4 (DeepCoreControlBar) is mounted here in
+  // Staking.tsx directly, so it needs the same gate applied explicitly.
+  const hidden = useDeepCoreHidden();
 
   const load = async () => {
     try {
@@ -191,16 +196,7 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
         <div className="flex items-center gap-2.5 py-10 justify-center"><Loader2 className="h-5 w-5 text-[#528dff] animate-spin" /><span className="text-sm text-[#8c90a0]">{t('loading')}</span></div>
       ) : (
         <>
-          {/* B1 STAGE — DEEP CORE canvas + HUD, and (bundled by DeepCoreEmbed
-              itself) B4 RIG BAR. The FRD's IA separates B1 and B4 with B2/B3
-              in between, but DeepCoreEmbed's own contract (game-developer,
-              deep-core/DeepCoreEmbed.tsx — "the ONE insertion point ...
-              everything else ... lives inside this tree") already bundles
-              canvas + HUD + control-bar into a single returned tree, and
-              that file is out of scope here. B4 therefore renders directly
-              under B1 rather than after B3 — a disclosed deviation, not an
-              oversight; flagged to game-developer/product-planner to
-              reconsider splitting it out in the report.
+          {/* B1 STAGE — DEEP CORE canvas + HUD.
               CH-1/CH-2 (§4.1): `onOpenStake` opens S-STAKE from the HUD's
               empty-rig CTA; `focusWellId` lets a position row's well badge
               pan the canvas to that well (UF-5, position → canvas). */}
@@ -222,6 +218,16 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
             onPositionsClick={() => setSheetOpen('positions')}
             onYieldClick={() => setSheetOpen('yield')}
           />
+
+          {/* B4 RIG BAR — Crew/Depot/Ledger. Rendered here (after B3, before
+              B5) per the FRD's B1→B2→B3→B4→B5 order. `DeepCoreControlBar`
+              takes a non-nullable `game`, so it's gated on the same
+              null/loading/S0_NOT_SHOWN/S5_DISABLED conditions DeepCoreEmbed
+              itself uses to suppress its own render, plus `!hidden` so it
+              disappears together with B1 when the user hides DEEP CORE. */}
+          {!hidden && !loading && gameState && gameState.surfaceState !== 'S0_NOT_SHOWN' && gameState.surfaceState !== 'S5_DISABLED' && (
+            <DeepCoreControlBar game={gameState} crewState={deriveDeepCoreCrewState(gameState)} />
+          )}
 
           {/* B5 INLINE NOTICES */}
           <InlineNotices

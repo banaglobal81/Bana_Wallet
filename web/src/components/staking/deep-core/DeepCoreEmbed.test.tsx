@@ -53,25 +53,29 @@ describe('DeepCoreEmbed', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders the canvas box + HUD + 3-tab control bar for S1_RUNNING', () => {
+  it('renders the canvas box + HUD for S1_RUNNING', () => {
     render(<DeepCoreEmbed game={baseGame()} loading={false} />);
     expect(screen.getByTestId('deep-core-canvas-box')).not.toBeNull();
     expect(screen.getByTestId('deep-core-hud-level')).not.toBeNull();
-    expect(screen.getByTestId('deep-core-tab-crew')).not.toBeNull();
-    expect(screen.getByTestId('deep-core-tab-depot')).not.toBeNull();
-    expect(screen.getByTestId('deep-core-tab-ledger')).not.toBeNull();
   });
 
-  it('never renders a Rig/gear-track tab (00 §6.5 Q4 — forbidden even as a placeholder in Phase 0)', () => {
+  // staking-page-v2-screen-flow-frd.md B1→B2→B3→B4 order — the B4 control
+  // bar (Crew/Depot/Ledger) is a sibling insertion point rendered by the
+  // page layout via the `DeepCoreControlBar` + `deriveDeepCoreCrewState`
+  // exports (see DeepCoreControlBar.test.tsx), not bundled into this tree
+  // anymore, so it must never appear inside `DeepCoreEmbed`'s own output.
+  it('never renders the B4 control bar tabs itself — that is a separate insertion point now', () => {
     render(<DeepCoreEmbed game={baseGame()} loading={false} />);
+    expect(screen.queryByTestId('deep-core-tab-crew')).toBeNull();
+    expect(screen.queryByTestId('deep-core-tab-depot')).toBeNull();
+    expect(screen.queryByTestId('deep-core-tab-ledger')).toBeNull();
     expect(screen.queryByTestId('deep-core-tab-rig')).toBeNull();
   });
 
-  it('S5_DISABLED renders only a minimal banner, no canvas box, no HUD, no tabs', () => {
+  it('S5_DISABLED renders only a minimal banner, no canvas box, no HUD', () => {
     render(<DeepCoreEmbed game={baseGame({ surfaceState: 'S5_DISABLED' })} loading={false} />);
     expect(screen.getByTestId('deep-core-disabled')).not.toBeNull();
     expect(screen.queryByTestId('deep-core-canvas-box')).toBeNull();
-    expect(screen.queryByTestId('deep-core-tab-crew')).toBeNull();
   });
 
   it('respects the `game.pref.hide` localStorage flag — canvas box does not mount, an unhide control remains', () => {

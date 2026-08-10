@@ -29,25 +29,30 @@ export type { RenewalFailureStatus };
 // docs/specs/staking-auto-renew-ruling.md (`pm`, 2026-08-09) — as the source
 // of the exact business rules (the "E2a".."E9" check labels referenced below,
 // the R-1..R-13 rule numbers, the M-1/M-2/M-3 ship conditions). NEITHER FILE
-// EXISTS IN THIS REPO as of this writing. Everything in this module has been
-// reconstructed from: (a) the copy-spec (which quotes fragments of the PRD
-// verbatim), (b) the three already-applied Prisma migrations
-// (web/prisma/migrations/2026080904*_staking_auto_renew*), (c) the schema
-// comments in schema.prisma (which cite specific E-numbers/R-numbers), and
-// (d) the calling-convention already hardcoded into the 6 files that import
-// this module (stakingSettle.ts, staking.ts, the auto-renew PATCH route, the
-// stake POST route, resend.ts, Staking.tsx). Every place below where a
-// specific rule could not be pinned down exactly is marked "ASSUMPTION" —
-// flag these to `pm`/`product-planner` once the parent docs are available.
+// EXISTS IN THIS REPO. Every business rule this module needed that those two
+// missing documents would have settled was reconstructed from secondary
+// evidence (the copy-spec, the three applied Prisma migrations, the schema
+// comments, and live call-site code) and marked ASSUMPTION pending review.
+//
+// That review has since happened:
+// `docs/specs/staking-auto-renew-assumption-ruling.md` (`pm`, AUTHORITATIVE
+// RULING, 2026-08-10) adjudicates every ASSUMPTION marker that was in this
+// file and in stakingRenewMath.ts. It is now the authority for all of them —
+// the comments below cite its section numbers rather than re-deriving the
+// reasoning. If `staking-auto-renew-prd.md` / `staking-auto-renew-ruling.md`
+// ever reappear, see the ruling's §7 for how to reconcile.
 // ---------------------------------------------------------------------------
 
 /**
  * Transient-failure ceiling (schema.prisma comment on
  * `StakePosition.renewalAttempts`): "At >= 3, force plain maturity with
  * FAILED_SYSTEM so the principal is never stranded behind a retry loop."
- * ASSUMPTION: the exact number (3) is stated in the schema comment; the
- * retry mechanics themselves (increment-and-defer vs. immediate force) are
- * reconstructed here, not spec'd anywhere in the available docs.
+ * The `3` itself is quoted verbatim from that comment; the retry mechanics
+ * (increment-and-defer on calls 1-3, force FAILED_SYSTEM on call 4) are
+ * ruling §4 (APPROVED as implemented) — the requirement being bought is a
+ * ceiling on delay, not a count: a position must never stay ACTIVE past
+ * maturity for more than three settlement cycles because of renewal
+ * retries; the fourth cycle must resolve it either way.
  */
 const MAX_RENEWAL_ATTEMPTS = 3;
 
@@ -70,9 +75,17 @@ export type MatureOrRenewOutcome =
   // of the modeled eligibility checks). renewalAttempts was incremented;
   // retried next settlement cycle unless/until it hits MAX_RENEWAL_ATTEMPTS,
   // at which point a later call forces FAILED_SYSTEM instead of retrying
-  // forever. ASSUMPTION: this literal is new relative to what the PRD is
-  // quoted as defining — safe to add because every caller only pattern-
-  // matches the outcomes it cares about (if/else-if, no exhaustive switch).
+  // forever. Ruling §4 (A5, APPROVED with no change): this is an internal
+  // return-type variant only, never promoted into the `StakeRenewalStatus`
+  // enum — a deferred position's `renewalStatus` stays at its default NONE
+  // while it remains ACTIVE, since renewalStatus is written exactly once,
+  // inside the maturity transaction, which a deferred position never
+  // commits. Every caller only pattern-matches the outcomes it cares about
+  // (if/else-if, no exhaustive switch), so adding this variant is safe.
+  // A4-C1 (ruling §4, P1): callers that count outcomes (stakingSettle.ts)
+  // MUST count this one too — it is the only outcome that leaves a matured
+  // user's principal locked with no interest accruing, and the only one
+  // otherwise invisible to operators.
   | { outcome: 'RENEWAL_DEFERRED' };
 
 type PositionForDecision = {
@@ -176,14 +189,22 @@ export async function matureOrRenewPosition(positionId: string, now: Date = new 
         .toFixed();
 
       const failReason = decideRenewalEligibility({
-        userDisabled: user?.disabled ?? false,
+        // A3-C1 (ruling §3, P2): `StakePosition.userId` is a plain scalar
+        // with no FK to `User`, so an orphaned position is structurally
+        // possible. Fail CLOSED on a missing row — `?? true`, not `?? false`
+        // — so a position whose owner cannot be found is treated the same
+        // as a disabled owner: matured, not renewed, silent (there is no
+        // address to notify, same reason the disabled case is silent).
+        userDisabled: user?.disabled ?? true,
         grantedByAdminId: position.grantedByAdminId,
         positionTermDays: position.termDays,
         positionPrincipal: position.principal,
         positionDailyRatePct: position.dailyRatePct,
+        positionCoin: position.coin,
         productStatus: product.status,
         productTermDays: product.termDays,
         productDailyRatePct: product.dailyRatePct,
+        productCoin: product.coin,
         productMinAmount: product.minAmount,
         productMaxAmount: product.maxAmount,
         productCapacity: product.capacity,
@@ -211,6 +232,9 @@ export async function matureOrRenewPosition(positionId: string, now: Date = new 
         data: {
           userId: position.userId,
           niaUserId: position.niaUserId,
+          // `user` cannot be null here (A3-C1): a missing user row makes
+          // `failReason` truthy above and returns before this point. The
+          // `?? ''` fallback is unreachable defensive-typing only.
           email: user?.email ?? '',
           productId: position.productId,
           coin: position.coin,

@@ -135,3 +135,84 @@ export function toRawUnits(amountDecimalStr, tokenDecimals) {
 export function amountsMatchExactly(expectedAmountDecimalStr, tokenDecimals, observedRawValueStr) {
   return toRawUnits(expectedAmountDecimalStr, tokenDecimals) === observedRawValueStr;
 }
+
+// ---------------------------------------------------------------------------
+// PoR-1″ right-hand side + on-chain withdrawal verify — real-RPC follow-up task
+// (A-3 §4.5 "fetchOnchainBalance TODO" / A-5 §2.8 "fetchTransactionReceipt et al
+// TODO"). Pure calldata-encoding/response-decoding helpers only — no fetch here.
+// The actual JSON-RPC POST lives in src/lib/onchain/rpc.ts (same split as the rest
+// of this file, see docs/architecture/harness.md).
+// ---------------------------------------------------------------------------
+
+/**
+ * ERC20/BEP20 `balanceOf(address)` function selector — first 4 bytes of
+ * keccak256("balanceOf(address)"). A fixed constant, never computed at runtime
+ * (same convention as TRANSFER_EVENT_TOPIC above).
+ */
+export const BALANCE_OF_SELECTOR = '0x70a08231';
+
+/**
+ * Build the `data` field for an `eth_call` to `balanceOf(address)` — the 4-byte
+ * selector followed by the address, left-padded to a 32-byte word.
+ * @param {string} address 0x-prefixed 20-byte address
+ * @returns {string}
+ */
+export function encodeBalanceOfCalldata(address) {
+  const stripped = address.toLowerCase().replace(/^0x/, '');
+  return `${BALANCE_OF_SELECTOR}${stripped.padStart(64, '0')}`;
+}
+
+/**
+ * Decode an `eth_call`/hex-quantity RPC result (e.g. balanceOf's return value, or
+ * eth_blockNumber) into a raw-integer decimal string — BigInt only, never
+ * Number()/parseFloat (CLAUDE.md rule 2). `null`/`undefined`/`'0x'` decode to `'0'`
+ * (a token contract legitimately returns `0x` for a zero balance on some clients).
+ * @param {string|null|undefined} hex
+ * @returns {string}
+ */
+export function decodeHexQuantityToRawUnits(hex) {
+  if (!hex || hex === '0x') return '0';
+  return BigInt(hex).toString(10);
+}
+
+/**
+ * Strictly parse a JSON-RPC "hex quantity" result (e.g. eth_blockNumber's return
+ * value, or a receipt's `blockNumber` field) into a `number`. Throws on anything
+ * that is not a well-formed `0x`-prefixed hex string.
+ *
+ * SECURITY (wallet-security-expert review, A-5): this exists specifically because
+ * `parseInt(x, 16)` is a lenient partial parser — `parseInt(null, 16)`,
+ * `parseInt('0xzz', 16)`, `parseInt(undefined, 16)` etc. all return `NaN` *without
+ * throwing*. Downstream, `verifyOnchainWithdrawal`'s confirmation-depth check is
+ * `if (confirmations < minConfirmations)` — and in JS, `NaN < anything` is always
+ * `false`, so a NaN confirmation count silently PASSES the depth check regardless of
+ * whether the transaction is actually confirmed. Using BigInt() (after a regex
+ * format check) instead of parseInt() closes that hole: any malformed/unexpected RPC
+ * response throws here, which the caller's try/catch collapses to RPC_UNAVAILABLE —
+ * never a false "verified" outcome (A-5 §2.4 closing paragraph).
+ * @param {unknown} hex
+ * @param {string} [label] optional context for the error message (e.g. 'eth_blockNumber')
+ * @returns {number}
+ */
+export function decodeHexQuantityToNumber(hex, label = 'hex quantity') {
+  if (typeof hex !== 'string' || !/^0x[0-9a-fA-F]+$/.test(hex)) {
+    throw new Error(`Malformed ${label}: expected a 0x-prefixed hex string, got ${JSON.stringify(hex)}.`);
+  }
+  const big = BigInt(hex);
+  if (big > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new Error(`Malformed ${label}: value ${hex} exceeds Number.MAX_SAFE_INTEGER.`);
+  }
+  return Number(big);
+}
+
+/**
+ * Convert a raw on-chain integer-unit string (e.g. balanceOf's raw return value)
+ * into a human decimal-string amount using the token's decimals (decimal.js only,
+ * CLAUDE.md rule 2 — mirrors toRawUnits' inverse direction).
+ * @param {string} rawUnitsStr
+ * @param {number} tokenDecimals
+ * @returns {string}
+ */
+export function fromRawUnits(rawUnitsStr, tokenDecimals) {
+  return new Decimal(rawUnitsStr).dividedBy(new Decimal(10).pow(tokenDecimals)).toFixed();
+}

@@ -1,8 +1,35 @@
 {
-  "$schema_note": "DEEP CORE Phase 0 hero asset pack -- see docs/specs/deep-core-08-asset-manifest-phase0-batch1.md",
+  "$schema_note": "DEEP CORE Phase 0 asset pack -- batch 1 (hero set, 33) + batch 2 (P0 backlog continuation, 28) -- see docs/specs/deep-core-08-asset-manifest-phase0-batch1.md and docs/specs/deep-core-09-asset-manifest-phase0-batch2.md",
   "generatedBy": "game-designer",
-  "count": 33,
+  "count": 61,
   "assets": [
+    {
+      "id": "dc_badge_corelog_tier1",
+      "publicPath": "/game/deep-core/badges/dc_badge_corelog_tier1.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": null,
+      "purpose": "Core Log tier badge (post-L60 cosmetic track, tier 1)"
+    },
+    {
+      "id": "dc_badge_level_milestone",
+      "publicPath": "/game/deep-core/badges/dc_badge_level_milestone.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": null,
+      "purpose": "Level milestone badge (generic sample)"
+    },
+    {
+      "id": "dc_badge_stratum_1",
+      "publicPath": "/game/deep-core/badges/dc_badge_stratum_1.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Chapter badge: Stratum 1"
+    },
     {
       "id": "dc_bg_ch1_fore",
       "publicPath": "/game/deep-core/backgrounds/dc_bg_ch1_fore.png",
@@ -58,103 +85,112 @@
       "purpose": "Chapter 2 parallax sky layer"
     },
     {
-      "id": "dc_badge_corelog_tier1",
-      "publicPath": "/game/deep-core/badges/dc_badge_corelog_tier1.png",
-      "width": 1024,
-      "height": 1024,
-      "transparent": true,
-      "chapter": null,
-      "purpose": "Core Log tier badge (post-L60 cosmetic track, tier 1)"
-    },
-    {
-      "id": "dc_badge_level_milestone",
-      "publicPath": "/game/deep-core/badges/dc_badge_level_milestone.png",
-      "width": 1024,
-      "height": 1024,
-      "transparent": true,
-      "chapter": null,
-      "purpose": "Level milestone badge (generic sample)"
-    },
-    {
-      "id": "dc_badge_stratum_1",
-      "publicPath": "/game/deep-core/badges/dc_badge_stratum_1.png",
-      "width": 1024,
-      "height": 1024,
-      "transparent": true,
-      "chapter": 1,
-      "purpose": "Chapter badge: Stratum 1"
-    },
-    {
-      "id": "dc_crew_boss_portrait_ch1",
-      "publicPath": "/game/deep-core/characters/portraits/dc_crew_boss_portrait_ch1.png",
-      "width": 1024,
-      "height": 1024,
-      "transparent": true,
-      "chapter": 1,
-      "purpose": "Crew portrait: Hanna Sorren (boss)"
-    },
-    {
-      "id": "dc_crew_geo_portrait_ch2",
-      "publicPath": "/game/deep-core/characters/portraits/dc_crew_geo_portrait_ch2.png",
-      "width": 1024,
-      "height": 1024,
-      "transparent": true,
-      "chapter": 2,
-      "purpose": "Crew portrait: Mei Lin (geologist)"
-    },
-    {
-      "id": "dc_crew_mech_portrait_ch1",
-      "publicPath": "/game/deep-core/characters/portraits/dc_crew_mech_portrait_ch1.png",
-      "width": 1024,
-      "height": 1024,
-      "transparent": true,
-      "chapter": 1,
-      "purpose": "Crew portrait: Dylan Akabo (mechanic)"
-    },
-    {
-      "id": "dc_crew_ops_portrait_ch2",
-      "publicPath": "/game/deep-core/characters/portraits/dc_crew_ops_portrait_ch2.png",
-      "width": 1024,
-      "height": 1024,
-      "transparent": true,
-      "chapter": 2,
-      "purpose": "Crew portrait: Omar Reiss (ops)"
-    },
-    {
-      "id": "dc_npc_auditor_ch1",
-      "publicPath": "/game/deep-core/characters/portraits/dc_npc_auditor_ch1.png",
-      "width": 864,
-      "height": 1184,
-      "transparent": true,
-      "chapter": 1,
-      "purpose": "NPC: Charter Auditor (faceless)"
-    },
-    {
-      "id": "dc_unit_k9_portrait_ch3",
-      "publicPath": "/game/deep-core/characters/portraits/dc_unit_k9_portrait_ch3.png",
-      "width": 1024,
-      "height": 1024,
-      "transparent": true,
+      "id": "dc_bg_ch3_fore",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch3_fore.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
       "chapter": 3,
-      "purpose": "Drone unit portrait: Core-Dog"
+      "purpose": "Chapter 3 (Basalt Breach) parallax foreground/ground layer"
     },
     {
-      "id": "dc_crew_boss_idle_ch1",
-      "publicPath": "/game/deep-core/characters/sprites/dc_crew_boss_idle_ch1.png",
-      "width": 864,
-      "height": 1184,
-      "transparent": true,
-      "chapter": 1,
-      "purpose": "Crew full-body idle pose sample: Hanna Sorren"
+      "id": "dc_bg_ch3_mid",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch3_mid.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
+      "chapter": 3,
+      "purpose": "Chapter 3 (Basalt Breach) parallax midground layer"
     },
     {
-      "id": "dc_crew_mech_idle_ch1",
-      "publicPath": "/game/deep-core/characters/sprites/dc_crew_mech_idle_ch1.png",
-      "width": 864,
-      "height": 1184,
-      "transparent": true,
-      "chapter": 1,
-      "purpose": "Crew full-body idle pose sample: Dylan Akabo"
+      "id": "dc_bg_ch3_sky",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch3_sky.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
+      "chapter": 3,
+      "purpose": "Chapter 3 (Basalt Breach) parallax upper/ceiling layer"
+    },
+    {
+      "id": "dc_bg_ch4_fore",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch4_fore.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
+      "chapter": 4,
+      "purpose": "Chapter 4 (Geothermal Depths) parallax foreground/ground layer"
+    },
+    {
+      "id": "dc_bg_ch4_mid",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch4_mid.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
+      "chapter": 4,
+      "purpose": "Chapter 4 (Geothermal Depths) parallax midground layer"
+    },
+    {
+      "id": "dc_bg_ch4_sky",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch4_sky.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
+      "chapter": 4,
+      "purpose": "Chapter 4 (Geothermal Depths) parallax upper/ceiling layer"
+    },
+    {
+      "id": "dc_bg_ch5_fore",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch5_fore.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
+      "chapter": 5,
+      "purpose": "Chapter 5 (Crystal Cavity) parallax foreground/ground layer"
+    },
+    {
+      "id": "dc_bg_ch5_mid",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch5_mid.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
+      "chapter": 5,
+      "purpose": "Chapter 5 (Crystal Cavity) parallax midground layer"
+    },
+    {
+      "id": "dc_bg_ch5_sky",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch5_sky.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
+      "chapter": 5,
+      "purpose": "Chapter 5 (Crystal Cavity) parallax upper/ceiling layer"
+    },
+    {
+      "id": "dc_bg_ch6_fore",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch6_fore.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
+      "chapter": 6,
+      "purpose": "Chapter 6 (Core Layer) parallax foreground/ground layer"
+    },
+    {
+      "id": "dc_bg_ch6_mid",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch6_mid.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
+      "chapter": 6,
+      "purpose": "Chapter 6 (Core Layer) parallax midground layer"
+    },
+    {
+      "id": "dc_bg_ch6_sky",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch6_sky.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
+      "chapter": 6,
+      "purpose": "Chapter 6 (Core Layer) parallax upper/ceiling layer"
     },
     {
       "id": "dc_cosmetic_helmet_01",
@@ -173,6 +209,114 @@
       "transparent": true,
       "chapter": null,
       "purpose": "Cosmetic: rig paint scheme sample (SV shop)"
+    },
+    {
+      "id": "dc_crew_boss_actionsheet_ch1",
+      "publicPath": "/game/deep-core/characters/actionsheets/dc_crew_boss_actionsheet_ch1.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Crew action reference sheet: Hanna Sorren (boss), Chapter 1 -- 3x2 grid, 5 states (idle/working/waiting/idle_empty/chapter_up) + 1 empty cell, requires manual slicing/rigging by game-developer (no guaranteed pixel-precise cell boundaries)"
+    },
+    {
+      "id": "dc_crew_boss_actionsheet_ch2",
+      "publicPath": "/game/deep-core/characters/actionsheets/dc_crew_boss_actionsheet_ch2.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 2,
+      "purpose": "Crew action reference sheet: Hanna Sorren (boss), Chapter 2 -- 3x2 grid, 5 states (idle/working/waiting/idle_empty/chapter_up) + 1 empty cell, requires manual slicing/rigging by game-developer (no guaranteed pixel-precise cell boundaries)"
+    },
+    {
+      "id": "dc_crew_boss_idle_ch1",
+      "publicPath": "/game/deep-core/characters/sprites/dc_crew_boss_idle_ch1.png",
+      "width": 864,
+      "height": 1184,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Crew full-body idle pose sample: Hanna Sorren"
+    },
+    {
+      "id": "dc_crew_boss_portrait_ch1",
+      "publicPath": "/game/deep-core/characters/portraits/dc_crew_boss_portrait_ch1.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Crew portrait: Hanna Sorren (boss)"
+    },
+    {
+      "id": "dc_crew_geo_actionsheet_ch2",
+      "publicPath": "/game/deep-core/characters/actionsheets/dc_crew_geo_actionsheet_ch2.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 2,
+      "purpose": "Crew action reference sheet: Mei Lin (geologist), Chapter 2 -- 3x2 grid, 5 states (idle/working/waiting/idle_empty/chapter_up) + 1 empty cell, requires manual slicing/rigging by game-developer (no guaranteed pixel-precise cell boundaries)"
+    },
+    {
+      "id": "dc_crew_geo_portrait_ch2",
+      "publicPath": "/game/deep-core/characters/portraits/dc_crew_geo_portrait_ch2.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 2,
+      "purpose": "Crew portrait: Mei Lin (geologist)"
+    },
+    {
+      "id": "dc_crew_mech_actionsheet_ch1",
+      "publicPath": "/game/deep-core/characters/actionsheets/dc_crew_mech_actionsheet_ch1.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Crew action reference sheet: Dylan Akabo (mechanic), Chapter 1 -- 3x2 grid, 5 states (idle/working/waiting/idle_empty/chapter_up) + 1 empty cell, requires manual slicing/rigging by game-developer (no guaranteed pixel-precise cell boundaries)"
+    },
+    {
+      "id": "dc_crew_mech_actionsheet_ch2",
+      "publicPath": "/game/deep-core/characters/actionsheets/dc_crew_mech_actionsheet_ch2.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 2,
+      "purpose": "Crew action reference sheet: Dylan Akabo (mechanic), Chapter 2 -- 3x2 grid, 5 states (idle/working/waiting/idle_empty/chapter_up) + 1 empty cell, requires manual slicing/rigging by game-developer (no guaranteed pixel-precise cell boundaries)"
+    },
+    {
+      "id": "dc_crew_mech_idle_ch1",
+      "publicPath": "/game/deep-core/characters/sprites/dc_crew_mech_idle_ch1.png",
+      "width": 864,
+      "height": 1184,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Crew full-body idle pose sample: Dylan Akabo"
+    },
+    {
+      "id": "dc_crew_mech_portrait_ch1",
+      "publicPath": "/game/deep-core/characters/portraits/dc_crew_mech_portrait_ch1.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Crew portrait: Dylan Akabo (mechanic)"
+    },
+    {
+      "id": "dc_crew_ops_actionsheet_ch2",
+      "publicPath": "/game/deep-core/characters/actionsheets/dc_crew_ops_actionsheet_ch2.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 2,
+      "purpose": "Crew action reference sheet: Omar Reiss (ops), Chapter 2 -- 3x2 grid, 5 states (idle/working/waiting/idle_empty/chapter_up) + 1 empty cell, requires manual slicing/rigging by game-developer (no guaranteed pixel-precise cell boundaries)"
+    },
+    {
+      "id": "dc_crew_ops_portrait_ch2",
+      "publicPath": "/game/deep-core/characters/portraits/dc_crew_ops_portrait_ch2.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 2,
+      "purpose": "Crew portrait: Omar Reiss (ops)"
     },
     {
       "id": "dc_fx_lift_burst_ch1",
@@ -220,6 +364,42 @@
       "purpose": "HUD icon: XP"
     },
     {
+      "id": "dc_npc_auditor_ch1",
+      "publicPath": "/game/deep-core/characters/portraits/dc_npc_auditor_ch1.png",
+      "width": 864,
+      "height": 1184,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "NPC: Charter Auditor (faceless)"
+    },
+    {
+      "id": "dc_prop_pipe_stack_ch1",
+      "publicPath": "/game/deep-core/props/dc_prop_pipe_stack_ch1.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Field prop: pipe stack"
+    },
+    {
+      "id": "dc_prop_storage_tank_ch1",
+      "publicPath": "/game/deep-core/props/dc_prop_storage_tank_ch1.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Field prop: storage tank"
+    },
+    {
+      "id": "dc_rig_base_ch1",
+      "publicPath": "/game/deep-core/rig/dc_rig_base_ch1.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Rig Grade I base silhouette (level/chapter-driven, B2)"
+    },
+    {
       "id": "dc_tab_icon_corelog",
       "publicPath": "/game/deep-core/icons/tabs/dc_tab_icon_corelog.png",
       "width": 1024,
@@ -256,31 +436,13 @@
       "purpose": "Control bar tab icon: Rig"
     },
     {
-      "id": "dc_prop_pipe_stack_ch1",
-      "publicPath": "/game/deep-core/props/dc_prop_pipe_stack_ch1.png",
+      "id": "dc_unit_k9_portrait_ch3",
+      "publicPath": "/game/deep-core/characters/portraits/dc_unit_k9_portrait_ch3.png",
       "width": 1024,
       "height": 1024,
       "transparent": true,
-      "chapter": 1,
-      "purpose": "Field prop: pipe stack"
-    },
-    {
-      "id": "dc_prop_storage_tank_ch1",
-      "publicPath": "/game/deep-core/props/dc_prop_storage_tank_ch1.png",
-      "width": 1024,
-      "height": 1024,
-      "transparent": true,
-      "chapter": 1,
-      "purpose": "Field prop: storage tank"
-    },
-    {
-      "id": "dc_rig_base_ch1",
-      "publicPath": "/game/deep-core/rig/dc_rig_base_ch1.png",
-      "width": 1024,
-      "height": 1024,
-      "transparent": true,
-      "chapter": 1,
-      "purpose": "Rig Grade I base silhouette (level/chapter-driven, B2)"
+      "chapter": 3,
+      "purpose": "Drone unit portrait: Core-Dog"
     },
     {
       "id": "dc_well_large_ch1_active",
@@ -292,6 +454,69 @@
       "purpose": "Large well object, long termDays, active state"
     },
     {
+      "id": "dc_well_large_ch1_stopped",
+      "publicPath": "/game/deep-core/wells/dc_well_large_ch1_stopped.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Large well object (termDays-based size tier), Chapter 1, stopped state"
+    },
+    {
+      "id": "dc_well_large_ch2_active",
+      "publicPath": "/game/deep-core/wells/dc_well_large_ch2_active.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 2,
+      "purpose": "Large well object (termDays-based size tier), Chapter 2, active state"
+    },
+    {
+      "id": "dc_well_large_ch2_stopped",
+      "publicPath": "/game/deep-core/wells/dc_well_large_ch2_stopped.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 2,
+      "purpose": "Large well object (termDays-based size tier), Chapter 2, stopped state"
+    },
+    {
+      "id": "dc_well_medium_ch1_active",
+      "publicPath": "/game/deep-core/wells/dc_well_medium_ch1_active.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Medium well object (termDays-based size tier), Chapter 1, active state"
+    },
+    {
+      "id": "dc_well_medium_ch1_stopped",
+      "publicPath": "/game/deep-core/wells/dc_well_medium_ch1_stopped.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Medium well object (termDays-based size tier), Chapter 1, stopped state"
+    },
+    {
+      "id": "dc_well_medium_ch2_active",
+      "publicPath": "/game/deep-core/wells/dc_well_medium_ch2_active.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 2,
+      "purpose": "Medium well object (termDays-based size tier), Chapter 2, active state"
+    },
+    {
+      "id": "dc_well_medium_ch2_stopped",
+      "publicPath": "/game/deep-core/wells/dc_well_medium_ch2_stopped.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 2,
+      "purpose": "Medium well object (termDays-based size tier), Chapter 2, stopped state"
+    },
+    {
       "id": "dc_well_small_ch1_active",
       "publicPath": "/game/deep-core/wells/dc_well_small_ch1_active.png",
       "width": 1024,
@@ -299,6 +524,33 @@
       "transparent": true,
       "chapter": 1,
       "purpose": "Small well object, short termDays, active state"
+    },
+    {
+      "id": "dc_well_small_ch1_stopped",
+      "publicPath": "/game/deep-core/wells/dc_well_small_ch1_stopped.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Small well object (termDays-based size tier), Chapter 1, stopped state"
+    },
+    {
+      "id": "dc_well_small_ch2_active",
+      "publicPath": "/game/deep-core/wells/dc_well_small_ch2_active.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 2,
+      "purpose": "Small well object (termDays-based size tier), Chapter 2, active state"
+    },
+    {
+      "id": "dc_well_small_ch2_stopped",
+      "publicPath": "/game/deep-core/wells/dc_well_small_ch2_stopped.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 2,
+      "purpose": "Small well object (termDays-based size tier), Chapter 2, stopped state"
     }
   ]
 }

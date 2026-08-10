@@ -12,6 +12,12 @@
 // directly currently fails to load under vitest. This split routes around
 // that gap the same way the rest of the codebase already does; the missing
 // stub itself is unrelated to auto-renew and out of this task's scope.
+//
+// Every business rule in this module was, at one point, marked ASSUMPTION
+// pending the (still-missing) parent PRD/ruling docs. All of them have since
+// been closed by `docs/specs/staking-auto-renew-assumption-ruling.md`
+// (`pm`, AUTHORITATIVE RULING, 2026-08-10) — read that document for the
+// reasoning; the comments below only cite its conclusions.
 import Decimal from 'decimal.js';
 
 /**
@@ -57,9 +63,14 @@ export interface RenewalEligibilityInput {
   positionTermDays: number;
   positionPrincipal: string; // decimal string
   positionDailyRatePct: string; // decimal string, snapshotted rate on the position
+  // A2-C1 (ruling §2): `coin` is a product snapshot carried forward onto the
+  // successor unchanged, exactly like `termDays` — must be compared alongside
+  // it for E8 (FAILED_TERMS_CHANGED).
+  positionCoin: string;
   productStatus: string; // StakingProductStatus, compared as string
   productTermDays: number;
   productDailyRatePct: string; // decimal string, product's CURRENT rate
+  productCoin: string;
   productMinAmount: string | null;
   productMaxAmount: string | null;
   productCapacity: string | null;
@@ -73,19 +84,18 @@ export interface RenewalEligibilityInput {
  * The ordered eligibility check for the ON-ramp at maturity time. Returns the
  * first failing reason, or `null` if the renewal may proceed.
  *
- * ASSUMPTION — reconstructed order (the parent docs
- * `docs/specs/staking-auto-renew-prd.md` / `staking-auto-renew-ruling.md`
- * that the copy-spec cites are NOT present in this repo; see
- * `stakingRenew.ts`'s module header for the full caveat):
- *  1. Account disabled (ruling R-9 per schema.prisma:311's "R-5/R-6/R-9, E9")
- *     — placed first because copy-spec §4 treats it as a wholly separate
- *     "no email at all" case, distinct from the E-numbered refusals below.
- *  2. Grant exclusion (schema.prisma labels this "E9", i.e. last in the
- *     PRD's own numbering — but the live PATCH route,
- *     `api/staking/positions/[id]/auto-renew/route.ts` checks 6/7, checks
- *     grant BEFORE the term cap for the opt-in gate; placed here right
- *     after the disabled check, ahead of E2a, to stay consistent with that
- *     precedent. Flag to `pm`/`product-planner` once the PRD is available.)
+ * Check order settled by `docs/specs/staking-auto-renew-assumption-ruling.md`
+ * §1.2 (APPROVED as implemented, no logic change from what this function
+ * already did — see that document for the full reasoning, including why the
+ * "E9" schema label does NOT mean "run last"):
+ *  1. Account disabled (ruling §3 / A3 — the only account-state flag on
+ *     `User`; matches "cannot get in to cancel the renewal") — placed first
+ *     because copy-spec §4 treats it as a wholly separate "no email at all"
+ *     case, distinct from the E-numbered refusals below.
+ *  2. Grant exclusion — ruling §1: a guard for a broken invariant (a granted
+ *     position should never reach maturity with autoRenew=true through any
+ *     supported path), and guards run before rules that assume the invariant
+ *     holds. Also consistent with the live PATCH route's own check order.
  *  3. E2a — term cap (copy-spec §2.2 check 7 / AC-29: "fires before E3/E4").
  *  4. E3 — product closed to new stakes.
  *  5. E4 — product's current rate lower than the rate on the position
@@ -93,13 +103,19 @@ export interface RenewalEligibilityInput {
  *  6. E5 — below the product's current minimum.
  *  7. E6 — above the product's current maximum.
  *  8. E7 — capacity: restaking would exceed the product's capacity cap.
- *  9. E8 (ASSUMPTION — unlabeled in available docs) — the product's term
- *     length changed since this position was created. Defensive/currently
- *     unreachable: `StakingProduct.termDays` has no admin edit path today
- *     (the admin edit panel only exposes name/dailyRatePct/minAmount/
- *     maxAmount/capacity — `web/src/app/[locale]/admin/staking/page.tsx`
- *     `editForm`). Kept for the same reason stakingSettle.ts keeps its own
- *     unreachable `> 90` reminder-lead branch.
+ *  9. E8 — ruling §2 (APPROVED, with the A2-C1 scope widening below): fires
+ *     when a product attribute the position snapshotted at stake time, and
+ *     the successor carries forward unchanged, no longer matches the
+ *     product's current value. That set is exactly `termDays` and `coin`
+ *     (A2-C1) — `dailyRatePct` is excluded because it is snapshotted but
+ *     deliberately NOT carried forward (the successor takes the product's
+ *     current rate; its own mismatch case is E4). Defensive/currently
+ *     unreachable: neither `termDays` nor `coin` has an admin edit path
+ *     today (the admin edit panel only exposes
+ *     name/dailyRatePct/minAmount/maxAmount/capacity —
+ *     `web/src/app/[locale]/admin/staking/page.tsx` `editForm`). Kept for
+ *     the same reason stakingSettle.ts keeps its own unreachable `> 90`
+ *     reminder-lead branch.
  */
 export function decideRenewalEligibility(input: RenewalEligibilityInput): AnyFailureStatus | null {
   if (input.userDisabled) return 'FAILED_ACCOUNT_INACTIVE';
@@ -119,6 +135,10 @@ export function decideRenewalEligibility(input: RenewalEligibilityInput): AnyFai
     const used = new Decimal(input.productActivePrincipalExcludingSelf || '0').plus(input.positionPrincipal);
     if (used.gt(new Decimal(input.productCapacity))) return 'FAILED_CAPACITY';
   }
+  // A2-C1: both termDays and coin are position snapshots carried forward
+  // unchanged onto the successor — either mismatching the product's current
+  // value trips the same structural E8 reason.
   if (input.productTermDays !== input.positionTermDays) return 'FAILED_TERMS_CHANGED';
+  if (input.productCoin !== input.positionCoin) return 'FAILED_TERMS_CHANGED';
   return null;
 }

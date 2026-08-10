@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { decideRenewalEligibility, AUTO_RENEW_MAX_TERM_DAYS, type RenewalEligibilityInput } from './stakingRenewMath';
 
-// Pure eligibility-decision logic only (no Prisma/DB) — see stakingRenew.ts's
-// module header for why the exact check set/order here is a reconstruction
-// from docs/specs/staking-auto-renew-copy-spec.md + schema.prisma comments
-// rather than a direct read of the (missing) parent PRD/ruling docs.
+// Pure eligibility-decision logic only (no Prisma/DB). The check set/order
+// here is no longer a reconstruction — it is settled by
+// docs/specs/staking-auto-renew-assumption-ruling.md (`pm`, AUTHORITATIVE
+// RULING, 2026-08-10), which adjudicated every ASSUMPTION marker that used to
+// be in stakingRenewMath.ts. See that document for the reasoning behind the
+// check order and the A2-C1/A3-C1 scope widenings covered below.
 function baseInput(overrides: Partial<RenewalEligibilityInput> = {}): RenewalEligibilityInput {
   return {
     userDisabled: false,
@@ -12,9 +14,11 @@ function baseInput(overrides: Partial<RenewalEligibilityInput> = {}): RenewalEli
     positionTermDays: 30,
     positionPrincipal: '1000',
     positionDailyRatePct: '0.05',
+    positionCoin: 'USDT',
     productStatus: 'OPEN',
     productTermDays: 30,
     productDailyRatePct: '0.05',
+    productCoin: 'USDT',
     productMinAmount: null,
     productMaxAmount: null,
     productCapacity: null,
@@ -101,5 +105,18 @@ describe('decideRenewalEligibility', () => {
 
   it('refuses when the product term length no longer matches the position (defensive E8)', () => {
     expect(decideRenewalEligibility(baseInput({ productTermDays: 60 }))).toBe('FAILED_TERMS_CHANGED');
+  });
+
+  // A2-C1 (ruling §2): E8 must also fire on a `coin` mismatch — `coin` is a
+  // position snapshot carried forward unchanged onto the successor, exactly
+  // like `termDays`.
+  it('refuses when the product coin no longer matches the position (A2-C1, defensive E8)', () => {
+    expect(decideRenewalEligibility(baseInput({ productCoin: 'BANA' }))).toBe('FAILED_TERMS_CHANGED');
+  });
+
+  it('coin mismatch alone (term unchanged) still trips E8, not silently ignored', () => {
+    expect(
+      decideRenewalEligibility(baseInput({ positionCoin: 'USDT', productCoin: 'BUSD', productTermDays: 30, positionTermDays: 30 })),
+    ).toBe('FAILED_TERMS_CHANGED');
   });
 });

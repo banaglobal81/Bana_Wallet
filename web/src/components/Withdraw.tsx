@@ -245,7 +245,10 @@ export default function Withdraw({ onNavigate }: WithdrawProps) {
                           : t('railUnavailable', { coin: localCoinRow.coin })}
                       </span>
                     </div>
-                    <p className="text-xs text-[#8c90a0] leading-relaxed">{t('feeLocalHelp', { coin: localCoinRow.coin })}</p>
+                    {/* Withdrawal is unavailable in this block (paused or
+                        no rail configured) — showing the on-chain fee copy
+                        here would contradict the "not available" notice
+                        above, so it's suppressed for both states. */}
                   </div>
                 </Step>
               ) : (

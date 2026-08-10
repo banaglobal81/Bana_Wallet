@@ -439,7 +439,11 @@ model StakePosition {
   // Idempotency stamp for the pre-maturity reminder email (PRD §7.1).
   maturityReminderSentAt DateTime?
   // Set only by the admin grant route. A non-null value makes a position
-  // ineligible for auto-renew at every layer (ruling R-5/R-6/R-9, E9).
+  // ineligible for auto-renew at every layer (ruling R-5/R-6/R-9). Note: the
+  // "E9" label used elsewhere for this rule is just an append-order tag, not
+  // an execution-order/priority index — the actual check order is whatever
+  // `decideRenewalEligibility` (web/src/lib/stakingRenewMath.ts) implements,
+  // per the A1 ruling in docs/specs/staking-auto-renew-assumption-ruling.md.
   grantedByAdminId       String?
 
   // Self-relation: predecessor (renewedTo) <-> successor (renewedFrom),

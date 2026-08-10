@@ -21,6 +21,8 @@ import { prisma } from '@/lib/db';
 import { recordAudit } from '@/lib/audit';
 import { getPlatformSettings } from '@/lib/platformSettings';
 import { assertIssuanceAllowed } from '@/lib/coinAuthority';
+import { jsonRpcCall } from '@/lib/onchain/rpc';
+import { encodeBalanceOfCalldata, decodeHexQuantityToRawUnits, fromRawUnits } from '../../server/core/onchain-verify.js';
 
 type Client = Prisma.TransactionClient | typeof prisma;
 
@@ -475,15 +477,39 @@ interface PlatformControlledAddressRow {
 }
 
 /**
- * TODO(follow-up task, out of scope here): real on-chain balance query for a
- * PlatformControlledAddress row. Left as a stub — see A-3 §0 "this document does not
- * make" list (on-chain reads are a separate RPC-integration task). Any thrown error
- * here surfaces as ReserveVerificationResult.QUERY_FAILED, never a false PASS.
+ * Real on-chain balance query for a PlatformControlledAddress row (A-3 §0's
+ * "separate RPC-integration task", now wired). Reads `balanceOf(address)` on the
+ * coin's registered BEP-20/ERC-20 contract for `addr.network` via a read-only
+ * `eth_call` (src/lib/onchain/rpc.ts — env-configured RPC first, then public BSC
+ * endpoints, A-5 §2.8 pattern). Any failure (no ManagedCoin, no matching network
+ * config, or the RPC call itself failing after exhausting every endpoint) THROWS —
+ * it never resolves to "0". The caller (runReserveVerification below) treats a throw
+ * here as QUERY_FAILED, never a false PASS from "0 ≤ 0" (PoR-G1/§4.5 contract).
  */
 async function fetchOnchainBalance(addr: PlatformControlledAddressRow): Promise<string> {
-  throw new Error(
-    `TODO: on-chain balance RPC lookup not implemented yet for ${addr.coin} @ ${addr.network}:${addr.address}`,
-  );
+  const managedCoin = await prisma.managedCoin.findUnique({ where: { symbol: addr.coin } });
+  if (!managedCoin) {
+    throw new Error(`fetchOnchainBalance: no ManagedCoin found for symbol ${addr.coin}.`);
+  }
+  const networks = Array.isArray(managedCoin.networks)
+    ? (managedCoin.networks as unknown as Array<Record<string, unknown>>)
+    : [];
+  const netConfig = networks.find((n) => String(n.code ?? '').toUpperCase() === addr.network.toUpperCase());
+  if (!netConfig) {
+    throw new Error(`fetchOnchainBalance: no network config for ${addr.coin} on ${addr.network}.`);
+  }
+  const contractAddress = String(netConfig.contractAddress ?? '');
+  if (!contractAddress) {
+    throw new Error(`fetchOnchainBalance: ${addr.coin} on ${addr.network} has no contractAddress configured.`);
+  }
+  const tokenDecimals = Number(netConfig.decimals ?? 18);
+
+  const result = await jsonRpcCall('eth_call', [
+    { to: contractAddress, data: encodeBalanceOfCalldata(addr.address) },
+    'latest',
+  ]);
+  const rawUnits = decodeHexQuantityToRawUnits(result as string | null);
+  return fromRawUnits(rawUnits, tokenDecimals);
 }
 
 /**

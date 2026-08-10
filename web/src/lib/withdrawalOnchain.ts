@@ -238,6 +238,21 @@ export async function submitWithdrawalOnchainTx(
     return { ok: false, error: outcome.detail, reason: outcome.reason };
   }
 
+  // A-5 §2.7 audit trail — record it distinctly when the PASS verdict above was
+  // sourced (even partly) from a public fallback RPC endpoint rather than the
+  // operator-configured BSC_RPC_URL/_FALLBACK. See the residual-risk note on
+  // PUBLIC_BSC_RPC_ENDPOINTS in web/src/lib/onchain/config.ts. `rpcSources` is a
+  // list of anonymous labels only (e.g. "public#1") — never a URL.
+  if (outcome.usedPublicFallbackRpc) {
+    await recordAudit({
+      adminId: opts.adminId,
+      action: 'WITHDRAWAL_ONCHAIN_VERIFIED_VIA_PUBLIC_FALLBACK_RPC',
+      targetType: 'withdrawal',
+      targetId: withdrawalRequestId,
+      detail: `sources=${outcome.rpcSources.join(',')}`,
+    });
+  }
+
   // Step 10 — ok: settle atomically (settlement row, hold execution, status flip).
   try {
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {

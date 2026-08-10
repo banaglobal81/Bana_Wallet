@@ -24,8 +24,7 @@
 5. **Git commits are `deploy-manager` only.** No history rewrites (`git rebase` / `reset --hard`). Commits require `qa-lead`'s sign-off — hook-enforced via a single-use `.claude/.qa-passed` marker (missing marker forces a live confirmation instead of a hard block). Details: `docs/architecture/harness.md`.
 6. **`git push` to `main` is `deploy-manager`-only.** No other agent may push. `deploy-manager` pushes autonomously after commit (no per-push user confirmation required). No force-push, ever.
    - **Railway control is also `deploy-manager`-only, scoped to redeploy/restart triggers and log/status queries.** Status/log queries run autonomously; a redeploy or restart requires explicit user confirmation first (it can affect live traffic). Env var/secret changes and creating/deleting Railway services stay human-only — `deploy-manager` may not perform them regardless of confirmation. Details: `docs/architecture/deploy.md`.
-7. **`prisma db push` is absolutely forbidden** (all agents). The DB + Prisma is now live — all schema changes go through migrations only (`prisma migrate dev` / `prisma migrate deploy`). Never run `prisma migrate reset` or drop tables on a shared/production DB.
-   - **Local and production schema must always stay in sync.** Production does not auto-migrate on deploy (by design). `prisma-db-expert` deploys every local migration to production promptly — same session, not batched — via the manual procedure in `docs/architecture/deploy.md`. Never leave a migration backlog on production.
+   - **Production database changes — schema or data — are `prisma-db-expert`-only, never `deploy-manager`.** `deploy-manager`'s sole role is fetching/refreshing the `DATABASE_PUBLIC_URL` connection string (a read, not a change); `prisma-db-expert` connects with it directly for migrations *and* one-off production data fixes (e.g. promoting a user's role). Requires explicit user approval per change. Details: `docs/architecture/deploy.md`.
 8. **Authentication is mandatory on protected routes.** API route handlers serving user/admin data must call `requireUser()` / `requireAdmin()` from `web/src/lib/auth/session.ts`. Never trust a client-supplied user id for authorization — derive it from the session. Passwords are hashed with `bcryptjs`; never store or log plaintext passwords.
 9. **Model tiers are role-based, not uniform — this is a token-cost control, not a formality.** `opus` is reserved for planning/spec-design work only (`pm`, `product-planner`, `game-planner`). Every other agent runs on `sonnet` or `haiku` per the Model Tier Strategy table below, chosen by task complexity, not defaulted to `sonnet`. Changing an agent's tier means editing **both** this table **and** that agent's `.claude/agents/*.md` frontmatter `model:` field in the same change — `sync-harness-docs.sh` flags a mismatch.
 10. **Keep this file atomized.** `CLAUDE.md` holds rules + tables only. Anything descriptive/detailed (path lists, wire-format specs, workflow prose) belongs in `docs/architecture/*.md`, read on demand by the agents whose scope needs it — not force-loaded into every agent's context. `doc-keeper` enforces this on request.
@@ -44,10 +43,10 @@
 |---|-------|-------|-------|--------|
 | 1 | web-wallet-expert | sonnet | wallet UI + staking domain logic | active |
 | 2 | web-admin-expert | sonnet | admin & settlement views | active |
-| 3 | web-shared-expert | sonnet | shared layer + owns HMAC client | active |
+| 3 | web-shared-expert | sonnet | shared layer, HMAC client, V2-CORE on-chain verification | active |
 | 4 | mobile-expert | haiku | Flutter mobile | **dormant** |
 | 5 | wallet-security-expert | sonnet | security review only (no code edits) | active |
-| 6 | prisma-db-expert | sonnet | DB & migrations (User/auth schema, Postgres) | active |
+| 6 | prisma-db-expert | sonnet | DB, migrations & production data ops (User/auth schema, Postgres) | active |
 | 7 | ui-ux-designer | haiku | Tailwind & design tokens | active |
 | 8 | pm | opus | product planning & PRD | active |
 | 9 | product-planner | opus | FRD & screen specs | active |

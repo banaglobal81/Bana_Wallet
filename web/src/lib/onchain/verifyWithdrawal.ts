@@ -7,23 +7,22 @@ import 'server-only';
 // docs/architecture/harness.md): pure decoding/comparison logic lives in
 // server/core/onchain-verify.js; this file owns the real dependency (fetch/JSON-RPC).
 //
-// STATUS (per the task that produced this file): the function signature, failure-
-// reason taxonomy, and full step-by-step orchestration below are complete and match
-// A-5 §2.3/§2.4 exactly. The actual JSON-RPC network calls (fetchTransactionReceipt /
-// fetchTransactionByHash / fetchBlockNumber) are TODO stubs — see each function.
-// Any network error (including "not implemented yet") is caught by the outer
-// try/catch and reported as RPC_UNAVAILABLE ("couldn't verify", never a false
-// WRONG_CONTRACT/AMOUNT_MISMATCH/etc — A-5 §2.4 closing paragraph), so this module is
-// safe to import/exist without ever producing a false-positive "verified" outcome.
+// STATUS: the function signature, failure-reason taxonomy, and full step-by-step
+// orchestration below match A-5 §2.3/§2.4 exactly. The JSON-RPC network calls
+// (fetchTransactionReceipt / fetchTransactionByHash / fetchBlockNumber) are wired to
+// real BSC RPC via jsonRpcCall() (src/lib/onchain/rpc.ts) — env-configured endpoint(s)
+// first, falling back through PUBLIC_BSC_RPC_ENDPOINTS (config.ts). Any network/RPC
+// failure (all endpoints exhausted, timeout, malformed response) is caught by the
+// outer try/catch and reported as RPC_UNAVAILABLE ("couldn't verify", never a false
+// WRONG_CONTRACT/AMOUNT_MISMATCH/etc — A-5 §2.4 closing paragraph), so this module
+// never produces a false-positive "verified" outcome on a query failure.
 //
 // SECURITY (A-5 §2.1/§4): read-only only. No eth_sendRawTransaction / personal_sign /
 // signing/private-key/mnemonic code may ever be added to this file tree. Every change
 // here requires a wallet-security-expert review (A-5 §2.2).
-// REACHABILITY: this module is now imported transitively via
+// REACHABILITY: this module is imported transitively via
 // web/src/lib/withdrawalOnchain.ts, which web/src/app/api/admin/withdrawals/[id]/submit-tx/route.ts
-// calls on a live request path. It is no longer dead/unreachable code — though the
-// JSON-RPC stubs noted above are still TODO, so it always resolves RPC_UNAVAILABLE
-// until those are implemented (never a false-positive "verified" outcome).
+// calls on a live request path.
 
 import Decimal from 'decimal.js';
 import {
@@ -32,8 +31,9 @@ import {
   filterTransferLogs,
   findRecipientMatch,
   amountsMatchExactly,
+  decodeHexQuantityToNumber,
 } from '../../../server/core/onchain-verify.js';
-import { BSC_RPC_URL } from './config';
+import { jsonRpcCallWithSource } from './rpc';
 
 export interface OnchainVerifyInput {
   /** e.g. 56 = BSC mainnet. Mapped from ManagedCoin.networks[] by code, not hardcoded. */
@@ -68,7 +68,21 @@ export type OnchainVerifyFailureReason =
   | 'RPC_UNAVAILABLE'; // could not verify at all — not a verdict, a fault (A-5 §2.4 principle 3)
 
 export type OnchainVerifyOutcome =
-  | { ok: true; confirmations: number; blockNumber: number; observedAmount: string }
+  | {
+      ok: true;
+      confirmations: number;
+      blockNumber: number;
+      observedAmount: string;
+      /** True if ANY underlying RPC call for this verification was answered by a
+       *  PUBLIC_BSC_RPC_ENDPOINTS fallback rather than the operator-configured
+       *  BSC_RPC_URL/_FALLBACK (A-5 §2.7 residual-risk audit trail — see the doc
+       *  comment on PUBLIC_BSC_RPC_ENDPOINTS in ./config.ts). The caller
+       *  (submitWithdrawalOnchainTx) records this in the audit log. */
+      usedPublicFallbackRpc: boolean;
+      /** Anonymous per-call source labels (e.g. ["configured#1", "public#2"]) — one
+       *  per underlying JSON-RPC call made during this verification. Never a URL. */
+      rpcSources: string[];
+    }
   | { ok: false; reason: OnchainVerifyFailureReason; detail: string; confirmations?: number };
 
 // tsconfig.json's "strict": false (strictNullChecks off) does not reliably narrow a
@@ -80,10 +94,10 @@ export function isOnchainVerifyFailure(o: OnchainVerifyOutcome): o is Extract<On
 }
 
 // ---------------------------------------------------------------------------
-// TODO (real RPC wiring — deferred to a follow-up task, see A-5 §2.8/§8 item 1).
-// Each of these is a read-only JSON-RPC call. Library choice (raw fetch vs viem
-// read-only client) is undecided — A-5 §2.8 explicitly leaves it open, to be
-// decided with wallet-security-expert at implementation time.
+// Real RPC wiring (A-5 §2.8/§8 item 1). Read-only JSON-RPC calls via jsonRpcCall()
+// (raw fetch, no external SDK — see rpc.ts). Each throws on failure; never returns a
+// fabricated/default value — the outer try/catch in verifyOnchainWithdrawal() below
+// collapses any thrown error to RPC_UNAVAILABLE.
 // ---------------------------------------------------------------------------
 
 interface JsonRpcTransactionReceipt {
@@ -92,21 +106,32 @@ interface JsonRpcTransactionReceipt {
   logs: Array<{ address: string; topics: string[]; data: string }>;
 }
 
-/** TODO: eth_getTransactionReceipt via BSC_RPC_URL. Returns null if not found. */
-async function fetchTransactionReceipt(_txHash: string): Promise<JsonRpcTransactionReceipt | null> {
-  throw new Error(
-    `TODO(A-5 §2.8): eth_getTransactionReceipt not implemented yet (BSC_RPC_URL=${BSC_RPC_URL || '<unset>'})`,
-  );
+/** eth_getTransactionReceipt via jsonRpcCallWithSource(). Returns null if not found (RPC returns null, not an error). */
+async function fetchTransactionReceipt(
+  txHash: string,
+): Promise<{ receipt: JsonRpcTransactionReceipt | null; source: string }> {
+  const { result, source } = await jsonRpcCallWithSource('eth_getTransactionReceipt', [txHash]);
+  return { receipt: (result as JsonRpcTransactionReceipt | null) ?? null, source };
 }
 
-/** TODO: eth_getTransactionByHash via BSC_RPC_URL. Returns null if not found anywhere (not even the mempool). */
-async function fetchTransactionByHash(_txHash: string): Promise<unknown | null> {
-  throw new Error('TODO(A-5 §2.8): eth_getTransactionByHash not implemented yet');
+/** eth_getTransactionByHash via jsonRpcCallWithSource(). Returns null if not found anywhere (not even the mempool). */
+async function fetchTransactionByHash(txHash: string): Promise<{ tx: unknown | null; source: string }> {
+  const { result, source } = await jsonRpcCallWithSource('eth_getTransactionByHash', [txHash]);
+  return { tx: result ?? null, source };
 }
 
-/** TODO: eth_blockNumber via BSC_RPC_URL. */
-async function fetchBlockNumber(): Promise<number> {
-  throw new Error('TODO(A-5 §2.8): eth_blockNumber not implemented yet');
+/**
+ * eth_blockNumber via jsonRpcCallWithSource(). Result is a hex-quantity string.
+ *
+ * SECURITY: uses decodeHexQuantityToNumber() (strict — throws on malformed input),
+ * NOT parseInt(x, 16), which silently returns NaN for a null/malformed result. A NaN
+ * here would let `confirmations < minConfirmations` evaluate to `false` regardless of
+ * actual confirmation depth (NaN < N is always false in JS), bypassing the
+ * confirmation-depth check entirely. See decodeHexQuantityToNumber's doc comment.
+ */
+async function fetchBlockNumber(): Promise<{ blockNumber: number; source: string }> {
+  const { result, source } = await jsonRpcCallWithSource('eth_blockNumber', []);
+  return { blockNumber: decodeHexQuantityToNumber(result, 'eth_blockNumber result'), source };
 }
 
 // ---------------------------------------------------------------------------
@@ -123,12 +148,19 @@ async function fetchBlockNumber(): Promise<number> {
 export async function verifyOnchainWithdrawal(input: OnchainVerifyInput): Promise<OnchainVerifyOutcome> {
   const { value: minConfirmations } = clampMinConfirmations(input.minConfirmations);
 
+  // Anonymous per-call source labels (A-5 §2.7 audit trail) — accumulated across
+  // every underlying RPC call this verification makes, never a URL. See the doc
+  // comment on OnchainVerifyOutcome's `rpcSources` field.
+  const rpcSources: string[] = [];
+
   try {
     // Step 1 — receipt lookup, falling back to a mempool check to distinguish
     // "pending" from "not found at all".
-    const receipt = await fetchTransactionReceipt(input.txHash);
+    const { receipt, source: receiptSource } = await fetchTransactionReceipt(input.txHash);
+    rpcSources.push(receiptSource);
     if (!receipt) {
-      const mempoolTx = await fetchTransactionByHash(input.txHash);
+      const { tx: mempoolTx, source: mempoolSource } = await fetchTransactionByHash(input.txHash);
+      rpcSources.push(mempoolSource);
       if (mempoolTx) {
         return { ok: false, reason: 'TX_PENDING', detail: 'Transaction is in the mempool, not yet mined.' };
       }
@@ -179,9 +211,11 @@ export async function verifyOnchainWithdrawal(input: OnchainVerifyInput): Promis
       };
     }
 
-    // Step 7 — confirmation depth.
-    const blockNumber = parseInt(receipt.blockNumber, 16);
-    const currentBlock = await fetchBlockNumber();
+    // Step 7 — confirmation depth. Same strict-parse rationale as fetchBlockNumber()
+    // above — a malformed receipt.blockNumber must throw, never silently become NaN.
+    const blockNumber = decodeHexQuantityToNumber(receipt.blockNumber, 'receipt.blockNumber');
+    const { blockNumber: currentBlock, source: blockNumberSource } = await fetchBlockNumber();
+    rpcSources.push(blockNumberSource);
     const confirmations = computeConfirmations(currentBlock, blockNumber);
     if (confirmations < minConfirmations) {
       return {
@@ -193,7 +227,14 @@ export async function verifyOnchainWithdrawal(input: OnchainVerifyInput): Promis
     }
 
     // Step 8 — pass.
-    return { ok: true, confirmations, blockNumber, observedAmount };
+    return {
+      ok: true,
+      confirmations,
+      blockNumber,
+      observedAmount,
+      usedPublicFallbackRpc: rpcSources.some((s) => s.startsWith('public#')),
+      rpcSources,
+    };
   } catch (e) {
     // Any network/RPC failure (including the TODO stubs above throwing) collapses to
     // RPC_UNAVAILABLE — a fault, never a false verdict (A-5 §2.4 closing paragraph).

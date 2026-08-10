@@ -57,6 +57,47 @@ Read on demand by `game-designer` only, when the current task's scope overlaps a
   beyond a few images) is simpler than trying to parallelize (which would just
   increase 429 retries against the shared quota).
 
+## Multi-panel / grid sheet prompts (crew action sheets, character turnarounds)
+
+- **A single-generation grid/sprite-sheet prompt (e.g. "3x2 grid of 6 cells, 5 poses of
+  the same character") is prone to the model baking in cell-number digits ("1"-"6") in
+  the corners and adding an unwanted white/grey margin border around the whole grid**
+  even when the base style-lock prompt already says "no text, no numbers" — the
+  multi-cell/reference-sheet framing seems to trigger it independently. Fix: add an
+  explicit second negative clause targeted at this specific failure mode ("no numbers,
+  no digits, no numerals, no labels, not even small ones in the corners" + "no
+  grey/white margin border around the outside of the grid, fill the entire canvas edge
+  to edge") — happened on 1/6 action sheets in the 2026-08-10 DEEP CORE Phase 0 batch 2
+  (`dc_crew_boss_actionsheet_ch1`), the other 5 didn't need the extra clause (model
+  behavior isn't deterministic even with an identical prompt template across
+  characters).
+- **`--edit-image` (feeding the flawed prior image back in as multimodal input) is the
+  wrong tool for fixing a structural/compositional flaw** like baked-in numbers or a
+  wrong border — the model reproduces the flaw from the reference image instead of
+  correcting it. For structural fixes, regenerate from scratch with just `--id` +
+  `--manifest` (no `--edit-image`/`--reference-image`) and a strengthened prompt, not
+  an edit pass. `--edit-image` is better suited to targeted content tweaks on an
+  otherwise-correct image (e.g. batch 1's "make the background X instead of Y").
+- **For multi-cell prompts, "subject isolated on a flat magenta background" (fine for
+  single-subject icons) is not strong enough to guarantee EVERY cell's interior is also
+  magenta** — a first regeneration attempt produced numbers-free output but with a
+  cream/off-white background inside each character cell (only the gaps between cells
+  were magenta). Needed an explicit "every single pixel of the background in ALL cells,
+  including directly behind each subject, must be the same flat magenta -- no
+  card/frame color, not even inside the cells" to get uniform chroma-key coverage
+  across the whole sheet.
+- **Character consistency across poses within the SAME single generation call is
+  noticeably better than consistency across separate calls** (e.g. the same character's
+  chapter-1 sheet vs chapter-2 sheet, generated in two different API calls, still won't
+  match reliably per docs/specs/deep-core-07-art-style-guide.md §7) — useful to know
+  when deciding whether something needs to be one multi-pose image or several
+  single-pose images.
+- **A multi-cell grid sheet is not a drop-in sprite atlas** — cell boundaries are only
+  visually even, not guaranteed to fall on exact pixel coordinates. Treat the output as
+  reference/source art requiring a human (or `game-developer`) to confirm crop
+  coordinates before slicing into individual game-ready frames, not as something safe
+  to auto-slice by dividing width/height evenly.
+
 ## Phase 0 vs P1 scope boundary (compliance-adjacent, verify against current `pm` sign-off before reuse)
 
 - The `deep-core` game family's Phase 0 gate (`docs/specs/deep-core-00-overview-and-gate.md`

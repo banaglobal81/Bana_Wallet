@@ -1,7 +1,11 @@
+'use client';
+
 // DEEP CORE — client-only display preferences (05 §6.7 / G-4).
 // None of these affect progression: `game.pref.hideHelp` is a hard product
 // requirement ("숨겨도 진행도와 지급에는 영향이 없습니다") — hiding is a pure
 // render-time decision, XP/SV keep accruing server-side regardless (AC-S3).
+import { useEffect, useState } from 'react';
+
 const PREFIX = 'bana.deepCore.';
 
 export type MotionPref = 'auto' | 'reduced' | 'static';
@@ -18,8 +22,50 @@ function write(key: string, value: string): void {
 export function isHidden(): boolean {
   return read('hidden') === '1';
 }
+
+// docs/specs/staking-page-v2-screen-flow-frd.md UF-6 — B4 (the control bar,
+// rendered by `Staking.tsx` as a sibling of `DeepCoreEmbed` since the B1→B4
+// split) has to hide in lockstep with B1 the moment the user toggles this
+// pref, in the *same* tab, without a reload. The native `storage` event only
+// fires in *other* tabs, so same-tab subscribers (this module's own
+// `useDeepCoreHidden()` callers) are notified explicitly via this listener
+// set. Do not read/write `bana.deepCore.hidden` directly anywhere else —
+// always go through `isHidden()` / `setHidden()` / `useDeepCoreHidden()` so
+// every subscriber stays in sync.
+const hiddenListeners = new Set<() => void>();
+
 export function setHidden(hidden: boolean): void {
   write('hidden', hidden ? '1' : '0');
+  for (const listener of hiddenListeners) listener();
+}
+
+/**
+ * Shared-state hook for the `bana.deepCore.hidden` pref (05 §6.7, UF-6).
+ * Both `DeepCoreEmbed` (B1's own mount gate) and `Staking.tsx` (B4's mount
+ * gate) call this hook so the two can never drift apart — calling
+ * `setHidden()` from either side, or toggling the pref in another browser
+ * tab, re-renders every subscriber with the new value.
+ *
+ * Defaults to `true` before the mount effect runs: `localStorage` isn't
+ * available during SSR, and defaulting to "hidden" avoids a flash of the
+ * canvas/control bar for users who had it hidden, matching the pre-split
+ * `DeepCoreEmbed` behavior.
+ */
+export function useDeepCoreHidden(): boolean {
+  const [hidden, setHiddenState] = useState(true);
+
+  useEffect(() => {
+    setHiddenState(isHidden());
+    const onChange = () => setHiddenState(isHidden());
+    hiddenListeners.add(onChange);
+    window.addEventListener('storage', onChange);
+    return () => {
+      hiddenListeners.delete(onChange);
+      window.removeEventListener('storage', onChange);
+    };
+  }, []);
+
+  return hidden;
 }
 
 export function getMotionPref(): MotionPref {

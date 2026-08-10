@@ -116,8 +116,13 @@ export default function AdminStakingPage() {
     setRunning(true); setError(null); setRunMsg(null);
     try {
       const r = await runStakingSettlement();
-      setRunMsg(r.daysCredited > 0
-        ? t('settlement.runResult', { amount: r.totalPaid, coin: 'BANA', days: r.daysCredited, matured: r.matured })
+      // A4-C1 (docs/specs/staking-auto-renew-assumption-ruling.md §4): a
+      // RENEWAL_DEFERRED outcome can occur with daysCredited === 0 (a position
+      // already fully paid, still retrying a stalled renewal) — the noop
+      // branch must not swallow that. Fall into the result message whenever
+      // there is anything to report, not only when new days were credited.
+      setRunMsg(r.daysCredited > 0 || r.matured > 0 || r.renewalsDeferred > 0
+        ? t('settlement.runResult', { amount: r.totalPaid, coin: 'BANA', days: r.daysCredited, matured: r.matured, deferred: r.renewalsDeferred })
         : t('settlement.runResultNoop', { n: r.processed }));
       await load();
     } catch (e) { setError((e as Error).message); }

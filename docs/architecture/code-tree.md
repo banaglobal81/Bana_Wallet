@@ -23,6 +23,10 @@ web/messages/               — translation JSON, one file per locale: en, ko, j
 web/src/lib/auth/session.ts — server-only guards: requireUser() (401), requireAdmin() (403)
 web/src/lib/email/        — email service layer. resend.ts (Resend SMTP driver), emailLocale.ts (locale-aware template rendering). Server-only.
 web/src/lib/staking*.ts    — staking domain business logic (staking.ts, stakingSettle.ts, stakingRenew.ts, stakingMath.ts, stakingRenewMath.ts). Owned by `web-wallet-expert`. Backs staking UI (`Staking.tsx`, `StakedSummaryCard.tsx`) and settlement workflows.
+web/src/lib/coinAuthority.ts — A-2 (V2-CORE) balance authority branching/probe/gating logic. Owned by `web-shared-expert`. SECURITY: every change requires `wallet-security-expert` review.
+web/src/lib/localLedger.ts — A-3 (V2-CORE) local balance ledger business logic. Owned by `web-shared-expert`. SECURITY: every change requires `wallet-security-expert` review.
+web/src/lib/withdrawalOnchain.ts — A-5 (V2-CORE) on-chain withdrawal state machine (AWAITING_ONCHAIN, submit-tx). Owned by `web-shared-expert`. SECURITY: every change requires `wallet-security-expert` review.
+web/src/lib/onchain/      — on-chain verification helpers (config.ts, rpc.ts, verifyWithdrawal.ts). Owned by `web-shared-expert`. SECURITY: read-only, never signing — every change requires `wallet-security-expert` review.
 web/src/lib/nia/          — server-only Nia-Hub API layer. config.ts, state.ts (globalThis singleton), client.ts (niaRequest/niaWalletRequest), resolve.ts, respond.ts, identity.ts (mints the `bana_<uuid>` id persisted to User.niaUserId at signup). All marked `import 'server-only'`.
 web/src/components/       — React 19 components ('use client' where needed). Flat: Wallet, Dashboard, Deposit, Withdraw, Swap, Staking, ActivityHistory, Notifications, Settings, Sidebar, BottomNav, ProfileMenu, ReferralPanel, ThemeToggle, LanguageSwitcher, MaintenanceBanner, BanaLogo, BanaBackground (WebGL nebula background). Subdirs: admin/ (AdminSidebar, AdminBottomNav), compensation/ (compensation UI), security/ (SecurityCenter, TwoFactorSection, PasskeysSection, MyDevices, EmailVerification), staking/ (StakedSummaryCard, and game-surface components under staking/field-live/ when implemented), wallet/ (CoinAvatar, NetworkAvatar, FlowNav, Selects, Step).
 web/src/app/globals.css   — the ONLY active stylesheet (imported by `web/src/app/[locale]/layout.tsx`): Tailwind v4 theme tokens, glassmorphic/bento effects, full light-theme override layer. (`web/src/index.css` was an orphaned pre-rebrand file — since removed; see `docs/patterns/ui-ux-designer.md`.)
@@ -30,7 +34,8 @@ web/src/types/            — next-auth.d.ts (session/role type augmentation)
 web/src/utils/            — frontend client (niaApi.ts fetches /api/nia/*, relative URLs), clipboard.ts
 web/prisma/               — schema.prisma (User + staking/referral/2FA/passkey/audit-log models), migrations/, seed.ts, seedStaking.ts
 web/prisma.config.ts      — Prisma 7 config; datasource.url = env("DATABASE_URL")
-web/server/core/nia-signing.js   — pure HMAC signing logic (reusable, harness-tested)
+web/server/core/nia-signing.js   — pure HMAC signing logic (reusable, harness-tested). Owned by `web-shared-expert`.
+web/server/core/onchain-verify.js — A-5 (V2-CORE) pure on-chain verification logic (read-only, harness-tested). Owned by `web-shared-expert`. SECURITY: no signing/private-key code ever — every change requires `wallet-security-expert` review.
 web/tests/harness/        — vitest harness tests (nia-signing/*)
 web/package.json          — scripts: dev (next dev -p 3000), build, start, lint (tsc --noEmit), test (vitest run), db:migrate (prisma migrate dev), db:deploy (prisma migrate deploy), db:seed (tsx prisma/seed.ts), postinstall (prisma generate). All run from the `web/` directory — there is no root-level package.json.
 ```

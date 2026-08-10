@@ -393,6 +393,11 @@ export async function getStakingStats(): Promise<AdminStakingStat[]> {
 export interface StakingRunResult {
   processed: number;
   matured: number;
+  // A4-C1 (docs/specs/staking-auto-renew-assumption-ruling.md §4): a
+  // RENEWAL_DEFERRED outcome does NOT increment `matured` (the position stays
+  // ACTIVE, not yet resolved). Must be surfaced wherever `matured` is —
+  // otherwise a held-past-maturity principal looks like nothing happened.
+  renewalsDeferred: number;
   daysCredited: number;
   totalPaid: string;
   at: string;

@@ -8,13 +8,53 @@ import type { DeepCoreGameState } from '@/utils/stakingApi';
 import type { CrewState } from './scene/DeepCoreScene';
 import { chapterTheme } from './chapterTheme';
 import DeepCoreHud from './DeepCoreHud';
-import DeepCoreControlBar from './DeepCoreControlBar';
 import DeepCoreIntroOverlay from './DeepCoreIntroOverlay';
 import {
-  isHidden, setHidden, motionShouldBeReduced, getMotionPref, setMotionPref,
+  setHidden, useDeepCoreHidden, motionShouldBeReduced, getMotionPref, setMotionPref,
   isIntroSeen, markIntroSeen, getLastSeenChapter, setLastSeenChapter,
 } from './DeepCorePrefs';
 import { unlocksAtLevel, type CrewId } from '@/lib/deepCoreChapters';
+
+// docs/specs/staking-page-v2-screen-flow-frd.md B1→B2→B3→B4 order — B4 (this
+// control bar: Crew/Depot/Ledger) must render *after* B3 (VaultControlBar),
+// not bundled inside the B1 canvas tree. Re-exported here (rather than
+// requiring callers to reach into './DeepCoreControlBar' directly) so
+// Staking.tsx has a single import site for the whole DEEP CORE surface, same
+// as before this split. `game-developer` owns this file; `Staking.tsx`'s own
+// placement of `<DeepCoreControlBar>` between B3 and B5 is web-wallet-expert's
+// call.
+//
+// UF-6 — `Staking.tsx` MUST also gate its `<DeepCoreControlBar>` render on
+// `useDeepCoreHidden()` (re-exported below, from `./DeepCorePrefs`): when
+// `bana.deepCore.hidden` is set, B1 hides itself internally, but B4 has no
+// such gate of its own and will keep rendering unless the caller checks this
+// hook too. Both `DeepCoreEmbed` and `Staking.tsx` calling the *same* hook
+// (rather than each tracking their own `isHidden()` snapshot) is what keeps
+// the two in sync — see DeepCorePrefs.ts for the pub-sub details.
+export { default as DeepCoreControlBar } from './DeepCoreControlBar';
+export { useDeepCoreHidden } from './DeepCorePrefs';
+
+/**
+ * deep-core-01-world-bible.md §4.3 — state precedence: reporting-paused
+ * (`waiting`) beats idle-rig (`idle_empty`), which beats the default
+ * `working`. `chapter_up` is a one-shot animation trigger, not a resting
+ * state, so it's never assigned here.
+ *
+ * Exported (not just an internal `useMemo`) so a caller rendering
+ * `DeepCoreControlBar` outside of `DeepCoreEmbed`'s own tree (see B1→B4
+ * split above) can derive the same `crewState` from the same `game` prop
+ * without duplicating this precedence logic.
+ */
+export function deriveDeepCoreCrewState(game: DeepCoreGameState | null): Record<string, CrewState> {
+  if (!game) return {};
+  const state: CrewState =
+    game.surfaceState === 'S2_REPORTING_PAUSED' ? 'waiting'
+      : game.activeWellCount === 0 ? 'idle_empty'
+        : 'working';
+  const out: Record<string, CrewState> = {};
+  for (const id of game.crew) out[id] = state;
+  return out;
+}
 
 // docs/specs/deep-core-05-screen-flow-frd.md G-2/AC-S2 — Phaser (and this
 // whole canvas bundle) is only ever requested when the surface actually
@@ -38,13 +78,20 @@ export interface DeepCoreEmbedProps {
   focusWellId?: string | null;
 }
 
-// The ONE insertion point into Staking.tsx (G-10: import 1 line + JSX 1
-// block). Everything else — mount gating (S-0/hide), the canvas, the HUD,
-// the control bar, the intro/chapter overlays — lives inside this tree
-// (G-3).
+// The B1-stage insertion point into Staking.tsx (G-10: import 1 line + JSX 1
+// block for the canvas+HUD stage). Mount gating (S-0/hide), the canvas, the
+// HUD, and the intro/chapter overlays all live inside this tree (G-3). The
+// B4 control bar (Crew/Depot/Ledger) is deliberately *not* rendered here —
+// per the FRD's B1→B2→B3→B4 order it must render after B3
+// (`VaultControlBar`), so it's a second, sibling insertion point: import
+// `{ DeepCoreControlBar, deriveDeepCoreCrewState }` from this same module
+// and render `<DeepCoreControlBar game={game} crewState={deriveDeepCoreCrewState(game)} />`
+// wherever B4 belongs in the page layout.
 export default function DeepCoreEmbed({ game, loading, onWellClick, onOpenStake, focusWellId }: DeepCoreEmbedProps) {
   const t = useTranslations('staking.game');
-  const [hidden, setHiddenState] = useState(true); // default true until the effect below reads localStorage (SSR-safe)
+  // Shared with `Staking.tsx`'s own B4 mount gate via `useDeepCoreHidden()`
+  // (DeepCorePrefs.ts) so B1/B4 can never drift out of sync (UF-6).
+  const hidden = useDeepCoreHidden();
   const [motionReduced, setMotionReduced] = useState(true);
   const [motionPref, setMotionPrefState] = useState(getMotionPref);
   const [bootFailed, setBootFailed] = useState(false);
@@ -57,7 +104,6 @@ export default function DeepCoreEmbed({ game, loading, onWellClick, onOpenStake,
   const introCheckedRef = useRef(false);
 
   useEffect(() => {
-    setHiddenState(isHidden());
     setMotionReduced(motionShouldBeReduced());
   }, []);
 
@@ -88,20 +134,7 @@ export default function DeepCoreEmbed({ game, loading, onWellClick, onOpenStake,
     lastLiftSeenRef.current = game.lastLiftAt;
   }, [game]);
 
-  // deep-core-01-world-bible.md §4.3 — state precedence: reporting-paused
-  // (`waiting`) beats idle-rig (`idle_empty`), which beats the default
-  // `working`. `chapter_up` is a one-shot animation trigger, not a resting
-  // state, so it's never assigned here.
-  const crewState: Record<string, CrewState> = useMemo(() => {
-    if (!game) return {};
-    const state: CrewState =
-      game.surfaceState === 'S2_REPORTING_PAUSED' ? 'waiting'
-        : game.activeWellCount === 0 ? 'idle_empty'
-          : 'working';
-    const out: Record<string, CrewState> = {};
-    for (const id of game.crew) out[id] = state;
-    return out;
-  }, [game]);
+  const crewState: Record<string, CrewState> = useMemo(() => deriveDeepCoreCrewState(game), [game]);
 
   if (loading || !game || game.surfaceState === 'S0_NOT_SHOWN') return null;
 
@@ -112,7 +145,7 @@ export default function DeepCoreEmbed({ game, loading, onWellClick, onOpenStake,
         <button
           type="button"
           data-testid="deep-core-unhide"
-          onClick={() => { setHidden(false); setHiddenState(false); }}
+          onClick={() => setHidden(false)}
           className="text-[#528dff] hover:text-white cursor-pointer font-bold"
         >
           {t('pref.show')}
@@ -199,10 +232,6 @@ export default function DeepCoreEmbed({ game, loading, onWellClick, onOpenStake,
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-2">
-        <DeepCoreControlBar game={game} crewState={crewState} />
-      </div>
-
       {settingsOpen && (
         <div data-testid="deep-core-settings-panel" className="flex flex-col gap-2 p-3 rounded-xl bg-[#112643]/60 border border-[#1E3559] text-xs font-mono">
           <span className="text-[10px] font-mono uppercase text-[#8c90a0]">{t('pref.title')}</span>
@@ -218,7 +247,7 @@ export default function DeepCoreEmbed({ game, loading, onWellClick, onOpenStake,
           <button
             type="button"
             data-testid="deep-core-hide-toggle"
-            onClick={() => { setHidden(true); setHiddenState(true); }}
+            onClick={() => setHidden(true)}
             className="text-left text-[#528dff] hover:text-white cursor-pointer"
           >
             {t('pref.hide')}

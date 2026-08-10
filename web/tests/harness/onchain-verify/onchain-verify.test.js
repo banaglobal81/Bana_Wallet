@@ -13,6 +13,11 @@ import {
   findRecipientMatch,
   toRawUnits,
   amountsMatchExactly,
+  BALANCE_OF_SELECTOR,
+  encodeBalanceOfCalldata,
+  decodeHexQuantityToRawUnits,
+  decodeHexQuantityToNumber,
+  fromRawUnits,
 } from '../../../server/core/onchain-verify.js';
 
 // All fixture addresses are exactly 40 hex chars (20 bytes) — built via repeat()
@@ -141,5 +146,97 @@ describe('toRawUnits / amountsMatchExactly', () => {
   it('never uses float comparison for large values (precision-safe)', () => {
     // A value well past Number.MAX_SAFE_INTEGER when expressed in raw 18-decimal units.
     expect(amountsMatchExactly('123456789.123456789', 18, '123456789123456789000000000')).toBe(true);
+  });
+});
+
+describe('encodeBalanceOfCalldata', () => {
+  it('prefixes the balanceOf selector and left-pads the address to a 32-byte word', () => {
+    const addr = `0x${'ab'.repeat(20)}`;
+    const calldata = encodeBalanceOfCalldata(addr);
+    expect(calldata.startsWith(BALANCE_OF_SELECTOR)).toBe(true);
+    expect(calldata).toBe(`${BALANCE_OF_SELECTOR}${'0'.repeat(24)}${'ab'.repeat(20)}`);
+    expect(calldata.length).toBe(2 + 8 + 64); // '0x' + 4-byte selector + 32-byte word
+  });
+
+  it('lower-cases a mixed-case address (checksum input)', () => {
+    const addr = `0x${'AB'.repeat(20)}`;
+    expect(encodeBalanceOfCalldata(addr)).toBe(`${BALANCE_OF_SELECTOR}${'0'.repeat(24)}${'ab'.repeat(20)}`);
+  });
+});
+
+describe('decodeHexQuantityToRawUnits', () => {
+  it('decodes a hex quantity into a decimal integer string', () => {
+    expect(decodeHexQuantityToRawUnits('0x0')).toBe('0');
+    expect(decodeHexQuantityToRawUnits('0x1')).toBe('1');
+    expect(decodeHexQuantityToRawUnits('0xde0b6b3a7640000')).toBe('1000000000000000000');
+  });
+
+  it('treats null/undefined/"0x" as zero, never throwing', () => {
+    expect(decodeHexQuantityToRawUnits(null)).toBe('0');
+    expect(decodeHexQuantityToRawUnits(undefined)).toBe('0');
+    expect(decodeHexQuantityToRawUnits('0x')).toBe('0');
+  });
+
+  it('never loses precision on values past Number.MAX_SAFE_INTEGER (BigInt, not float)', () => {
+    // 2^90 in hex — far past what a JS double can represent exactly.
+    const big = (2n ** 90n).toString(16);
+    expect(decodeHexQuantityToRawUnits(`0x${big}`)).toBe((2n ** 90n).toString(10));
+  });
+});
+
+describe('decodeHexQuantityToNumber — regression for the NaN-confirmation-bypass bug (wallet-security-expert finding)', () => {
+  it('decodes a well-formed hex quantity into a number', () => {
+    expect(decodeHexQuantityToNumber('0x0')).toBe(0);
+    expect(decodeHexQuantityToNumber('0x1')).toBe(1);
+    expect(decodeHexQuantityToNumber('0x64')).toBe(100);
+  });
+
+  it('THROWS (never returns NaN) on null — parseInt(null, 16) silently returns NaN', () => {
+    expect(() => decodeHexQuantityToNumber(null)).toThrow();
+  });
+
+  it('THROWS (never returns NaN) on undefined', () => {
+    expect(() => decodeHexQuantityToNumber(undefined)).toThrow();
+  });
+
+  it('THROWS (never returns NaN) on a malformed hex string — parseInt would lenient-parse a prefix and stop, or return NaN', () => {
+    expect(() => decodeHexQuantityToNumber('0xzz')).toThrow();
+    expect(() => decodeHexQuantityToNumber('not-hex')).toThrow();
+    expect(() => decodeHexQuantityToNumber('')).toThrow();
+  });
+
+  it('THROWS on a non-string type (e.g. a number or object slipping through a malformed RPC response)', () => {
+    expect(() => decodeHexQuantityToNumber(123)).toThrow();
+    expect(() => decodeHexQuantityToNumber({})).toThrow();
+  });
+
+  it('requires the 0x prefix — a bare hex digit string is rejected, not silently accepted', () => {
+    expect(() => decodeHexQuantityToNumber('64')).toThrow();
+  });
+
+  it('THROWS on a value exceeding Number.MAX_SAFE_INTEGER rather than silently losing precision', () => {
+    const tooLarge = (BigInt(Number.MAX_SAFE_INTEGER) + 1n).toString(16);
+    expect(() => decodeHexQuantityToNumber(`0x${tooLarge}`)).toThrow();
+  });
+
+  it('never produces a NaN that would defeat the `confirmations < minConfirmations` check', () => {
+    // Direct demonstration of the bug this guards against: parseInt(null, 16) is NaN,
+    // and `NaN < 3` is false in JS — so the old code let an unconfirmed/garbage
+    // response pass the confirmation-depth gate. decodeHexQuantityToNumber must throw
+    // instead of ever reaching that comparison with a NaN operand.
+    expect(Number.isNaN(parseInt(null, 16))).toBe(true); // documents the old bug's root cause
+    expect(() => decodeHexQuantityToNumber(null)).toThrow(); // the fix: throw, don't compare
+  });
+});
+
+describe('fromRawUnits', () => {
+  it('is the inverse of toRawUnits', () => {
+    expect(fromRawUnits('1000000000000000000', 18)).toBe('1');
+    expect(fromRawUnits('1000000000000', 18)).toBe('0.000001');
+    expect(fromRawUnits('0', 18)).toBe('0');
+  });
+
+  it('never uses float for large raw values (precision-safe)', () => {
+    expect(fromRawUnits('123456789123456789000000000', 18)).toBe('123456789.123456789');
   });
 });

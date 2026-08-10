@@ -12,6 +12,15 @@ export interface SettlementResult {
   // Auto-renew outcome counts (docs/specs/staking-auto-renew-prd.md §6.3).
   renewed: number;
   renewalsFailed: number;
+  // A4-C1 (docs/specs/staking-auto-renew-assumption-ruling.md §4): a
+  // RENEWAL_DEFERRED outcome (a transient failure inside
+  // matureOrRenewPosition, retried up to MAX_RENEWAL_ATTEMPTS times) must be
+  // visible to operators — it is the one auto-renew outcome that leaves a
+  // matured user's principal unavailable (daysPaid capped at termDays, no
+  // further interest) while looking, on this result object, like nothing
+  // happened at all. Surface this wherever `matured`/`renewalsFailed` are
+  // surfaced.
+  renewalsDeferred: number;
   daysCredited: number;
   totalPaid: string;
   at: string;
@@ -47,6 +56,7 @@ export async function runStakingSettlement(now: Date = new Date()): Promise<Sett
   let matured = 0;
   let renewed = 0;
   let renewalsFailed = 0;
+  let renewalsDeferred = 0;
   let daysCredited = 0;
   let totalPaid = new Decimal(0);
 
@@ -97,8 +107,13 @@ export async function runStakingSettlement(now: Date = new Date()): Promise<Sett
       if (result.outcome === 'RENEWED') { matured += 1; renewed += 1; }
       else if (result.outcome === 'RENEWAL_FAILED') { matured += 1; renewalsFailed += 1; }
       else if (result.outcome === 'MATURED_NO_RENEWAL') { matured += 1; }
+      else if (result.outcome === 'RENEWAL_DEFERRED') { renewalsDeferred += 1; }
       // ALREADY_HANDLED: another writer (the lazy path) got there first this
       // cycle — already counted when it ran, don't double-count here.
+      // RENEWAL_DEFERRED does NOT increment `matured` — the position is
+      // still ACTIVE (A4-C1): it stays past maturityAt, unpaid, principal
+      // unavailable, until a later cycle either renews or forces
+      // FAILED_SYSTEM.
     }
     processed += 1;
   }
@@ -184,7 +199,7 @@ export async function runStakingSettlement(now: Date = new Date()): Promise<Sett
   const referral = await payReferralBonuses(now);
 
   return {
-    processed, matured, renewed, renewalsFailed, daysCredited,
+    processed, matured, renewed, renewalsFailed, renewalsDeferred, daysCredited,
     totalPaid: totalPaid.toFixed(), at: now.toISOString(), referral,
   };
 }

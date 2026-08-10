@@ -23,7 +23,10 @@ export async function POST(): Promise<NextResponse> {
   await recordAudit({
     adminId: (admin as { id?: string }).id, adminEmail: (admin as { email?: string }).email,
     action: 'STAKING_SETTLEMENT_RUN', targetType: 'staking', targetId: null,
-    detail: `Ran settlement: ${result.daysCredited} day(s) credited, ${result.totalPaid} paid, ${result.matured} matured across ${result.processed} active position(s)`,
+    // A4-C1 (docs/specs/staking-auto-renew-assumption-ruling.md §4): deferred
+    // renewals stay ACTIVE and are excluded from `matured` — record them here
+    // too, so the audit trail doesn't read as if nothing happened.
+    detail: `Ran settlement: ${result.daysCredited} day(s) credited, ${result.totalPaid} paid, ${result.matured} matured, ${result.renewalsDeferred} deferred across ${result.processed} active position(s)`,
   });
   return NextResponse.json({ ok: true, data: result });
 }

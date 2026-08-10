@@ -81,7 +81,22 @@ additive/safe, deployed after user approval, since resolved.
 ## First-admin seed (one-time per environment)
 `railway run npm run db:seed` (or the equivalent one-off command in the Railway service
 shell). Upserts `ADMIN_EMAIL` as an ADMIN user. Do **not** add this to the start command —
-it would reset the admin password on every restart.
+it would reset the admin password on every restart. Note this also resets the account's
+password to `ADMIN_PASSWORD` — for promoting an *existing* account without touching its
+password, use the production data change flow below instead.
+
+## Production data changes (non-schema)
+For one-off data fixes on an existing row (e.g. promoting `admin@admin.com` to `role:
+'ADMIN'` without resetting its password) — not a migration, not a Railway `env`/service
+change:
+1. `deploy-manager` fetches/refreshes `DATABASE_PUBLIC_URL` into `web/.env.production.local`
+   (same read-only relay used for migrations — see § Deploy + migrate above).
+2. `prisma-db-expert` connects with that file and runs the change directly (Prisma Client
+   query or `psql` via
+   `(set -a && source .env.production.local && set +a && ...)`), after stating the exact
+   command and getting explicit user approval — same gate as `migrate deploy`.
+`deploy-manager` never executes the data change itself; its Railway scope stays limited to
+redeploy/restart/log/status/connection-string-fetch (CLAUDE.md rule 6).
 
 ## Google OAuth redirect (only if Google login is enabled)
 Google Cloud Console → Credentials → authorized redirect URI:
