@@ -24,7 +24,7 @@ const panelCls =
 
 // ---- Searchable coin selector ----
 export function CoinSelect({
-  value, options, onChange, placeholder, disabled, searchPlaceholder,
+  value, options, onChange, placeholder, disabled, searchPlaceholder, disabledOptions,
 }: {
   value: string;
   options: string[];
@@ -32,11 +32,21 @@ export function CoinSelect({
   placeholder: string;
   searchPlaceholder: string;
   disabled?: boolean;
+  /**
+   * A-7 DEP-3 — coins that exist but are not selectable right now (e.g. deposit
+   * unsupported). They stay visible in search results with a badge instead of
+   * silently disappearing from the list (LA-4 — a missing item reads as "look
+   * elsewhere", which is exactly the failure mode this is guarding against).
+   */
+  disabledOptions?: { symbol: string; badge: string }[];
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const ref = useOutsideClose(() => setOpen(false));
   const filtered = options.filter((s) => !q.trim() || s.toUpperCase().includes(q.trim().toUpperCase()));
+  const filteredDisabled = (disabledOptions ?? []).filter(
+    (d) => !options.includes(d.symbol) && (!q.trim() || d.symbol.toUpperCase().includes(q.trim().toUpperCase())),
+  );
 
   return (
     <div className="relative" ref={ref}>
@@ -72,25 +82,44 @@ export function CoinSelect({
             </div>
           </div>
           <div className="max-h-64 overflow-y-auto py-1">
-            {filtered.length === 0 ? (
+            {filtered.length === 0 && filteredDisabled.length === 0 ? (
               <p className="px-4 py-6 text-center text-xs font-mono text-[#8c90a0]">—</p>
-            ) : filtered.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => { onChange(s); setOpen(false); setQ(''); }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-left transition-colors ${
-                  s === value ? 'bg-[#16325c]' : 'hover:bg-[#112643]'
-                }`}
-              >
-                <CoinAvatar symbol={s} />
-                <span className="flex flex-col min-w-0">
-                  <span className="text-sm font-bold text-white truncate">{s}</span>
-                  <span className="text-[11px] text-[#8c90a0] truncate">{s}</span>
-                </span>
-                {s === value && <Check className="h-4 w-4 text-[#528dff] ml-auto shrink-0" />}
-              </button>
-            ))}
+            ) : (
+              <>
+                {filtered.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => { onChange(s); setOpen(false); setQ(''); }}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-left transition-colors ${
+                      s === value ? 'bg-[#16325c]' : 'hover:bg-[#112643]'
+                    }`}
+                  >
+                    <CoinAvatar symbol={s} />
+                    <span className="flex flex-col min-w-0">
+                      <span className="text-sm font-bold text-white truncate">{s}</span>
+                      <span className="text-[11px] text-[#8c90a0] truncate">{s}</span>
+                    </span>
+                    {s === value && <Check className="h-4 w-4 text-[#528dff] ml-auto shrink-0" />}
+                  </button>
+                ))}
+                {filteredDisabled.map((d) => (
+                  <div
+                    key={d.symbol}
+                    data-testid={`coin-select-disabled-${d.symbol}`}
+                    className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left opacity-60 cursor-not-allowed"
+                  >
+                    <CoinAvatar symbol={d.symbol} />
+                    <span className="flex flex-col min-w-0">
+                      <span className="text-sm font-bold text-[#8c90a0] truncate">{d.symbol}</span>
+                    </span>
+                    <span className="ml-auto shrink-0 text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#1E3559]/60 text-[#8c90a0] border border-[#1E3559]">
+                      {d.badge}
+                    </span>
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         </div>
       )}

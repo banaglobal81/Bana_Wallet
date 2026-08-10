@@ -18,7 +18,8 @@
     "adminConsole": "Bảng quản trị",
     "coins": "Coin",
     "coinManagement": "Quản lý Coin",
-    "invite": "Mời bạn bè"
+    "invite": "Mời bạn bè",
+    "reserve": "Dự trữ"
   },
   "login": {
     "title": "Đăng nhập",
@@ -414,15 +415,23 @@
     },
     "yield": {
       "recordedLabel": "Lợi tức đã ghi nhận",
-      "recordedHelp": "Đã ghi nhận trong sổ lợi tức staking của bạn. Khoản này chưa nằm trong số dư ví.",
-      "claimedLabel": "Đã nhận vào ví",
-      "claimedHelp": "Đã chuyển vào số dư ví của bạn.",
+      "recordedHelp": "Đã ghi nhận trong sổ lợi tức staking của bạn. Khoản này chưa nằm trong số dư BANA.",
+      "claimedLabel": "Đã nhận",
+      "claimedHelp": "Đã chuyển vào số dư BANA của bạn.",
       "lockedLabel": "Vốn gốc đang khóa",
-      "lockedHelp": "Vốn gốc vẫn nằm trong ví của bạn nhưng không thể rút cho đến khi hết kỳ hạn.",
+      "lockedHelp": "Vốn gốc vẫn nằm trong số dư BANA của bạn nhưng không thể rút cho đến khi hết kỳ hạn.",
       "empty": "Chưa có lợi tức nào được ghi nhận."
     },
     "claim": {
-      "unavailable": "Chưa hỗ trợ thanh toán vào ví."
+      "unavailable": "Chức năng nhận chưa khả dụng.",
+      "confirmBody": "{amount} {coin} sẽ được chuyển vào số dư BANA của bạn. Đây là toàn bộ lợi tức {coin} đã ghi nhận đến thời điểm này.",
+      "confirmNote2": "Gửi đến địa chỉ bên ngoài là một yêu cầu riêng, phải qua xét duyệt trước.",
+      "confirmAction": "Nhận",
+      "cancel": "Hủy",
+      "succeeded": "Đã chuyển {amount} {coin} vào số dư BANA của bạn.",
+      "resultUnknownRefresh": "Không thể xác nhận kết quả. Hãy tải lại trạng thái để biết yêu cầu đã xử lý hay chưa.",
+      "refreshStatus": "Tải lại trạng thái",
+      "destinationNote": "Khi nhận, số tiền sẽ được cộng ngay vào số dư BANA của bạn. Để gửi đến địa chỉ bên ngoài, bạn cần yêu cầu rút tiền."
     },
     "nav": {
       "stake": "Stake",
@@ -445,7 +454,7 @@
     "position": {
       "recordedLabel": "Đã ghi nhận",
       "settledDays": "Đã tất toán {d}/{total} ngày",
-      "maturedNote": "Khi hết kỳ hạn, vốn gốc sẽ được mở khóa và khả dụng trong ví của bạn. Lợi tức đã ghi nhận không tự động được chuyển đi."
+      "maturedNote": "Khi hết kỳ hạn, vốn gốc sẽ được mở khóa và khả dụng trong số dư BANA của bạn. Lợi tức đã ghi nhận không tự động được chuyển đi."
     },
     "yieldLog": {
       "title": "Nhật ký lợi tức",
@@ -501,7 +510,13 @@
     "copyBtn": "Sao chép",
     "sendOnlyWarning": "Chỉ gửi <b>{coin}</b> trên mạng <b>{network}</b> tới địa chỉ này.",
     "confirmationsNote": "Khoản nạp sẽ được ghi có sau khi mạng xác nhận.",
-    "selectCoinFirst": "Chọn coin và mạng lưới ở trên để xem địa chỉ nạp."
+    "selectCoinFirst": "Chọn coin và mạng lưới ở trên để xem địa chỉ nạp.",
+    "unsupportedAsset": "Chưa hỗ trợ nạp {coin}.",
+    "unsupportedBadge": "Không hỗ trợ nạp",
+    "unsupportedBlockTitle": "Tài sản không thể nạp",
+    "unsupportedBlockBody": "{coins} không thể nạp vào tài khoản này. Đừng gửi các tài sản này đến bất kỳ địa chỉ nào hiển thị ở nơi khác.",
+    "formerAddressWarning": "Nếu trước đây bạn từng được cấp địa chỉ nạp {coin}, đừng sử dụng địa chỉ đó nữa. Tài sản gửi tới đó sẽ không tự động được ghi có. Nếu bạn đã gửi, hãy liên hệ hỗ trợ.",
+    "checkUnavailable": "Hiện không thể kiểm tra. Vui lòng thử lại sau giây lát."
   },
   "walletPage": {
     "title": "Ví",
@@ -525,7 +540,19 @@
     "transactionHistory": "Lịch sử giao dịch",
     "transactionHistorySubtitle": "Nạp, rút & giao dịch",
     "depositNow": "Nạp ngay",
-    "depositWallet": "Nạp"
+    "depositWallet": "Nạp",
+    "groupCustody": "Tài khoản nạp & rút",
+    "groupPlatform": "Tài sản do nền tảng phát hành",
+    "groupPlatformHelp": "BANA là tài sản do nền tảng BANA phát hành. Số dư này do BANA ghi nhận. Để gửi đến địa chỉ bên ngoài, hãy yêu cầu rút tiền; yêu cầu sẽ được xét duyệt rồi gửi trên chuỗi.",
+    "localBalanceLabel": "Số dư",
+    "localAvailableLabel": "Khả dụng",
+    "localHoldStake": "Đang khóa cho staking",
+    "localHoldWithdrawal": "Đang giữ cho yêu cầu rút tiền",
+    "localHoldOther": "Khoản giữ khác",
+    "localHoldWithdrawalLink": "Xem yêu cầu",
+    "localEmpty": "Chưa có BANA nào được ghi nhận.",
+    "localLoading": "Đang tải…",
+    "localLoadFailed": "Không thể tải số dư này."
   },
   "withdraw": {
     "backAria": "Quay lại",
@@ -567,7 +594,27 @@
     "selectNetwork": "Chọn mạng lưới",
     "networkHint": "Đảm bảo chọn đúng mạng lưới của nền tảng nhận.",
     "amountDestTitle": "Số tiền & Địa chỉ",
-    "selectCoinFirst": "Chọn coin ở trên để nhập số tiền."
+    "selectCoinFirst": "Chọn coin ở trên để nhập số tiền.",
+    "railUnavailable": "Rút {coin} hiện không khả dụng.",
+    "railPaused": "Rút {coin} hiện đang tạm dừng.",
+    "coinHalted": "Việc xử lý rút tiền cho tài sản này đang tạm dừng. Số dư của bạn vẫn được ghi nhận nguyên trạng.",
+    "availableLabel": "Số tiền có thể rút",
+    "heldNote": "{amount} {coin} đang bị giữ cho một yêu cầu rút tiền bạn đã gửi trước đó.",
+    "amountExceedsAvailable": "Số tiền có thể rút là {available} {coin}.",
+    "feeLocalLabel": "Phí",
+    "feeLocalHelp": "Trang trải chi phí chuyển khoản trên chuỗi. Phí này được tính bằng {coin}.",
+    "sendAmountLabel": "Số tiền gửi đi",
+    "debitTotalLabel": "Bị trừ khỏi số dư của bạn",
+    "statusPending": "Đang chờ xét duyệt",
+    "statusAwaitingOnchain": "Đã duyệt · chờ chuyển khoản",
+    "statusAwaitingOnchainHelp": "Yêu cầu này đã được duyệt và đang chờ được gửi trên chuỗi.",
+    "statusCompletedLocal": "Hoàn tất",
+    "statusRejected": "Bị từ chối",
+    "statusRejectedHelp": "Số tiền đang giữ đã có thể sử dụng lại trong số dư của bạn.",
+    "statusFailed": "Chưa được xử lý",
+    "statusFailedHelp": "Yêu cầu này chưa được xử lý. Số dư của bạn không thay đổi.",
+    "txHashLabel": "Giao dịch",
+    "viewOnExplorer": "Xem trên block explorer"
   },
   "settings": {
     "breadcrumbActivity": "Hoạt động",
@@ -616,6 +663,8 @@
     "syncing": "Đang đồng bộ với BANA…",
     "liveRecords": "Trực tiếp • {count, plural, other {# bản ghi}} từ BANA",
     "awaitingApproval": "Đang chờ quản trị viên phê duyệt",
+    "awaitingOnchain": "Đã duyệt · chờ chuyển khoản",
+    "awaitingOnchainDescription": "Đã được duyệt và đang chờ gửi trên chuỗi",
     "loadError": "Không thể tải hoạt động"
   },
   "notifications": {
@@ -732,7 +781,20 @@
     "statusAPPROVED": "Đã duyệt",
     "statusREJECTED": "Đã từ chối",
     "statusFAILED": "Thất bại",
-    "statusPROCESSING": "Đang xử lý"
+    "statusPROCESSING": "Đang xử lý",
+    "colRail": "Kênh",
+    "railLocal": "On-chain thủ công",
+    "railHub": "Hub tự động",
+    "statusAWAITING_ONCHAIN": "Đã duyệt · chờ on-chain",
+    "feeAmount": "Phí {fee}",
+    "debitTotal": "Đã trừ {total}",
+    "txHashPlaceholder": "Mã hash giao dịch (0x…)",
+    "verifyAndSettle": "Xác minh & quyết toán",
+    "verifyPassed": "Đã xác minh — tiền đã đến tay người dùng.",
+    "verifyFailed": "Xác minh thất bại",
+    "verifyInconclusive": "Chưa có kết luận",
+    "approveLocal": "Duyệt (đưa vào hàng chờ on-chain)",
+    "confirmApproveLocal": "Duyệt lệnh rút này để thực hiện on-chain thủ công? Tiền chưa di chuyển ngay — bạn vẫn cần tự gửi giao dịch rồi nộp mã hash kết quả."
   },
   "adminDashboard": {
     "pageTitle": "Bảng điều khiển",
@@ -768,6 +830,12 @@
       "unpaid": "Lãi chưa chi trả {coin}",
       "principalSub": "{amount} đang khóa · {n} đang hoạt động",
       "error": "Không có số liệu nợ — đừng hiểu là bằng 0."
+    },
+    "reserveStrip": {
+      "title": "Xác minh dự trữ (PoR-1″)",
+      "error": "Không thể tải trạng thái dự trữ.",
+      "empty": "Chưa có coin nào thuộc thẩm quyền cục bộ.",
+      "notComputable": "Không thể tính toán"
     }
   },
   "adminSettings": {
@@ -1058,6 +1126,203 @@
         "FAILED_SYSTEM": "Chúng tôi không thể hoàn tất gia hạn.",
         "FAILED_GRANTED_POSITION": "Chúng tôi không thể hoàn tất gia hạn."
       }
+    }
+  },
+  "adminReserve": {
+    "pageTitle": "Xác minh dự trữ (PoR-1″)",
+    "pageSubtitle": "Bằng chứng dự trữ on-chain, cơ cấu nghĩa vụ nợ và cổng phát hành — theo từng coin phát hành nội bộ.",
+    "refresh": "Làm mới",
+    "loading": "Đang tải…",
+    "noCoins": "Chưa có coin quản lý nào được cấu hình.",
+    "noLocalCoins": "Chưa có coin nào thuộc thẩm quyền cục bộ — không có gì để xác minh.",
+    "por": {
+      "title": "Xác minh dự trữ (PoR-1″)",
+      "left": {
+        "label": "Tổng nghĩa vụ nợ (vế trái)"
+      },
+      "right": {
+        "label": "Số dư on-chain của các địa chỉ được kiểm soát (vế phải)",
+        "addressCount": "{n} địa chỉ đã đăng ký"
+      },
+      "margin": {
+        "label": "Biên độ (vế phải − vế trái)"
+      },
+      "inFlight": {
+        "label": "Khoản điều chỉnh · rút tiền đang xử lý",
+        "note": "Đã gửi on-chain nhưng chưa được xác minh. Số tiền này không được cộng vào bên nào cả."
+      },
+      "notComputable": "Không thể tính toán",
+      "whyIncomplete": {
+        "title": "Vì sao chưa thể xác minh"
+      },
+      "blockedBy": {
+        "a4": "{component} — chưa thể tính toán",
+        "h2": "{component} — chưa quyết định cách xử lý gốc grant",
+        "addresses": "Vế dự trữ — chưa đăng ký địa chỉ kiểm soát (chưa có phản hồi về ví công ty)"
+      },
+      "lastRun": "Kiểm tra gần nhất {absolute} ({relative}) · {trigger} · lượt chạy {id}",
+      "chip": {
+        "workerOff": "Worker xác minh đang tắt",
+        "staleVerdict": "Kết quả đã cũ",
+        "addressSetChanged": "Danh sách địa chỉ đã thay đổi kể từ lượt chạy này"
+      },
+      "runNow": "Chạy xác minh ngay",
+      "runNowTitle": "Chỉ đọc. Tính lại tổng sổ cái và đọc lại số dư on-chain của các địa chỉ đã đăng ký. Không di chuyển bất kỳ khoản tiền nào.",
+      "state": {
+        "pass": {
+          "title": "Đã xác minh",
+          "body": "Mọi thành phần nghĩa vụ nợ đã được tính toán và được bảo đảm bằng số dư on-chain của các địa chỉ kiểm soát đã đăng ký."
+        },
+        "fail": {
+          "title": "Vi phạm dự trữ",
+          "body": "Nghĩa vụ nợ đã phát hành vượt quá số dư on-chain của các địa chỉ kiểm soát. Không phát hành thêm cho đến khi khắc phục."
+        },
+        "neverRun": {
+          "title": "Chưa từng xác minh",
+          "body": "Không có lượt xác minh nào cho coin này. Chưa kiểm tra không có nghĩa là đạt."
+        },
+        "queryFailed": {
+          "title": "Không thể xác minh",
+          "body": "Truy vấn on-chain hoặc sổ cái thất bại. Đây là sự cố, không phải kết quả xác minh."
+        },
+        "stale": {
+          "title": "Kết quả đã cũ",
+          "body": "Lượt chạy gần nhất đã hơn {minutes} phút. Hãy coi kết quả này là chưa xác minh."
+        },
+        "incomplete": {
+          "title": "Chưa thể xác minh",
+          "body": "Một hoặc nhiều thành phần nghĩa vụ nợ chưa thể tính toán. Không phải đạt, cũng không phải thất bại — việc kiểm tra hiện chưa có câu trả lời."
+        },
+        "unconfigured": {
+          "title": "Chưa cấu hình vế dự trữ",
+          "body": "Chưa có địa chỉ kiểm soát nào được đăng ký nên vế dự trữ bằng không. Phép tính chỉ \"đạt\" vì cả hai vế đều bằng không — điều này không chứng minh được gì."
+        },
+        "unavailable": {
+          "title": "Không thể tải trạng thái dự trữ",
+          "body": "Đừng hiểu khoảng trống này là \"đã xác minh\" hay \"nghĩa vụ nợ bằng không\"."
+        }
+      }
+    },
+    "liability": {
+      "title": "Cơ cấu nghĩa vụ nợ",
+      "total": {
+        "label": "Tổng nghĩa vụ nợ",
+        "note": "Toàn bộ số tiền này là số dư mà ví công ty phải nắm giữ."
+      },
+      "additive": "Thành phần (được cộng vào tổng)",
+      "subset": "Thành phần (đã nằm trong dòng khác · không cộng thêm)",
+      "comp": {
+        "localBalance": "Tổng số dư sổ cái cục bộ",
+        "unclaimedInterest": "Lãi đã ghi sổ chưa nhận",
+        "grantPrincipal": "Gốc grant cần chi trả",
+        "referralPayable": "Thưởng giới thiệu cần chi trả",
+        "userPrincipal": "Trong đó gốc do người dùng tự stake",
+        "withdrawalHold": "Trong đó khoản giữ cho yêu cầu rút tiền",
+        "compensationPlan": "Cam kết chương trình thưởng (chưa phát sinh)",
+        "inFlight": "Rút tiền on-chain đang xử lý"
+      },
+      "accrualRate": "+{amount} {coin} mỗi ngày quyết toán",
+      "settled": {
+        "label": "Đã gửi on-chain (nghĩa vụ nợ đã được giải trừ)",
+        "note": "Đây là con số duy nhất trên bảng này thể hiện nghĩa vụ nợ đã thực sự không còn tồn tại."
+      },
+      "rail": {
+        "noRail": "Không có kênh rút tiền",
+        "manualOnchain": "Kênh on-chain thủ công"
+      },
+      "claimRail": {
+        "disabled": "Đã tắt nhận thưởng",
+        "enabled": "Đã bật nhận thưởng",
+        "note": "Nhận thưởng chỉ chuyển lãi vào số dư cục bộ. Không làm giảm nghĩa vụ nợ của nền tảng."
+      }
+    },
+    "ledger": {
+      "title": "Sổ cái cục bộ",
+      "balance": "Tổng sổ cái",
+      "heldLabel": "Tổng giữ lại",
+      "available": "Tổng khả dụng",
+      "holders": "{n} người giữ · {rows} dòng sổ cái",
+      "held": {
+        "withdrawal": "Đang chờ rút tiền",
+        "stakeLock": "Khóa gốc stake",
+        "stakeLockNote": "Khóa mềm — không bị trừ khỏi số dư."
+      },
+      "recon": {
+        "title": "Trạng thái đối soát",
+        "never": "Chưa từng đối soát",
+        "summary": "Đã kiểm tra {checked} · sai lệch {mismatches} · lệch phiên bản {drift}"
+      },
+      "holdInvariant": {
+        "ok": "Khoản giữ khớp với các yêu cầu rút tiền đang mở",
+        "broken": "Khoản giữ {holds} ≠ yêu cầu rút tiền đang mở {requests} (chênh lệch {diff})"
+      }
+    },
+    "gate": {
+      "title": "Cổng phát hành",
+      "none": "Hiện không có điều kiện nào chặn việc phát hành.",
+      "blocker": {
+        "t2": "Vi phạm thẩm quyền (T2) — đã dừng",
+        "t1": "Cảnh báo niêm yết thẩm quyền (T1) — chặn phát hành mới",
+        "porFail": "Vi phạm dự trữ — lượt chạy {id}",
+        "porUnverified": "Dự trữ chưa được xác minh ({state})",
+        "claimOff": "Công tắc ngắt nhận thưởng đang tắt",
+        "settlementOff": "Worker quyết toán đang tắt",
+        "maintenance": "Chế độ bảo trì"
+      },
+      "hint": {
+        "authorityT2": "Giải quyết thông qua quy trình chuyển đổi thẩm quyền.",
+        "authorityT1": "Xem bảng theo dõi thẩm quyền coin bên dưới.",
+        "por": "Xem bảng xác minh dự trữ ở trên.",
+        "killSwitch": "Cài đặt nền tảng.",
+        "maintenance": "Cài đặt nền tảng."
+      }
+    },
+    "authority": {
+      "title": "Theo dõi thẩm quyền coin",
+      "hub": "Thẩm quyền hub",
+      "local": "Thẩm quyền cục bộ",
+      "stage": {
+        "clear": "Bình thường",
+        "unverified": "Chưa xác nhận — giám sát đang tắt hoặc đã cũ",
+        "t1": "Phát hiện niêm yết (T1)",
+        "t2": "Vi phạm số dư (T2)"
+      },
+      "hubListedYes": "Coin này hiện đã xuất hiện trong phản hồi markets của hub.",
+      "t1": {
+        "impact": "Phát hành mới không có phê duyệt của quản trị viên sẽ bị chặn. Các chức năng dành cho người dùng không bị ảnh hưởng."
+      },
+      "t2": {
+        "impact": "Phát hành, mở vị thế mới và thực thi rút tiền đều bị tạm dừng. Vẫn có thể truy vấn đọc.",
+        "evidence": "Đã quan sát thấy số dư hub khác không là {amount} cho người dùng {userId} vào lúc {when}."
+      },
+      "noClear": "Cảnh báo này không thể tắt từ màn hình này. Nó chỉ được giải trừ khi các lần dò trả về sạch, hoặc thông qua quy trình chuyển đổi thẩm quyền.",
+      "unknownRun": "Số lần dò không xác định liên tiếp: {n} / {threshold}",
+      "probeOff": "Worker dò thẩm quyền đang tắt"
+    },
+    "registry": {
+      "title": "Địa chỉ được kiểm soát",
+      "add": "Thêm địa chỉ",
+      "empty": "Chưa có địa chỉ kiểm soát nào được đăng ký nên việc xác minh dự trữ không thể thành lập (chưa có phản hồi về ví công ty).",
+      "field": {
+        "coin": "Coin",
+        "network": "Mạng lưới",
+        "address": "Địa chỉ",
+        "label": "Nhãn",
+        "notes": "Ghi chú"
+      },
+      "addWarning": "Thay đổi này sẽ có hiệu lực ở vế dự trữ kể từ lượt xác minh tiếp theo.",
+      "explorer": "Xem trên explorer",
+      "deactivate": "Vô hiệu hóa",
+      "deactivateNote": "Được giữ lại để phục vụ kiểm toán"
+    },
+    "incident": {
+      "POR_FAIL": "Vi phạm dự trữ — nghĩa vụ nợ đã phát hành của {coin} vượt quá số dư on-chain của các địa chỉ kiểm soát (lượt chạy {runId}). Mọi con số số dư trên trang này vẫn chính xác, nhưng nền tảng không thể thực hiện đầy đủ tất cả. Hãy dừng phát hành và không phê duyệt rút tiền cho đến khi dự trữ được khôi phục hoặc nghĩa vụ nợ giảm xuống.",
+      "AUTHORITY_T2": "Vi phạm thẩm quyền (T2) trên {coin} — hub đã trả về số dư người dùng cuối khác không cho một coin thuộc thẩm quyền cục bộ. Tính chất duy nhất giúp mô hình thẩm quyền phân tách an toàn đã bị phá vỡ. Phát hành, mở vị thế mới và thực thi rút tiền đã bị tạm dừng; không tự ý khôi phục thủ công. Hãy giải quyết thông qua quy trình chuyển đổi thẩm quyền.",
+      "AUTHORITY_T1": "Phát hiện niêm yết (T1) — {coin} hiện đã xuất hiện trong danh sách của hub. Chưa quan sát thấy số dư người dùng nào ở phía hub nên đây là cảnh báo, không phải vi phạm. Phát hành mới không có phê duyệt của quản trị viên đã bị chặn và tần suất dò đã được tăng lên.",
+      "HOLD_INVARIANT_BROKEN": "Bất biến về khoản giữ của {coin} đã bị phá vỡ — tổng khoản giữ {holds} nhưng tổng yêu cầu rút tiền đang mở {requests}. Hoặc là người dùng có thể rút số tiền đã được cam kết ở nơi khác, hoặc tiền đang bị khóa mà không có yêu cầu tương ứng.",
+      "HUB_COIN_HAS_LOCAL_BALANCE": "{coin} được khai báo thuộc thẩm quyền hub nhưng vẫn tồn tại các dòng sổ cái cục bộ. Một trong hai điều này là sai, và dù thế nào thì một phía cũng có số dư không thể nhìn thấy.",
+      "ISSUING_WITHOUT_VERIFICATION": "Đang phát hành mà chưa xác minh — việc phát hành cho {coin} đang được bật trong khi xác minh dự trữ đang ở trạng thái \"{state}\". Bất biến dự trữ là tuyến phòng thủ duy nhất chống phát hành quá mức, và hiện nó không được duy trì.",
+      "UNKNOWN_CODE": "Mã sự cố không xác định {code} — bản build quản trị này có thể cũ hơn server. Đừng cho rằng nó vô hại."
     }
   }
 }

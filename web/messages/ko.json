@@ -18,7 +18,8 @@
     "adminConsole": "관리자 콘솔",
     "coins": "코인",
     "coinManagement": "코인 관리",
-    "invite": "초대"
+    "invite": "초대",
+    "reserve": "준비금"
   },
   "login": {
     "title": "로그인",
@@ -414,15 +415,23 @@
     },
     "yield": {
       "recordedLabel": "기록된 수익",
-      "recordedHelp": "스테이킹 원장에 기록된 금액입니다. 지갑 잔고에는 포함되지 않습니다.",
-      "claimedLabel": "지갑 수령 완료",
-      "claimedHelp": "지갑 잔고로 옮겨진 금액입니다.",
+      "recordedHelp": "스테이킹 원장에 기록된 금액입니다. BANA 잔고에는 포함되지 않습니다.",
+      "claimedLabel": "수령 완료",
+      "claimedHelp": "BANA 잔고로 옮겨진 금액입니다.",
       "lockedLabel": "잠긴 원금",
-      "lockedHelp": "원금은 지갑에 그대로 있으며, 약정이 끝날 때까지 출금할 수 없습니다.",
+      "lockedHelp": "원금은 BANA 잔고에 그대로 있으며, 약정이 끝날 때까지 출금할 수 없습니다.",
       "empty": "아직 기록된 수익이 없습니다."
     },
     "claim": {
-      "unavailable": "지갑으로의 지급은 아직 제공되지 않습니다."
+      "unavailable": "수령은 아직 제공되지 않습니다.",
+      "confirmBody": "{amount} {coin}이 BANA 잔고로 옮겨집니다. 지금까지 기록된 {coin} 수익 전액입니다.",
+      "confirmNote2": "외부 주소로 보내는 것은 검토를 거치는 별도의 신청입니다.",
+      "confirmAction": "수령",
+      "cancel": "취소",
+      "succeeded": "{amount} {coin}이 BANA 잔고로 옮겨졌습니다.",
+      "resultUnknownRefresh": "결과를 확인하지 못했습니다. 상태를 새로 불러오면 처리 여부를 확인할 수 있습니다.",
+      "refreshStatus": "상태 새로고침",
+      "destinationNote": "수령하면 BANA 잔고로 즉시 반영됩니다. 외부 주소로 보내려면 출금을 신청해야 합니다."
     },
     "nav": {
       "stake": "예치",
@@ -445,7 +454,7 @@
     "position": {
       "recordedLabel": "기록됨",
       "settledDays": "정산 {d}/{total}일",
-      "maturedNote": "약정이 끝나면 원금의 잠금이 해제되어 지갑에서 사용할 수 있습니다. 기록된 수익은 자동으로 옮겨지지 않습니다."
+      "maturedNote": "약정이 끝나면 원금의 잠금이 해제되어 BANA 잔고에서 사용할 수 있습니다. 기록된 수익은 자동으로 옮겨지지 않습니다."
     },
     "yieldLog": {
       "title": "수익 내역",
@@ -501,7 +510,13 @@
     "copyBtn": "복사",
     "sendOnlyWarning": "이 주소로는 <b>{network}</b> 네트워크의 <b>{coin}</b>만 보내세요.",
     "confirmationsNote": "네트워크 확인 후 입금이 반영됩니다.",
-    "selectCoinFirst": "위에서 코인과 네트워크를 선택하면 입금 주소가 표시됩니다."
+    "selectCoinFirst": "위에서 코인과 네트워크를 선택하면 입금 주소가 표시됩니다.",
+    "unsupportedAsset": "{coin} 입금은 지원하지 않습니다.",
+    "unsupportedBadge": "입금 미지원",
+    "unsupportedBlockTitle": "입금할 수 없는 자산",
+    "unsupportedBlockBody": "{coins}은(는) 이 계정으로 입금할 수 없습니다. 다른 곳에 표시된 주소로 보내지 마십시오.",
+    "formerAddressWarning": "이전에 발급된 {coin} 입금 주소가 있더라도 사용하지 마십시오. 해당 주소로 보낸 자산은 자동으로 반영되지 않습니다. 이미 보내셨다면 고객지원에 문의하십시오.",
+    "checkUnavailable": "지금은 확인할 수 없습니다. 잠시 후 다시 시도하십시오."
   },
   "walletPage": {
     "title": "지갑",
@@ -525,7 +540,19 @@
     "transactionHistory": "거래 내역",
     "transactionHistorySubtitle": "입금, 출금 및 거래",
     "depositNow": "지금 입금",
-    "depositWallet": "입금"
+    "depositWallet": "입금",
+    "groupCustody": "입출금 계정",
+    "groupPlatform": "플랫폼 발행 자산",
+    "groupPlatformHelp": "BANA는 BANA 플랫폼이 발행한 자산입니다. 이 잔고는 BANA가 기록합니다. 외부 주소로 보내려면 출금을 신청하며, 신청 건은 검토를 거쳐 온체인으로 전송됩니다.",
+    "localBalanceLabel": "잔고",
+    "localAvailableLabel": "사용 가능",
+    "localHoldStake": "스테이킹 잠금",
+    "localHoldWithdrawal": "출금 신청 보류",
+    "localHoldOther": "기타 보류",
+    "localHoldWithdrawalLink": "신청 보기",
+    "localEmpty": "아직 기록된 BANA가 없습니다.",
+    "localLoading": "불러오는 중…",
+    "localLoadFailed": "이 잔고를 불러오지 못했습니다."
   },
   "withdraw": {
     "backAria": "뒤로",
@@ -567,7 +594,27 @@
     "selectNetwork": "네트워크 선택",
     "networkHint": "받는 플랫폼과 동일한 네트워크를 선택하세요.",
     "amountDestTitle": "금액 및 주소",
-    "selectCoinFirst": "위에서 코인을 선택하면 금액을 입력할 수 있습니다."
+    "selectCoinFirst": "위에서 코인을 선택하면 금액을 입력할 수 있습니다.",
+    "railUnavailable": "{coin} 출금은 제공되지 않습니다.",
+    "railPaused": "{coin} 출금이 현재 중지되어 있습니다.",
+    "coinHalted": "이 자산의 출금 처리를 일시 중지했습니다. 잔고는 그대로 기록되어 있습니다.",
+    "availableLabel": "출금 가능",
+    "heldNote": "이미 신청한 출금 건으로 {amount} {coin}이 보류 중입니다.",
+    "amountExceedsAvailable": "출금 가능 금액은 {available} {coin}입니다.",
+    "feeLocalLabel": "수수료",
+    "feeLocalHelp": "온체인 전송 비용을 충당하는 수수료입니다. {coin}으로 차감됩니다.",
+    "sendAmountLabel": "보내는 금액",
+    "debitTotalLabel": "잔고에서 차감",
+    "statusPending": "검토 대기",
+    "statusAwaitingOnchain": "승인됨 · 전송 대기",
+    "statusAwaitingOnchainHelp": "이 신청은 승인되었으며 온체인 전송을 기다리고 있습니다.",
+    "statusCompletedLocal": "완료",
+    "statusRejected": "거절됨",
+    "statusRejectedHelp": "보류되었던 금액은 다시 잔고에서 사용할 수 있습니다.",
+    "statusFailed": "처리되지 않음",
+    "statusFailedHelp": "이 신청은 처리되지 않았습니다. 잔고는 그대로입니다.",
+    "txHashLabel": "트랜잭션",
+    "viewOnExplorer": "블록 익스플로러에서 보기"
   },
   "settings": {
     "breadcrumbActivity": "활동",
@@ -616,6 +663,8 @@
     "syncing": "BANA와 동기화 중…",
     "liveRecords": "실시간 • BANA의 {count, plural, one {기록 #개} other {기록 #개}}",
     "awaitingApproval": "관리자 승인 대기 중",
+    "awaitingOnchain": "승인됨 · 전송 대기",
+    "awaitingOnchainDescription": "승인되었으며 온체인 전송을 기다리고 있습니다",
     "loadError": "활동을 불러올 수 없습니다"
   },
   "notifications": {
@@ -732,7 +781,20 @@
     "statusAPPROVED": "승인됨",
     "statusREJECTED": "거부됨",
     "statusFAILED": "실패",
-    "statusPROCESSING": "처리 중"
+    "statusPROCESSING": "처리 중",
+    "colRail": "레일",
+    "railLocal": "수동 온체인",
+    "railHub": "허브 자동",
+    "statusAWAITING_ONCHAIN": "승인됨 · 전송 대기",
+    "feeAmount": "수수료 {fee}",
+    "debitTotal": "차감 {total}",
+    "txHashPlaceholder": "트랜잭션 해시 (0x…)",
+    "verifyAndSettle": "검증 및 확정",
+    "verifyPassed": "검증 완료 — 자금이 사용자에게 도착했습니다.",
+    "verifyFailed": "검증 실패",
+    "verifyInconclusive": "불확정",
+    "approveLocal": "승인 (전송 대기로 이동)",
+    "confirmApproveLocal": "이 출금을 수동 온체인 실행 대기로 승인하시겠습니까? 아직 자금은 이동하지 않으며, 직접 전송을 실행한 뒤 결과 해시를 제출해야 합니다."
   },
   "adminDashboard": {
     "pageTitle": "대시보드",
@@ -768,6 +830,12 @@
       "unpaid": "{coin} 미지급 이자",
       "principalSub": "잠긴 원금 {amount} · 활성 {n}",
       "error": "부채 수치를 불러오지 못했습니다 — 0으로 해석하지 마십시오."
+    },
+    "reserveStrip": {
+      "title": "준비금 검증 (PoR-1″)",
+      "error": "준비금 상태를 불러오지 못했습니다.",
+      "empty": "로컬 권위 코인이 아직 없습니다.",
+      "notComputable": "계산 불가"
     }
   },
   "adminSettings": {
@@ -1058,6 +1126,203 @@
         "FAILED_SYSTEM": "갱신을 완료할 수 없습니다.",
         "FAILED_GRANTED_POSITION": "갱신을 완료할 수 없습니다."
       }
+    }
+  },
+  "adminReserve": {
+    "pageTitle": "준비금 검증 (PoR-1″)",
+    "pageSubtitle": "로컬 발행 코인별 온체인 준비금 증명·청구권 구성·발행 게이트.",
+    "refresh": "새로고침",
+    "loading": "불러오는 중…",
+    "noCoins": "등록된 관리 코인이 없습니다.",
+    "noLocalCoins": "로컬 권위 코인이 아직 없습니다 — 검증할 대상이 없습니다.",
+    "por": {
+      "title": "준비금 검증 (PoR-1″)",
+      "left": {
+        "label": "청구권 총액 (좌변)"
+      },
+      "right": {
+        "label": "통제 주소 온체인 보유 (우변)",
+        "addressCount": "등록 주소 {n}건"
+      },
+      "margin": {
+        "label": "마진 (우변 − 좌변)"
+      },
+      "inFlight": {
+        "label": "조정 항목 · 실행 중 출금",
+        "note": "온체인으로 이미 전송되었으나 아직 검증되지 않은 금액입니다. 좌변·우변 어디에도 합산되지 않습니다."
+      },
+      "notComputable": "계산 불가",
+      "whyIncomplete": {
+        "title": "왜 지금 판정할 수 없는가"
+      },
+      "blockedBy": {
+        "a4": "{component} — 아직 계산할 수 없음",
+        "h2": "{component} — 그랜트 원금 처리 미결정",
+        "addresses": "준비금 측 — 통제 주소 미등록 (회사 지갑 미회신)"
+      },
+      "lastRun": "마지막 검사 {absolute} ({relative}) · {trigger} · 실행 {id}",
+      "chip": {
+        "workerOff": "검증 워커 꺼짐",
+        "staleVerdict": "오래된 판정",
+        "addressSetChanged": "이 실행 이후 주소 구성 변경됨"
+      },
+      "runNow": "지금 검사 실행",
+      "runNowTitle": "읽기 전용입니다. 원장 합계를 재계산하고 등록된 주소의 온체인 잔고를 다시 조회합니다. 자금을 이동시키지 않습니다.",
+      "state": {
+        "pass": {
+          "title": "검증 통과",
+          "body": "청구권 구성요소가 모두 계산되었고, 등록된 통제 주소의 온체인 잔고로 충당됩니다."
+        },
+        "fail": {
+          "title": "준비금 위반",
+          "body": "발행된 청구권이 통제 주소 온체인 잔고를 초과합니다. 해소 전까지 추가 발행을 하지 마십시오."
+        },
+        "neverRun": {
+          "title": "검증한 적 없음",
+          "body": "이 코인에 대한 검사 실행 기록이 없습니다. 검사하지 않은 것은 통과가 아닙니다."
+        },
+        "queryFailed": {
+          "title": "검증 조회 실패",
+          "body": "온체인 또는 원장 조회가 실패했습니다. 판정이 아니라 장애입니다."
+        },
+        "stale": {
+          "title": "판정이 오래되었습니다",
+          "body": "마지막 실행이 {minutes}분 이상 지났습니다. 이 판정을 미검증으로 취급하십시오."
+        },
+        "incomplete": {
+          "title": "아직 검증할 수 없음",
+          "body": "청구권 구성요소 중 일부를 아직 계산할 수 없습니다. 통과도 실패도 아니며, 검사에 답이 없는 상태입니다."
+        },
+        "unconfigured": {
+          "title": "준비금(우변) 미구성",
+          "body": "등록된 통제 주소가 없어 준비금 측이 0입니다. 양변이 모두 0이라 산술적으로만 통과한 것이며, 아무것도 증명하지 않습니다."
+        },
+        "unavailable": {
+          "title": "준비금 상태를 불러오지 못했습니다",
+          "body": "이 공백을 \"검증됨\" 또는 \"부채 0\"으로 해석하지 마십시오."
+        }
+      }
+    },
+    "liability": {
+      "title": "청구권 구성",
+      "total": {
+        "label": "청구권 총액",
+        "note": "이 전액이 회사 지갑이 보유해야 하는 금액입니다."
+      },
+      "additive": "구성 (가산)",
+      "subset": "구성 (부분집합 · 총액에 더해지지 않음)",
+      "comp": {
+        "localBalance": "로컬 원장 잔고 총액",
+        "unclaimedInterest": "미청구 원장 이자",
+        "grantPrincipal": "그랜트 원금 지급 대상액",
+        "referralPayable": "레퍼럴 보너스 지급 대상액",
+        "userPrincipal": "그중 사용자 예치 원금",
+        "withdrawalHold": "그중 출금 홀드",
+        "compensationPlan": "보상 플랜 약정 (아직 발생하지 않음)",
+        "inFlight": "실행 중 온체인 출금"
+      },
+      "accrualRate": "정산일 1일당 +{amount} {coin}",
+      "settled": {
+        "label": "온체인 전송 완료 (부채 소멸분)",
+        "note": "이 패널에서 실제로 소멸한 부채를 가리키는 유일한 수치입니다."
+      },
+      "rail": {
+        "noRail": "출금 레일 없음",
+        "manualOnchain": "수동 온체인 레일"
+      },
+      "claimRail": {
+        "disabled": "클레임 비활성",
+        "enabled": "클레임 활성",
+        "note": "클레임은 이자를 로컬 잔고로 옮기는 동작입니다. 플랫폼 부채를 줄이지 않습니다."
+      }
+    },
+    "ledger": {
+      "title": "로컬 원장",
+      "balance": "원장 총액",
+      "heldLabel": "홀드 합계",
+      "available": "가용 합계",
+      "holders": "보유 사용자 {n}명 · 원장 행 {rows}건",
+      "held": {
+        "withdrawal": "출금 대기",
+        "stakeLock": "스테이킹 원금 락",
+        "stakeLockNote": "소프트 락 — 잔고에서 차감되지 않습니다."
+      },
+      "recon": {
+        "title": "대사 상태",
+        "never": "미대사",
+        "summary": "검사 {checked} · 불일치 {mismatches} · 버전 드리프트 {drift}"
+      },
+      "holdInvariant": {
+        "ok": "홀드와 미결 출금 요청이 일치합니다",
+        "broken": "홀드 {holds} ≠ 미결 출금 요청 {requests} (차이 {diff})"
+      }
+    },
+    "gate": {
+      "title": "발행 게이트",
+      "none": "현재 발행을 막는 조건이 없습니다.",
+      "blocker": {
+        "t2": "권위 위반(T2) — 정지",
+        "t1": "권위 등재 경고(T1) — 신규 발행 차단",
+        "porFail": "준비금 위반 — 실행 {id}",
+        "porUnverified": "준비금 미검증 ({state})",
+        "claimOff": "클레임 킬 스위치 비활성",
+        "settlementOff": "정산 워커 비활성",
+        "maintenance": "점검 모드"
+      },
+      "hint": {
+        "authorityT2": "권위 전환 절차로 해소하십시오.",
+        "authorityT1": "아래 코인 권위 감시 패널을 참조하십시오.",
+        "por": "위 준비금 검증 패널을 참조하십시오.",
+        "killSwitch": "플랫폼 설정.",
+        "maintenance": "플랫폼 설정."
+      }
+    },
+    "authority": {
+      "title": "코인 권위 감시",
+      "hub": "허브 권위",
+      "local": "로컬 권위",
+      "stage": {
+        "clear": "정상",
+        "unverified": "미확인 — 감시가 꺼져 있거나 오래되었습니다",
+        "t1": "등재 감지 (T1)",
+        "t2": "잔고 위반 (T2)"
+      },
+      "hubListedYes": "이 코인이 허브 markets 응답에 등재되었습니다.",
+      "t1": {
+        "impact": "관리자 승인 없는 신규 발행이 차단됩니다. 사용자 기능은 영향받지 않습니다."
+      },
+      "t2": {
+        "impact": "발행·신규 체결·출금 실행이 정지됩니다. 조회는 유지됩니다.",
+        "evidence": "{when}에 사용자 {userId}에 대해 0이 아닌 허브 잔고 {amount}가 관측되었습니다."
+      },
+      "noClear": "이 경보는 화면에서 해제할 수 없습니다. 프로브가 정상으로 돌아오거나 권위 전환 절차가 완료될 때 해소됩니다.",
+      "unknownRun": "연속 판정 불가 프로브: {n} / {threshold}회",
+      "probeOff": "권위 감시 워커가 꺼져 있습니다"
+    },
+    "registry": {
+      "title": "통제 주소",
+      "add": "주소 추가",
+      "empty": "통제 주소가 등록되지 않아 준비금 검증이 성립하지 않습니다 (회사 지갑 미회신).",
+      "field": {
+        "coin": "코인",
+        "network": "네트워크",
+        "address": "주소",
+        "label": "라벨",
+        "notes": "비고"
+      },
+      "addWarning": "이 변경은 다음 검사 실행부터 준비금 측에 반영됩니다.",
+      "explorer": "익스플로러에서 보기",
+      "deactivate": "비활성화",
+      "deactivateNote": "감사를 위해 보존됨"
+    },
+    "incident": {
+      "POR_FAIL": "준비금 위반 — {coin}의 발행된 청구권이 통제 주소 온체인 보유를 초과합니다(실행 {runId}). 이 페이지의 잔고 수치는 여전히 정확하지만, 플랫폼이 그 전부를 이행할 수 없습니다. 준비금이 복구되거나 청구권이 줄기 전까지 발행을 중단하고 출금을 승인하지 마십시오.",
+      "AUTHORITY_T2": "{coin}에 권위 위반(T2)이 발생했습니다 — 로컬 권위 코인에 대해 허브가 0이 아닌 엔드유저 잔고를 반환했습니다. 분할 권위 모델을 안전하게 만드는 유일한 성질이 깨졌습니다. 발행·신규 체결·출금 실행이 정지되었습니다. 수동으로 되살리지 마십시오. 권위 전환 절차로 해소하십시오.",
+      "AUTHORITY_T1": "등재 감지(T1) — {coin}이(가) 허브 목록에 나타났습니다. 허브 측 엔드유저 잔고는 아직 관측되지 않았으므로 위반이 아니라 경고입니다. 관리자 승인 없는 신규 발행이 차단되고 프로브 주기가 상향되었습니다.",
+      "HOLD_INVARIANT_BROKEN": "{coin}의 홀드 불변식이 깨졌습니다 — 홀드 합계 {holds}, 미결 출금 요청 합계 {requests}. 이미 다른 곳에 확약된 자금을 사용자가 인출할 수 있거나, 근거 없는 홀드로 자금이 잠겨 있습니다.",
+      "HUB_COIN_HAS_LOCAL_BALANCE": "{coin}은 허브 권위로 선언되어 있으나 로컬 원장 행이 존재합니다. 둘 중 하나가 틀렸으며, 어느 쪽이든 한쪽에서 보이지 않는 잔고가 있습니다.",
+      "ISSUING_WITHOUT_VERIFICATION": "검증 없이 발행 중 — {coin}의 발행이 활성 상태인데 준비금 검증은 \"{state}\"입니다. 준비금 불변식은 과다 발행에 대한 유일한 방어선이며, 지금 그것이 성립하고 있지 않습니다.",
+      "UNKNOWN_CODE": "알 수 없는 인시던트 코드 {code} — 관리자 화면 빌드가 서버보다 오래되었을 수 있습니다. 무해하다고 가정하지 마십시오."
     }
   }
 }

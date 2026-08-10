@@ -18,7 +18,8 @@
     "adminConsole": "Admin Console",
     "coins": "Coins",
     "coinManagement": "Coin Management",
-    "invite": "Invite"
+    "invite": "Invite",
+    "reserve": "Reserve"
   },
   "login": {
     "title": "Sign in",
@@ -414,15 +415,23 @@
     },
     "yield": {
       "recordedLabel": "Recorded yield",
-      "recordedHelp": "Recorded in your staking ledger. It is not part of your wallet balance.",
-      "claimedLabel": "Claimed to wallet",
-      "claimedHelp": "Already moved to your wallet balance.",
+      "recordedHelp": "Recorded in your staking ledger. It is not part of your BANA balance.",
+      "claimedLabel": "Claimed",
+      "claimedHelp": "Already moved to your BANA balance.",
       "lockedLabel": "Locked principal",
-      "lockedHelp": "Your principal stays in your wallet but cannot be withdrawn until the term ends.",
+      "lockedHelp": "Your principal stays in your BANA balance but cannot be withdrawn until the term ends.",
       "empty": "No yield recorded yet."
     },
     "claim": {
-      "unavailable": "Payout to your wallet is not available yet."
+      "unavailable": "Payout is not available yet.",
+      "confirmBody": "{amount} {coin} will be moved to your BANA balance. This is all {coin} yield recorded up to now.",
+      "confirmNote2": "Sending it to an external address is a separate request that is reviewed first.",
+      "confirmAction": "Claim",
+      "cancel": "Cancel",
+      "succeeded": "{amount} {coin} moved to your BANA balance.",
+      "resultUnknownRefresh": "The result could not be confirmed. Reload the status to see whether it went through.",
+      "refreshStatus": "Reload status",
+      "destinationNote": "Claiming moves the amount to your BANA balance right away. To send it to an external address, request a withdrawal."
     },
     "nav": {
       "stake": "Stake",
@@ -445,7 +454,7 @@
     "position": {
       "recordedLabel": "Recorded",
       "settledDays": "Settled {d}/{total} days",
-      "maturedNote": "When a term ends, the principal stops being locked and is available in your wallet. Recorded yield is not moved automatically."
+      "maturedNote": "When a term ends, the principal stops being locked and is available in your BANA balance. Recorded yield is not moved automatically."
     },
     "yieldLog": {
       "title": "Yield log",
@@ -501,7 +510,13 @@
     "copyBtn": "Copy",
     "sendOnlyWarning": "Send only <b>{coin}</b> on the <b>{network}</b> network to this address.",
     "confirmationsNote": "Your deposit is credited after the network confirms it.",
-    "selectCoinFirst": "Choose a coin and network above to see your deposit address."
+    "selectCoinFirst": "Choose a coin and network above to see your deposit address.",
+    "unsupportedAsset": "{coin} deposits are not supported.",
+    "unsupportedBadge": "Deposits not supported",
+    "unsupportedBlockTitle": "Assets that cannot be deposited",
+    "unsupportedBlockBody": "{coins} cannot be deposited to this account. Do not send them to any address shown elsewhere.",
+    "formerAddressWarning": "If you were given a {coin} deposit address before, do not use it. Assets sent to it are not credited automatically. If you have already sent some, contact support.",
+    "checkUnavailable": "This cannot be checked right now. Try again in a moment."
   },
   "walletPage": {
     "title": "Wallet",
@@ -525,7 +540,19 @@
     "transactionHistory": "Transaction history",
     "transactionHistorySubtitle": "Deposits, withdrawals & trades",
     "depositNow": "Deposit now",
-    "depositWallet": "Deposit"
+    "depositWallet": "Deposit",
+    "groupCustody": "Deposit & withdrawal account",
+    "groupPlatform": "Platform-issued assets",
+    "groupPlatformHelp": "BANA is issued by the BANA platform. This balance is recorded by BANA. To send it to an external address, request a withdrawal; requests are reviewed and then sent on-chain.",
+    "localBalanceLabel": "Balance",
+    "localAvailableLabel": "Available",
+    "localHoldStake": "Locked for staking",
+    "localHoldWithdrawal": "Held for a withdrawal request",
+    "localHoldOther": "Other hold",
+    "localHoldWithdrawalLink": "View request",
+    "localEmpty": "No BANA recorded yet.",
+    "localLoading": "Loading…",
+    "localLoadFailed": "Could not load this balance."
   },
   "withdraw": {
     "backAria": "Back",
@@ -567,7 +594,27 @@
     "selectNetwork": "Select Network",
     "networkHint": "Ensure you select the same network as the receiving platform.",
     "amountDestTitle": "Amount & Destination",
-    "selectCoinFirst": "Choose a coin above to enter an amount."
+    "selectCoinFirst": "Choose a coin above to enter an amount.",
+    "railUnavailable": "Withdrawing {coin} is not available.",
+    "railPaused": "{coin} withdrawals are stopped right now.",
+    "coinHalted": "Withdrawals for this asset are stopped. Your balance is recorded as it is.",
+    "availableLabel": "Available to withdraw",
+    "heldNote": "{amount} {coin} is held for a withdrawal request you already made.",
+    "amountExceedsAvailable": "Available to withdraw is {available} {coin}.",
+    "feeLocalLabel": "Fee",
+    "feeLocalHelp": "Covers the cost of the on-chain transfer. It is charged in {coin}.",
+    "sendAmountLabel": "Amount to send",
+    "debitTotalLabel": "Deducted from your balance",
+    "statusPending": "Awaiting review",
+    "statusAwaitingOnchain": "Approved · awaiting transfer",
+    "statusAwaitingOnchainHelp": "This request was approved and is waiting to be sent on-chain.",
+    "statusCompletedLocal": "Completed",
+    "statusRejected": "Rejected",
+    "statusRejectedHelp": "The held amount is available in your balance again.",
+    "statusFailed": "Not processed",
+    "statusFailedHelp": "This request was not processed. Your balance is unchanged.",
+    "txHashLabel": "Transaction",
+    "viewOnExplorer": "View on block explorer"
   },
   "settings": {
     "breadcrumbActivity": "Activity",
@@ -616,6 +663,8 @@
     "syncing": "Syncing with BANA…",
     "liveRecords": "Live • {count, plural, one {# record} other {# records}} from BANA",
     "awaitingApproval": "Awaiting admin approval",
+    "awaitingOnchain": "Approved · awaiting transfer",
+    "awaitingOnchainDescription": "Approved and waiting to be sent on-chain",
     "loadError": "Couldn't load activity"
   },
   "notifications": {
@@ -732,7 +781,20 @@
     "statusAPPROVED": "Approved",
     "statusREJECTED": "Rejected",
     "statusFAILED": "Failed",
-    "statusPROCESSING": "Processing"
+    "statusPROCESSING": "Processing",
+    "colRail": "Rail",
+    "railLocal": "Manual on-chain",
+    "railHub": "Hub auto",
+    "statusAWAITING_ONCHAIN": "Approved · awaiting on-chain",
+    "feeAmount": "Fee {fee}",
+    "debitTotal": "Deducted {total}",
+    "txHashPlaceholder": "Transaction hash (0x…)",
+    "verifyAndSettle": "Verify & settle",
+    "verifyPassed": "Verified — funds reached the user.",
+    "verifyFailed": "Verification failed",
+    "verifyInconclusive": "Inconclusive",
+    "approveLocal": "Approve (queue for on-chain)",
+    "confirmApproveLocal": "Approve this withdrawal for manual on-chain execution? No funds move yet — you will still need to send the transfer yourself and submit the resulting hash."
   },
   "adminDashboard": {
     "pageTitle": "Dashboard",
@@ -768,6 +830,12 @@
       "unpaid": "{coin} unpaid interest",
       "principalSub": "{amount} locked · {n} active",
       "error": "Liability figures unavailable — do not read as zero."
+    },
+    "reserveStrip": {
+      "title": "Reserve verification (PoR-1″)",
+      "error": "Could not load reserve status.",
+      "empty": "No locally-authoritative coin exists yet.",
+      "notComputable": "Not computable"
     }
   },
   "adminSettings": {
@@ -1058,6 +1126,203 @@
         "FAILED_SYSTEM": "We couldn't complete the renewal.",
         "FAILED_GRANTED_POSITION": "We couldn't complete the renewal."
       }
+    }
+  },
+  "adminReserve": {
+    "pageTitle": "Reserve Verification (PoR-1″)",
+    "pageSubtitle": "On-chain reserve proof, liability composition, and issuance gate — per locally-issued coin.",
+    "refresh": "Refresh",
+    "loading": "Loading…",
+    "noCoins": "No managed coins are configured yet.",
+    "noLocalCoins": "No locally-authoritative coin exists yet — nothing to verify.",
+    "por": {
+      "title": "Reserve verification (PoR-1″)",
+      "left": {
+        "label": "Total claims (liability side)"
+      },
+      "right": {
+        "label": "Controlled addresses — on-chain holdings",
+        "addressCount": "{n} registered address(es)"
+      },
+      "margin": {
+        "label": "Margin (reserve − claims)"
+      },
+      "inFlight": {
+        "label": "Adjusting item · withdrawals in flight",
+        "note": "Already sent on-chain, not yet verified. This amount is not added to either side."
+      },
+      "notComputable": "Not computable",
+      "whyIncomplete": {
+        "title": "Why this cannot be verified yet"
+      },
+      "blockedBy": {
+        "a4": "{component} — not yet computable",
+        "h2": "{component} — grant principal treatment is undecided",
+        "addresses": "Reserve side — no controlled address registered (company wallet unanswered)"
+      },
+      "lastRun": "Last checked {absolute} ({relative}) · {trigger} · run {id}",
+      "chip": {
+        "workerOff": "Verification worker off",
+        "staleVerdict": "Out-of-date verdict",
+        "addressSetChanged": "Address set changed since this run"
+      },
+      "runNow": "Run verification now",
+      "runNowTitle": "Read-only. Recomputes the ledger totals and re-reads the registered addresses on-chain. Moves no funds.",
+      "state": {
+        "pass": {
+          "title": "Verified",
+          "body": "All liability components were computed and are covered by the on-chain balance of the registered controlled addresses."
+        },
+        "fail": {
+          "title": "Reserve breach",
+          "body": "Issued claims exceed the on-chain balance of the controlled addresses. Do not issue anything further until this is resolved."
+        },
+        "neverRun": {
+          "title": "Never verified",
+          "body": "No verification run exists for this coin. An absent check is not a pass."
+        },
+        "queryFailed": {
+          "title": "Could not verify",
+          "body": "The on-chain or ledger query failed. This is an outage, not a verdict."
+        },
+        "stale": {
+          "title": "Verdict is out of date",
+          "body": "The last run is older than {minutes} minutes. Treat this verdict as unverified."
+        },
+        "incomplete": {
+          "title": "Cannot verify yet",
+          "body": "One or more liability components cannot be computed yet. This is not a pass and not a failure — the check has no answer."
+        },
+        "unconfigured": {
+          "title": "Reserve side not configured",
+          "body": "No controlled address is registered, so the reserve side is zero. The arithmetic passes only because both sides are zero — this proves nothing."
+        },
+        "unavailable": {
+          "title": "Reserve status unavailable",
+          "body": "Do not read this blank as \"verified\" or as \"zero liability\"."
+        }
+      }
+    },
+    "liability": {
+      "title": "Claims composition",
+      "total": {
+        "label": "Total claims",
+        "note": "This entire amount is what the company wallet must hold."
+      },
+      "additive": "Components (added to the total)",
+      "subset": "Components (already inside another line — not added)",
+      "comp": {
+        "localBalance": "Local ledger balances",
+        "unclaimedInterest": "Unclaimed ledgered interest",
+        "grantPrincipal": "Grant principal payable",
+        "referralPayable": "Referral bonus payable",
+        "userPrincipal": "Of which user-staked principal",
+        "withdrawalHold": "Of which withdrawal holds",
+        "compensationPlan": "Compensation-plan commitment (not yet accrued)",
+        "inFlight": "In-flight on-chain withdrawals"
+      },
+      "accrualRate": "+{amount} {coin} per settlement day",
+      "settled": {
+        "label": "Sent on-chain (liability discharged)",
+        "note": "This is the only figure on this panel that represents liability that no longer exists."
+      },
+      "rail": {
+        "noRail": "No withdrawal rail",
+        "manualOnchain": "Manual on-chain rail"
+      },
+      "claimRail": {
+        "disabled": "Claim disabled",
+        "enabled": "Claim enabled",
+        "note": "Claiming moves interest into a local balance. It does not reduce the platform’s liability."
+      }
+    },
+    "ledger": {
+      "title": "Local ledger",
+      "balance": "Ledger total",
+      "heldLabel": "Held",
+      "available": "Available",
+      "holders": "{n} holder(s) · {rows} ledger row(s)",
+      "held": {
+        "withdrawal": "Withdrawal pending",
+        "stakeLock": "Stake principal lock",
+        "stakeLockNote": "Soft lock — not deducted from the balance."
+      },
+      "recon": {
+        "title": "Reconciliation",
+        "never": "Never reconciled",
+        "summary": "Checked {checked} · mismatches {mismatches} · version drift {drift}"
+      },
+      "holdInvariant": {
+        "ok": "Holds match open withdrawal requests",
+        "broken": "Holds {holds} ≠ open withdrawal requests {requests} (difference {diff})"
+      }
+    },
+    "gate": {
+      "title": "Issuance gate",
+      "none": "Nothing is currently blocking issuance.",
+      "blocker": {
+        "t2": "Authority violation (T2) — halted",
+        "t1": "Authority listing warning (T1) — new issuance blocked",
+        "porFail": "Reserve breach — run {id}",
+        "porUnverified": "Reserve not verified ({state})",
+        "claimOff": "Claim kill switch is off",
+        "settlementOff": "Settlement worker is off",
+        "maintenance": "Maintenance mode"
+      },
+      "hint": {
+        "authorityT2": "Resolve via the authority transition procedure.",
+        "authorityT1": "See the coin authority watch panel below.",
+        "por": "See the reserve verification panel above.",
+        "killSwitch": "Platform settings.",
+        "maintenance": "Platform settings."
+      }
+    },
+    "authority": {
+      "title": "Coin authority watch",
+      "hub": "Hub authority",
+      "local": "Local authority",
+      "stage": {
+        "clear": "Clear",
+        "unverified": "Unverified — watch is off or stale",
+        "t1": "Listing detected (T1)",
+        "t2": "Balance violation (T2)"
+      },
+      "hubListedYes": "This coin is now listed on the hub’s markets response.",
+      "t1": {
+        "impact": "New issuance without admin approval is blocked. User-facing functions are unaffected."
+      },
+      "t2": {
+        "impact": "Issuance, new positions and withdrawal execution are halted. Read access stays available.",
+        "evidence": "Observed a non-zero hub balance of {amount} for user {userId} at {when}."
+      },
+      "noClear": "This alert cannot be dismissed from this screen. It clears when probes return clean, or through the authority transition procedure.",
+      "unknownRun": "Consecutive unknown probes: {n} / {threshold}",
+      "probeOff": "Authority probe worker is off"
+    },
+    "registry": {
+      "title": "Controlled addresses",
+      "add": "Add address",
+      "empty": "No controlled address is registered, so reserve verification cannot hold (company wallet unanswered).",
+      "field": {
+        "coin": "Coin",
+        "network": "Network",
+        "address": "Address",
+        "label": "Label",
+        "notes": "Notes"
+      },
+      "addWarning": "This change takes effect on the reserve side from the next verification run.",
+      "explorer": "View on explorer",
+      "deactivate": "Deactivate",
+      "deactivateNote": "Kept for audit"
+    },
+    "incident": {
+      "POR_FAIL": "Reserve breach — issued claims exceed controlled on-chain holdings for {coin} (run {runId}). Every balance figure on this page is still correct, but the platform cannot honour all of them. Halt issuance and do not approve withdrawals until reserves are restored or claims are reduced.",
+      "AUTHORITY_T2": "Authority violation (T2) on {coin} — the hub returned a non-zero end-user balance for a locally-authoritative coin. The single property that makes the split-authority model safe is broken. Issuance, new positions and withdrawal execution are halted; do not re-enable them manually. Resolve via the authority transition procedure.",
+      "AUTHORITY_T1": "Listing detected (T1) on {coin} — the hub now lists this locally-authoritative coin. No user balance has been observed on the hub side, so this is a warning, not a violation. New issuance without admin approval is blocked and probe frequency has been raised.",
+      "HOLD_INVARIANT_BROKEN": "Hold invariant broken on {coin} — holds total {holds} but open withdrawal requests total {requests}. Either a user can withdraw funds already committed elsewhere, or funds are locked with no request behind them.",
+      "HUB_COIN_HAS_LOCAL_BALANCE": "{coin} is declared hub-authoritative but local ledger rows exist for it. One of the two is wrong, and either way some balance is invisible on one side.",
+      "ISSUING_WITHOUT_VERIFICATION": "Issuing without verification — issuance is enabled for {coin} while reserve verification is \"{state}\". The reserve invariant is the only defence against over-issuance, and it is not currently holding.",
+      "UNKNOWN_CODE": "Unknown incident code {code} — this admin build may be older than the server. Do not assume it is harmless."
     }
   }
 }

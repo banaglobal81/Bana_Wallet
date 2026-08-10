@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
 import BanaLogo from '@/components/BanaLogo';
 import {
-  LayoutDashboard, ArrowUpRight, Coins, Users, SlidersHorizontal, Building2, X, Sprout, CircleDollarSign,
+  LayoutDashboard, ArrowUpRight, Coins, Users, SlidersHorizontal, Building2, X, Sprout, CircleDollarSign, ShieldCheck,
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -27,6 +27,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }: Admi
     { href: '/admin/withdrawals', label: nav('withdrawals'), icon: ArrowUpRight },
     { href: '/admin/settlement', label: nav('settlement'), icon: Coins },
     { href: '/admin/staking', label: nav('staking'), icon: Sprout },
+    { href: '/admin/reserve', label: nav('reserve'), icon: ShieldCheck },
     { href: '/admin/coins', label: nav('coinManagement'), icon: CircleDollarSign },
     { href: '/admin/users', label: nav('users'), icon: Users },
     { href: '/admin/settings', label: nav('settings'), icon: SlidersHorizontal },

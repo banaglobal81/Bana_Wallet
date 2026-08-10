@@ -42,7 +42,10 @@ export default function ActivityHistory({ settings, onNavigate }: ActivityHistor
     let cancelled = false;
     const mapStatus = (s: string): Activity['status'] => {
       const u = String(s ?? '').toUpperCase();
-      if (u === 'PENDING') return 'Pending';
+      if (u === 'PENDING' || u === 'PROCESSING') return 'Pending';
+      // A-7 WD-9/LA-5 — LOCAL-rail withdrawal, approved but not yet sent
+      // on-chain. Must never render as 'Completed': nothing has moved.
+      if (u === 'AWAITING_ONCHAIN') return 'AwaitingOnchain';
       if (u === 'FAILED' || u === 'REJECTED') return 'Failed';
       return 'Completed'; // COMPLETED, APPROVED, or anything else the hub returns
     };
@@ -79,16 +82,29 @@ export default function ActivityHistory({ settings, onNavigate }: ActivityHistor
               timestamp: fmt(d.createdAt ?? d.ts), status: mapStatus(d.status), txHash: d.txHash || d.id || '',
             },
           })),
-          ...wds.map((w: any): Row => ({
-            ts: parseTs(w.createdAt ?? w.ts),
-            act: {
-              id: w.id || w.withdrawalId || `wd-${w.createdAt || ''}`,
-              type: 'Send', title: `Withdrew ${w.amount} ${w.currency}`,
-              description: w.pendingApproval ? t('awaitingApproval') : `${w.network || ''} network withdrawal`,
-              fromAmount: String(w.amount ?? ''), fromSymbol: w.currency || '', toAmount: '0', toSymbol: '',
-              timestamp: fmt(w.createdAt ?? w.ts), status: mapStatus(w.status), txHash: w.txHash || w.withdrawalId || w.id || '',
-            },
-          })),
+          ...wds.map((w: any): Row => {
+            const status = mapStatus(w.status);
+            // A-7 LA-7/WD-10 — an admin-submitted txHash is an unverified
+            // claim until onchainVerifiedAt is set. AWAITING_ONCHAIN rows
+            // never show a hash, verified or not (the field name/shape of
+            // that verification is a web-shared-expert follow-up — see the
+            // report handed back with this change).
+            const txHash = status === 'AwaitingOnchain' && !w.onchainVerifiedAt
+              ? ''
+              : (w.onchainTxHash || w.txHash || w.withdrawalId || w.id || '');
+            return {
+              ts: parseTs(w.createdAt ?? w.ts),
+              act: {
+                id: w.id || w.withdrawalId || `wd-${w.createdAt || ''}`,
+                type: 'Send', title: `Withdrew ${w.amount} ${w.currency}`,
+                description: status === 'AwaitingOnchain'
+                  ? t('awaitingOnchainDescription')
+                  : w.pendingApproval ? t('awaitingApproval') : `${w.network || ''} network withdrawal`,
+                fromAmount: String(w.amount ?? ''), fromSymbol: w.currency || '', toAmount: '0', toSymbol: '',
+                timestamp: fmt(w.createdAt ?? w.ts), status, txHash,
+              },
+            };
+          }),
           ...trades.map((t: any): Row => {
             const [base, quote] = splitSymbol(t.symbol);
             const isBuy = String(t.side ?? '').toUpperCase() === 'BUY';
@@ -276,6 +292,8 @@ export default function ActivityHistory({ settings, onNavigate }: ActivityHistor
                             ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                             : act.status === 'Pending'
                             ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                            : act.status === 'AwaitingOnchain'
+                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                             : 'bg-red-500/10 text-red-500 border-red-500/20'
                         }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${
@@ -283,14 +301,21 @@ export default function ActivityHistory({ settings, onNavigate }: ActivityHistor
                               ? 'bg-emerald-400'
                               : act.status === 'Pending'
                               ? 'bg-blue-400'
+                              : act.status === 'AwaitingOnchain'
+                              ? 'bg-amber-400'
                               : 'bg-red-500'
                           } animate-pulse`} />
-                          {act.status}
+                          {act.status === 'AwaitingOnchain' ? t('awaitingOnchain') : act.status}
                         </span>
-                        
-                        <span className="text-[10px] font-mono text-slate-450 font-semibold truncate max-w-[100px]">
-                          {act.txHash}
-                        </span>
+
+                        {/* A-7 LA-7 — txHash is already gated empty above for an
+                            unverified AWAITING_ONCHAIN row (WD-10); nothing to
+                            render here in that case. */}
+                        {act.txHash && (
+                          <span className="text-[10px] font-mono text-slate-450 font-semibold truncate max-w-[100px]">
+                            {act.txHash}
+                          </span>
+                        )}
                       </div>
                     </td>
 

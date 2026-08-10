@@ -5,9 +5,9 @@ import Decimal from 'decimal.js';
 import { useTranslations } from 'next-intl';
 import { Screen, SystemSettings } from '../types';
 import { requestNiaWithdrawal, getNiaBalance, getNiaMarkets } from '../utils/niaApi';
-import { getManagedCoins } from '../utils/coinsApi';
+import { getLocalBalance, type LocalBalanceCoin } from '../utils/localBalanceApi';
 import { listSavedAddresses, type SavedAddress } from '../utils/accountApi';
-import { ShieldCheck, AlertTriangle, ChevronRight, Loader2, BookMarked } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, ChevronRight, Loader2, BookMarked, Info } from 'lucide-react';
 import FlowNav from './wallet/FlowNav';
 import Step from './wallet/Step';
 import { CoinSelect, NetworkSelect } from './wallet/Selects';
@@ -67,6 +67,12 @@ export default function Withdraw({ onNavigate }: WithdrawProps) {
   const [savedAddrs, setSavedAddrs] = useState<SavedAddress[]>([]);
   useEffect(() => { listSavedAddresses().then(setSavedAddrs).catch(() => {}); }, []);
 
+  // LOCAL-authority coins (BANA) — A-7 §5. Loaded independently of the hub
+  // markets/currencies list below; never merged into it (LA-1/AC-A7-01 — a
+  // coin's rail is a fact from ONE authority, not a union of two lists).
+  const [localCoins, setLocalCoins] = useState<LocalBalanceCoin[]>([]);
+  useEffect(() => { getLocalBalance().then(setLocalCoins).catch(() => setLocalCoins([])); }, []);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -80,12 +86,17 @@ export default function Withdraw({ onNavigate }: WithdrawProps) {
     return () => { cancelled = true; };
   }, []);
 
-  // Load withdraw-enabled currencies/networks (with real fees) from markets.
+  // Load withdraw-enabled currencies/networks (with real fees) from hub markets.
+  // A-7 WD-5/N-12 fix: this used to also merge in admin-added ("managed")
+  // coins with a hardcoded `fee: '0', min: '0'` — an unconfigured fee rendered
+  // as "the fee is zero", which nobody ever set. Managed/LOCAL-authority coins
+  // (BANA) are handled entirely separately below via `localCoins` — no
+  // fallback fee/min is ever fabricated for them.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [data, managed] = await Promise.all([getNiaMarkets(), getManagedCoins()]);
+        const data = await getNiaMarkets();
         const list: Wd_Currency[] = (data?.currencies ?? [])
           .map((c: any) => ({
             symbol: c.symbol as string,
@@ -99,16 +110,6 @@ export default function Withdraw({ onNavigate }: WithdrawProps) {
               })),
           }))
           .filter((c: Wd_Currency) => c.networks.length > 0);
-        // Merge admin-added custom coins not already provided by the hub.
-        const seen = new Set(list.map((c) => c.symbol.toUpperCase()));
-        for (const m of managed) {
-          if (seen.has(m.symbol.toUpperCase())) continue;
-          // Mirror the hub path: only surface networks that accept withdrawals.
-          const nets = m.networks
-            .filter((n) => n.withdrawEnabled !== false)
-            .map((n) => ({ code: n.code, chainType: 'EVM', fee: '0', min: '0' }));
-          if (nets.length) list.push({ symbol: m.symbol, networks: nets });
-        }
         if (cancelled) return;
         setCurrencies(list);
       } catch { /* leave empty */ }
@@ -116,6 +117,15 @@ export default function Withdraw({ onNavigate }: WithdrawProps) {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  // A-7 LA-3/WE-1 — LOCAL-authority coins are a distinct rail, not just another
+  // hub currency. Selecting one never falls through to the hub amount/network
+  // form below; `withdrawRailRow` decides which branch §3 renders.
+  const localCoinRow = localCoins.find((c) => c.coin === selectedAsset);
+  const coinOptions = [
+    ...currencies.map((c) => c.symbol),
+    ...localCoins.filter((c) => !currencies.some((h) => h.symbol === c.coin)).map((c) => c.coin),
+  ];
 
   const assetNetworks = currencies.find((c) => c.symbol === selectedAsset)?.networks ?? [];
   const netObj = assetNetworks.find((n) => n.code === selectedNetwork) ?? assetNetworks[0];
@@ -207,7 +217,7 @@ export default function Withdraw({ onNavigate }: WithdrawProps) {
                 ) : (
                   <CoinSelect
                     value={selectedAsset}
-                    options={currencies.map((c) => c.symbol)}
+                    options={coinOptions}
                     onChange={setSelectedAsset}
                     placeholder={t('selectCoin')}
                     searchPlaceholder={t('searchCoin')}
@@ -216,6 +226,30 @@ export default function Withdraw({ onNavigate }: WithdrawProps) {
                 )}
               </Step>
 
+              {localCoinRow ? (
+                // A-7 WE-1/WE-2 — LOCAL-authority rail. No admin fee/min is
+                // configured for any managed coin today (N-12), so this is
+                // always UNAVAILABLE in production — the slot stays visible
+                // (LA-4: deleting it would look like the coin doesn't exist),
+                // but no amount/network form is ever rendered under it.
+                <Step n={2} title={t('amountDestTitle')} active last>
+                  <div className="p-5 rounded-2xl bg-[#0a1b33]/70 border border-[#1E3559] flex flex-col gap-3">
+                    <div
+                      data-testid="withdraw-local-rail-unavailable"
+                      className="inline-flex items-start gap-2.5 self-start px-3.5 py-2.5 rounded-lg bg-[#1E3559]/40 border border-[#1E3559]/60"
+                    >
+                      <Info className="h-4 w-4 text-[#8c90a0] shrink-0 mt-0.5" />
+                      <span className="text-sm font-medium text-[#8c90a0]">
+                        {localCoinRow.localWithdrawRail === 'PAUSED'
+                          ? t('railPaused', { coin: localCoinRow.coin })
+                          : t('railUnavailable', { coin: localCoinRow.coin })}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#8c90a0] leading-relaxed">{t('feeLocalHelp', { coin: localCoinRow.coin })}</p>
+                  </div>
+                </Step>
+              ) : (
+              <>
               {/* Step 2 — Select Network */}
               <Step n={2} title={t('selectNetworkTitle')} active={hasCoin}>
                 <NetworkSelect
@@ -300,6 +334,8 @@ export default function Withdraw({ onNavigate }: WithdrawProps) {
                 </div>
                 )}
               </Step>
+              </>
+              )}
             </>
           )}
         </div>

@@ -18,7 +18,8 @@
     "adminConsole": "管理コンソール",
     "coins": "コイン",
     "coinManagement": "コイン管理",
-    "invite": "招待"
+    "invite": "招待",
+    "reserve": "準備金"
   },
   "login": {
     "title": "ログイン",
@@ -414,15 +415,23 @@
     },
     "yield": {
       "recordedLabel": "記録された収益",
-      "recordedHelp": "ステーキング台帳に記録された金額です。ウォレット残高には含まれません。",
-      "claimedLabel": "ウォレットへ受け取り済み",
-      "claimedHelp": "すでにウォレット残高へ移動済みです。",
+      "recordedHelp": "ステーキング台帳に記録された金額です。BANA残高には含まれません。",
+      "claimedLabel": "受け取り済み",
+      "claimedHelp": "すでにBANA残高へ移動済みです。",
       "lockedLabel": "ロック中の元本",
-      "lockedHelp": "元本はウォレットにそのまま残りますが、期間が終了するまで出金できません。",
+      "lockedHelp": "元本はBANA残高にそのまま残りますが、期間が終了するまで出金できません。",
       "empty": "記録された収益はまだありません。"
     },
     "claim": {
-      "unavailable": "ウォレットへの支払いはまだ提供されていません。"
+      "unavailable": "受け取りはまだ提供されていません。",
+      "confirmBody": "{amount} {coin}がBANA残高へ移動します。現在までに記録された{coin}収益の全額です。",
+      "confirmNote2": "外部アドレスへ送るには、審査を伴う別の申請が必要です。",
+      "confirmAction": "受け取る",
+      "cancel": "キャンセル",
+      "succeeded": "{amount} {coin}がBANA残高へ移動しました。",
+      "resultUnknownRefresh": "結果を確認できませんでした。状態を再読み込みして処理結果を確認してください。",
+      "refreshStatus": "状態を再読み込み",
+      "destinationNote": "受け取るとBANA残高へすぐに反映されます。外部アドレスへ送るには出金を申請してください。"
     },
     "nav": {
       "stake": "ステーク",
@@ -445,7 +454,7 @@
     "position": {
       "recordedLabel": "記録済み",
       "settledDays": "精算済み {d}/{total}日",
-      "maturedNote": "期間が終了すると元本のロックが解除され、ウォレットで利用できるようになります。記録された収益は自動的には移動しません。"
+      "maturedNote": "期間が終了すると元本のロックが解除され、BANA残高で利用できるようになります。記録された収益は自動的には移動しません。"
     },
     "yieldLog": {
       "title": "収益履歴",
@@ -501,7 +510,13 @@
     "copyBtn": "コピー",
     "sendOnlyWarning": "このアドレスには<b>{network}</b>ネットワークの<b>{coin}</b>のみを送金してください。",
     "confirmationsNote": "ネットワークの承認後に入金が反映されます。",
-    "selectCoinFirst": "上でコインとネットワークを選択すると入金アドレスが表示されます。"
+    "selectCoinFirst": "上でコインとネットワークを選択すると入金アドレスが表示されます。",
+    "unsupportedAsset": "{coin}の入金には対応していません。",
+    "unsupportedBadge": "入金非対応",
+    "unsupportedBlockTitle": "入金できない資産",
+    "unsupportedBlockBody": "{coins}はこのアカウントに入金できません。他の場所に表示されたアドレスへは送金しないでください。",
+    "formerAddressWarning": "以前に発行された{coin}の入金アドレスがあっても使用しないでください。そのアドレスに送られた資産は自動的には反映されません。すでに送金済みの場合はサポートにお問い合わせください。",
+    "checkUnavailable": "現在確認できません。しばらくしてからもう一度お試しください。"
   },
   "walletPage": {
     "title": "ウォレット",
@@ -525,7 +540,19 @@
     "transactionHistory": "取引履歴",
     "transactionHistorySubtitle": "入金、出金、取引",
     "depositNow": "今すぐ入金",
-    "depositWallet": "入金"
+    "depositWallet": "入金",
+    "groupCustody": "入出金アカウント",
+    "groupPlatform": "プラットフォーム発行資産",
+    "groupPlatformHelp": "BANAはBANAプラットフォームが発行する資産です。この残高はBANAが記録します。外部アドレスへ送るには出金を申請してください。申請は審査後にオンチェーンで送金されます。",
+    "localBalanceLabel": "残高",
+    "localAvailableLabel": "利用可能",
+    "localHoldStake": "ステーキングでロック中",
+    "localHoldWithdrawal": "出金申請で保留中",
+    "localHoldOther": "その他の保留",
+    "localHoldWithdrawalLink": "申請を見る",
+    "localEmpty": "まだ記録されたBANAはありません。",
+    "localLoading": "読み込み中…",
+    "localLoadFailed": "この残高を読み込めませんでした。"
   },
   "withdraw": {
     "backAria": "戻る",
@@ -567,7 +594,27 @@
     "selectNetwork": "ネットワークを選択",
     "networkHint": "受取先プラットフォームと同じネットワークを選択してください。",
     "amountDestTitle": "金額と送金先",
-    "selectCoinFirst": "上でコインを選択すると金額を入力できます。"
+    "selectCoinFirst": "上でコインを選択すると金額を入力できます。",
+    "railUnavailable": "{coin}の出金は現在利用できません。",
+    "railPaused": "{coin}の出金は現在停止しています。",
+    "coinHalted": "この資産の出金処理を一時停止しています。残高はそのまま記録されています。",
+    "availableLabel": "出金可能額",
+    "heldNote": "既存の出金申請により{amount} {coin}が保留中です。",
+    "amountExceedsAvailable": "出金可能額は{available} {coin}です。",
+    "feeLocalLabel": "手数料",
+    "feeLocalHelp": "オンチェーン送金のコストをカバーする手数料です。{coin}で差し引かれます。",
+    "sendAmountLabel": "送金額",
+    "debitTotalLabel": "残高から差し引かれる額",
+    "statusPending": "審査待ち",
+    "statusAwaitingOnchain": "承認済み・送金待ち",
+    "statusAwaitingOnchainHelp": "この申請は承認され、オンチェーン送金を待っています。",
+    "statusCompletedLocal": "完了",
+    "statusRejected": "却下",
+    "statusRejectedHelp": "保留されていた金額は再び残高で利用できます。",
+    "statusFailed": "未処理",
+    "statusFailedHelp": "この申請は処理されませんでした。残高は変わっていません。",
+    "txHashLabel": "トランザクション",
+    "viewOnExplorer": "ブロックエクスプローラーで見る"
   },
   "settings": {
     "breadcrumbActivity": "アクティビティ",
@@ -616,6 +663,8 @@
     "syncing": "BANA と同期中…",
     "liveRecords": "ライブ • BANA から {count, plural, one {# 件のレコード} other {# 件のレコード}}",
     "awaitingApproval": "管理者の承認待ち",
+    "awaitingOnchain": "承認済み・送金待ち",
+    "awaitingOnchainDescription": "承認され、オンチェーン送金を待っています",
     "loadError": "アクティビティを読み込めませんでした"
   },
   "notifications": {
@@ -732,7 +781,20 @@
     "statusAPPROVED": "承認済み",
     "statusREJECTED": "却下",
     "statusFAILED": "失敗",
-    "statusPROCESSING": "処理中"
+    "statusPROCESSING": "処理中",
+    "colRail": "レール",
+    "railLocal": "手動オンチェーン",
+    "railHub": "ハブ自動",
+    "statusAWAITING_ONCHAIN": "承認済み・送金待ち",
+    "feeAmount": "手数料 {fee}",
+    "debitTotal": "差引額 {total}",
+    "txHashPlaceholder": "トランザクションハッシュ (0x…)",
+    "verifyAndSettle": "検証して確定",
+    "verifyPassed": "検証完了 — 資金がユーザーに到達しました。",
+    "verifyFailed": "検証失敗",
+    "verifyInconclusive": "未確定",
+    "approveLocal": "承認（送金待ちへ）",
+    "confirmApproveLocal": "この出金を手動オンチェーン実行待ちとして承認しますか？資金はまだ移動しません。ご自身で送金を実行し、結果のハッシュを提出する必要があります。"
   },
   "adminDashboard": {
     "pageTitle": "ダッシュボード",
@@ -768,6 +830,12 @@
       "unpaid": "{coin} 未払い利息",
       "principalSub": "{amount} ロック中・アクティブ{n}件",
       "error": "負債額を取得できませんでした — ゼロとして解釈しないでください。"
+    },
+    "reserveStrip": {
+      "title": "準備金検証 (PoR-1″)",
+      "error": "準備金ステータスを取得できませんでした。",
+      "empty": "ローカル権威コインがまだありません。",
+      "notComputable": "算出不可"
     }
   },
   "adminSettings": {
@@ -1058,6 +1126,203 @@
         "FAILED_SYSTEM": "更新を完了できませんでした。",
         "FAILED_GRANTED_POSITION": "更新を完了できませんでした。"
       }
+    }
+  },
+  "adminReserve": {
+    "pageTitle": "準備金検証 (PoR-1″)",
+    "pageSubtitle": "ローカル発行コインごとのオンチェーン準備金証明・請求権構成・発行ゲート。",
+    "refresh": "更新",
+    "loading": "読み込み中…",
+    "noCoins": "登録済みの管理コインがありません。",
+    "noLocalCoins": "ローカル権威コインがまだありません — 検証対象がありません。",
+    "por": {
+      "title": "準備金検証 (PoR-1″)",
+      "left": {
+        "label": "請求権合計（左辺）"
+      },
+      "right": {
+        "label": "管理アドレスのオンチェーン残高（右辺）",
+        "addressCount": "登録アドレス {n} 件"
+      },
+      "margin": {
+        "label": "マージン（右辺− 左辺）"
+      },
+      "inFlight": {
+        "label": "調整項目・処理中の出金",
+        "note": "オンチェーンに送信済みだが未検証の金額です。左辺・右辺いずれにも加算されません。"
+      },
+      "notComputable": "算出不可",
+      "whyIncomplete": {
+        "title": "なぜ今判定できないか"
+      },
+      "blockedBy": {
+        "a4": "{component} — まだ算出できません",
+        "h2": "{component} — グラント元本の扱いが未決定",
+        "addresses": "準備金側 — 管理アドレス未登録（会社ウォレット未回答）"
+      },
+      "lastRun": "最終検査 {absolute}（{relative}）· {trigger} · 実行 {id}",
+      "chip": {
+        "workerOff": "検証ワーカー停止中",
+        "staleVerdict": "古い判定",
+        "addressSetChanged": "この実行以降アドレス構成が変更されました"
+      },
+      "runNow": "今すぐ検証を実行",
+      "runNowTitle": "読み取り専用です。台帳合計を再計算し、登録アドレスのオンチェーン残高を再取得します。資金は移動しません。",
+      "state": {
+        "pass": {
+          "title": "検証済み",
+          "body": "すべての負債構成要素が算出され、登録済み管理アドレスのオンチェーン残高でカバーされています。"
+        },
+        "fail": {
+          "title": "準備金違反",
+          "body": "発行済み請求権が管理アドレスのオンチェーン残高を超過しています。解消するまで追加発行を行わないでください。"
+        },
+        "neverRun": {
+          "title": "未検証",
+          "body": "このコインの検証実行履歴がありません。未実施は合格ではありません。"
+        },
+        "queryFailed": {
+          "title": "検証できませんでした",
+          "body": "オンチェーンまたは台帳の照会に失敗しました。判定ではなく障害です。"
+        },
+        "stale": {
+          "title": "判定が古くなっています",
+          "body": "最終実行から{minutes}分以上経過しています。この判定は未検証として扱ってください。"
+        },
+        "incomplete": {
+          "title": "まだ検証できません",
+          "body": "負債構成要素の一部がまだ算出できません。合格でも不合格でもなく、検査自体に答えがない状態です。"
+        },
+        "unconfigured": {
+          "title": "準備金（右辺）未設定",
+          "body": "管理アドレスが登録されていないため右辺はゼロです。両辺がゼロなので算術上は通過しますが、何も証明していません。"
+        },
+        "unavailable": {
+          "title": "準備金ステータスを取得できません",
+          "body": "この空欄を「検証済み」や「負債ゼロ」と解釈しないでください。"
+        }
+      }
+    },
+    "liability": {
+      "title": "請求権の構成",
+      "total": {
+        "label": "請求権合計",
+        "note": "この全額が会社ウォレットが保有すべき金額です。"
+      },
+      "additive": "構成要素（合計に加算）",
+      "subset": "構成要素（既に他の行に含まれる・加算しない）",
+      "comp": {
+        "localBalance": "ローカル台帳残高合計",
+        "unclaimedInterest": "未請求の記帳済み利息",
+        "grantPrincipal": "グラント元本支払対象額",
+        "referralPayable": "紹介ボーナス支払対象額",
+        "userPrincipal": "うちユーザー預入元本",
+        "withdrawalHold": "うち出金ホールド",
+        "compensationPlan": "報酬プラン約定額（未発生）",
+        "inFlight": "処理中のオンチェーン出金"
+      },
+      "accrualRate": "精算日1日あたり +{amount} {coin}",
+      "settled": {
+        "label": "オンチェーン送金完了（負債消滅分）",
+        "note": "このパネルで実際に消滅した負債を示す唯一の数値です。"
+      },
+      "rail": {
+        "noRail": "出金レールなし",
+        "manualOnchain": "手動オンチェーンレール"
+      },
+      "claimRail": {
+        "disabled": "クレーム無効",
+        "enabled": "クレーム有効",
+        "note": "クレームは利息をローカル残高に移すだけです。プラットフォームの負債は減りません。"
+      }
+    },
+    "ledger": {
+      "title": "ローカル台帳",
+      "balance": "台帳合計",
+      "heldLabel": "ホールド合計",
+      "available": "利用可能合計",
+      "holders": "保有ユーザー {n} 名 · 台帳行 {rows} 件",
+      "held": {
+        "withdrawal": "出金保留",
+        "stakeLock": "ステーキング元本ロック",
+        "stakeLockNote": "ソフトロック — 残高から差し引かれません。"
+      },
+      "recon": {
+        "title": "照合状況",
+        "never": "未照合",
+        "summary": "検査 {checked} · 不一致 {mismatches} · バージョン乖離 {drift}"
+      },
+      "holdInvariant": {
+        "ok": "ホールドと未処理出金要求が一致しています",
+        "broken": "ホールド {holds} ≠ 未処理出金要求 {requests}（差 {diff}）"
+      }
+    },
+    "gate": {
+      "title": "発行ゲート",
+      "none": "現在、発行を妨げる条件はありません。",
+      "blocker": {
+        "t2": "権威違反（T2）— 停止中",
+        "t1": "権威掲載警告（T1）— 新規発行ブロック",
+        "porFail": "準備金違反 — 実行 {id}",
+        "porUnverified": "準備金未検証（{state}）",
+        "claimOff": "クレームキルスイッチが無効",
+        "settlementOff": "精算ワーカーが無効",
+        "maintenance": "メンテナンスモード"
+      },
+      "hint": {
+        "authorityT2": "権威移行手順で解消してください。",
+        "authorityT1": "下記のコイン権威監視パネルを参照してください。",
+        "por": "上記の準備金検証パネルを参照してください。",
+        "killSwitch": "プラットフォーム設定。",
+        "maintenance": "プラットフォーム設定。"
+      }
+    },
+    "authority": {
+      "title": "コイン権威監視",
+      "hub": "ハブ権威",
+      "local": "ローカル権威",
+      "stage": {
+        "clear": "正常",
+        "unverified": "未確認 — 監視が無効または古い",
+        "t1": "掲載検知（T1）",
+        "t2": "残高違反（T2）"
+      },
+      "hubListedYes": "このコインがハブのmarkets応答に掲載されました。",
+      "t1": {
+        "impact": "管理者承認のない新規発行はブロックされます。ユーザー向け機能には影響しません。"
+      },
+      "t2": {
+        "impact": "発行・新規ポジション・出金実行が停止されます。読み取りは引き続き可能です。",
+        "evidence": "{when} にユーザー {userId} について、ゼロでないハブ残高 {amount} が観測されました。"
+      },
+      "noClear": "この警告はこの画面から解除できません。プローブが正常に戻るか、権威移行手順が完了すると解消されます。",
+      "unknownRun": "連続不明プローブ: {n} / {threshold}",
+      "probeOff": "権威監視ワーカーが停止しています"
+    },
+    "registry": {
+      "title": "管理アドレス",
+      "add": "アドレスを追加",
+      "empty": "管理アドレスが登録されていないため準備金検証は成立しません（会社ウォレット未回答）。",
+      "field": {
+        "coin": "コイン",
+        "network": "ネットワーク",
+        "address": "アドレス",
+        "label": "ラベル",
+        "notes": "備考"
+      },
+      "addWarning": "この変更は次回の検証実行から準備金側に反映されます。",
+      "explorer": "エクスプローラーで見る",
+      "deactivate": "無効化",
+      "deactivateNote": "監査のため保持"
+    },
+    "incident": {
+      "POR_FAIL": "準備金違反 — {coin}の発行済み請求権が管理アドレスのオンチェーン保有を超過しています（実行 {runId}）。このページの残高数値は依然として正しいですが、プラットフォームはそのすべてを履行できません。準備金が回復するか請求権が減るまで発行を停止し、出金を承認しないでください。",
+      "AUTHORITY_T2": "{coin}で権威違反（T2）が発生しました — ローカル権威コインについて、ハブがゼロでないエンドユーザー残高を返しました。分割権威モデルを安全にする唯一の性質が破られています。発行・新規ポジション・出金実行が停止されました。手動で復旧しないでください。権威移行手順で解消してください。",
+      "AUTHORITY_T1": "掲載検知（T1）— {coin}がハブの一覧に表示されました。ハブ側のユーザー残高はまだ観測されていないため、違反ではなく警告です。管理者承認のない新規発行がブロックされ、プローブ頻度が引き上げられました。",
+      "HOLD_INVARIANT_BROKEN": "{coin}のホールド不変条件が破られました — ホールド合計 {holds}、未処理出金要求合計 {requests}。既に他で確約された資金をユーザーが引き出せる状態か、根拠のないホールドで資金がロックされています。",
+      "HUB_COIN_HAS_LOCAL_BALANCE": "{coin}はハブ権威として宣言されていますが、ローカル台帳の行が存在します。どちらかが誤っており、いずれにせよ一方の残高が見えなくなっています。",
+      "ISSUING_WITHOUT_VERIFICATION": "未検証のまま発行中 — {coin}の発行が有効な状態で、準備金検証は「{state}」です。準備金不変条件は過剰発行に対する唯一の防御であり、現在それが成立していません。",
+      "UNKNOWN_CODE": "不明なインシデントコード {code} — この管理画面ビルドがサーバーより古い可能性があります。無害だと決めつけないでください。"
     }
   }
 }

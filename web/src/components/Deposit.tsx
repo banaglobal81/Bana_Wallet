@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Screen, SystemSettings } from '../types';
 import { getNiaDeposits, createDepositAddress, getNiaMarkets } from '../utils/niaApi';
 import { getManagedCoins } from '../utils/coinsApi';
+import { getLocalBalance, type LocalBalanceCoin } from '../utils/localBalanceApi';
 import { copyToClipboard } from '../utils/clipboard';
 import { AlertTriangle, Info, Copy, Check, Loader2, ShieldCheck } from 'lucide-react';
 import FlowNav from './wallet/FlowNav';
@@ -41,6 +42,14 @@ export default function Deposit(_props: DepositProps) {
 
   const [deposits, setDeposits] = useState<any[]>([]);
   const [depLoading, setDepLoading] = useState(true);
+
+  // A-7 §7 (DEP) — LOCAL-authority coins (BANA). These never get a deposit
+  // address (X-7 / assertDepositAddressAllowed) — `localDepositRail` is
+  // always 'UNSUPPORTED' today (§7.1: Q-M5 unanswered, no deposit rail built).
+  // Loaded independently; a failure here must not affect the hub-driven flow.
+  const [localCoins, setLocalCoins] = useState<LocalBalanceCoin[]>([]);
+  useEffect(() => { getLocalBalance().then(setLocalCoins).catch(() => setLocalCoins([])); }, []);
+  const unsupportedCoins = localCoins.filter((c) => c.localDepositRail === 'UNSUPPORTED').map((c) => c.coin);
 
   const assetNetworks = currencies.find((c) => c.symbol === selectedAsset)?.networks ?? [];
 
@@ -168,6 +177,7 @@ export default function Deposit(_props: DepositProps) {
                 onChange={setSelectedAsset}
                 placeholder={t('selectCoin')}
                 searchPlaceholder={t('searchCoin')}
+                disabledOptions={unsupportedCoins.map((coin) => ({ symbol: coin, badge: t('unsupportedBadge') }))}
               />
             )}
           </Step>
@@ -275,6 +285,31 @@ export default function Deposit(_props: DepositProps) {
               </div>
             )}
           </div>
+
+          {/* A-7 DEP-4/DEP-5 — unsupported-asset notice, rendered unconditionally
+              (not just while an unsupported coin happens to be selected) so a
+              user who never opens the coin selector still sees it. No address/
+              QR/network-selector is ever rendered for these coins (DEP-3) —
+              this block never triggers createDepositAddress (AC-A7-32). */}
+          {unsupportedCoins.length > 0 && (
+            <div className="p-5 rounded-2xl bg-[#112643]/50 border border-[#1E3559] flex flex-col gap-3">
+              <div className="flex items-start gap-2.5">
+                <Info className="h-4 w-4 text-[#8c90a0] shrink-0 mt-0.5" />
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-sm font-bold text-white">{t('unsupportedBlockTitle')}</h3>
+                  <p className="text-xs text-[#8c90a0] leading-relaxed">
+                    {t('unsupportedBlockBody', { coins: unsupportedCoins.join(', ') })}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-xs text-[#8c90a0] leading-relaxed">
+                  {t('formerAddressWarning', { coin: unsupportedCoins.join(', ') })}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -90,6 +90,39 @@ Verified 2026-08-08 against `web/prisma/schema.prisma`, `web/src/utils/stakingAp
   box (`h-[220px] sm:h-[300px] lg:h-[380px]`) doing all per-breakpoint sizing. Per-breakpoint
   internal resolution is banned as a device-class heuristic.
 
+## Planning a schema swap under a live game
+
+Written 2026-08-10 while specifying the A-6 DEEP CORE adapter contract
+(`staking-yield-system-v2-design-a6-deepcore-adapter.md`).
+
+- **A field-mapping table counts Prisma columns; it does not count dependencies.** DEEP CORE's
+  "13 fields" contract missed four things that would each have broken it: `stakingDayMs()` imported
+  from a file on the deletion list (build break), the surface-state flag still pointing at the *old*
+  worker (a silent lie about whether settlement is running), the lazy `ACTIVE→MATURED` call the route
+  makes *before* the game reads (drop it and progression freezes silently), and the API route
+  carrying the `game` block being deleted. Walk the adapter file line by line, not just the schema diff.
+- **Split the rename from the cutover.** If the acceptance criterion is "the existing test file passes
+  unmodified", any field rename in the same commit forces a test edit and destroys the signal.
+  Repackage in the adapter first; do the naming-hygiene rename as a separate commit whose own
+  criterion is "every `expect()` value identical".
+- **Timestamp semantics are a game mechanic.** Payout rows stamped `@default(now())` mean a caught-up
+  worker collapses N missed days into one day key — and day keys are exactly what the operating-day
+  odometer and the per-day XP cap are computed from. A well-meaning v2 implementer backfilling
+  `settledAt` to the accrual day would silently turn an outage into an XP surge. Freeze the semantics
+  in the spec, and name the known trade-off you are *not* fixing.
+- **"Read both tables during the transition" is a farming hole, not a kindness.** A per-day-key cap
+  (`min(positions, 3) × 10`) gets applied twice if two sources are unioned. Reject dual-read on
+  mechanics grounds, not just on data-authority grounds.
+- **When new columns land next to the ones you read, write the forbidden-read list.** The old payout
+  table gave the game nothing but `positionId`/`paidAt`; the v2 ledger puts
+  `amount`/`bonusAmount`/`mpSnapshot` on the same row as the timestamp the game needs. What used to be
+  impossible is now a one-line temptation — and reading `amount` reintroduces principal-scaled
+  progression in a single character.
+- **Existing unit tests are a necessary but insufficient acceptance criterion.** Of 19 DEEP CORE tests,
+  7 stay green under a wrong flag mapping or a diverged day-length source, because the pure function
+  never sees where its inputs came from. Pair "old tests unmodified" with a short list of *new*
+  adapter-boundary tests, or the criterion certifies the wrong thing.
+
 ## Designing a game stat that moves real money
 
 Written 2026-08-10 while specifying the `deep-core-*` family. All of it is pre-sign-off design;

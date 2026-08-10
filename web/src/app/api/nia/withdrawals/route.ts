@@ -13,6 +13,9 @@ import { ok, fail } from '@/lib/nia/respond';
 import { getPlatformSettings } from '@/lib/platformSettings';
 import { forwardWithdrawalToHub } from '@/lib/withdrawals';
 import { settleMaturedPositions, lockedPrincipalByCoin } from '@/lib/staking';
+import { getCoinAuthority, assertExecutionAllowed, CoinAuthorityBlockedError } from '@/lib/coinAuthority';
+import { createLocalWithdrawalHold } from '@/lib/withdrawalOnchain';
+import { getUserCoinBalance } from '@/lib/localLedger';
 
 // Stablecoins are valued 1:1 with USD for the auto-approve threshold. Any other
 // asset can't be valued safely here, so it always requires manual approval.
@@ -53,15 +56,30 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       },
     }) as { items?: unknown[] } | unknown[] | null;
 
-    // Merge in the user's locally-held requests that aren't in the hub yet
-    // (PENDING / REJECTED / FAILED). APPROVED ones already show up from the hub.
+    // Merge in the user's locally-held requests, authority-aware (A-5 §1.8):
+    //  - HUB rail: only requests not yet visible in the hub's own history
+    //    (PENDING / PROCESSING / REJECTED / FAILED). APPROVED HUB requests
+    //    already show up from the hub call above — unchanged from before.
+    //  - LOCAL rail: the local WithdrawalRequest row is the ONLY source of
+    //    truth (there is no hub call for this rail at all) — every status
+    //    must be merged, including AWAITING_ONCHAIN and APPROVED, or the
+    //    request disappears from the user's history the moment an admin
+    //    approves it (and never reappears once settled). See the design doc's
+    //    "regression" writeup for why this must ship in the same release as
+    //    the admin submit-tx endpoint.
     let localItems: unknown[] = [];
     try {
       const session = await auth();
       const dbUserId = (session?.user as { id?: string } | undefined)?.id;
       if (dbUserId) {
         const reqs = await prisma.withdrawalRequest.findMany({
-          where: { userId: dbUserId, status: { in: ['PENDING', 'PROCESSING', 'REJECTED', 'FAILED'] } },
+          where: {
+            userId: dbUserId,
+            OR: [
+              { balanceAuthorityAtRequest: 'HUB', status: { in: ['PENDING', 'PROCESSING', 'REJECTED', 'FAILED'] } },
+              { balanceAuthorityAtRequest: 'LOCAL' },
+            ],
+          },
           orderBy: { createdAt: 'desc' },
           take: 20,
         });
@@ -73,6 +91,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
           toAddress: w.toAddress,
           status: w.status,
           txHash: w.hubTxId ?? null,
+          // LOCAL rail (A-5) — the on-chain settlement info. An
+          // AWAITING_ONCHAIN row with no onchainVerifiedAt yet has only an
+          // unverified admin claim (if any submit-tx attempt was made) —
+          // the frontend (ActivityHistory) is responsible for not rendering
+          // a hash until onchainVerifiedAt is set (W-4).
+          onchainTxHash: w.onchainTxHash ?? null,
+          onchainVerifiedAt: w.onchainVerifiedAt ?? null,
           createdAt: w.createdAt,
           pendingApproval: w.status === 'PENDING',
         }));
@@ -195,6 +220,88 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           { status: 403 },
         );
       }
+    }
+  }
+
+  // -- 3b′. LOCAL-authority coins (A-2 CoinBalanceAuthority) never have a hub
+  // balance to check against — branch out to the LOCAL rail entirely here,
+  // before the HUB-only balance check below. W-1 (unconditional balance
+  // verification) still applies on this rail: createLocalWithdrawalHold's
+  // placeHold() (A-3 §4.3) checks getUserCoinBalance().available inside the
+  // SAME DB transaction as the WithdrawalRequest row creation and always
+  // throws INSUFFICIENT_AVAILABLE_BALANCE if the amount exceeds it — there
+  // is no conditional/opt-out path, mirroring the HUB-rail W-1 fix below.
+  let authority: 'HUB' | 'LOCAL' = 'HUB';
+  try {
+    authority = await getCoinAuthority(curUpper);
+  } catch {
+    // Fail open to HUB here only decides "which rail" — getCoinAuthority()
+    // itself already treats a missing/unreadable ManagedCoin row as HUB (its
+    // own documented default, A-2 §4.1). A genuine DB outage lands here too;
+    // the HUB balance check below (3c) is unconditional and fails CLOSED on
+    // its own hub-lookup failure, so this fallback never bypasses balance
+    // verification — it only ever routes into the (still-verified) HUB path.
+  }
+
+  if (authority === 'LOCAL') {
+    try {
+      await assertExecutionAllowed(curUpper, 'WITHDRAWAL');
+    } catch (e) {
+      if (e instanceof CoinAuthorityBlockedError) {
+        return NextResponse.json({ ok: false, error: e.message }, { status: 403 });
+      }
+      throw e;
+    }
+
+    const localClientKey = req.headers.get('Idempotency-Key');
+    const localInflightKey = localClientKey
+      ? `idem:${localClientKey}`
+      : `${dbUserId}|${curUpper}|${network}|${toAddress.trim()}|${decAmount.toFixed()}`;
+
+    if (niaState.inFlightWithdrawals.has(localInflightKey)) {
+      return NextResponse.json(
+        { ok: false, error: 'A duplicate withdrawal is already in progress' },
+        { status: 409 },
+      );
+    }
+
+    niaState.inFlightWithdrawals.add(localInflightKey);
+    try {
+      // -- LOCAL rail hold: request row + WITHDRAWAL_PENDING hold, atomic
+      //    (A-5 §3.2). No hub call, no auto-approve (W-8 — LOCAL never
+      //    auto-approves; "approved" on this rail only means "queued for
+      //    manual on-chain execution", see approve-route + submit-tx). --
+      const wr = await createLocalWithdrawalHold({
+        userId: dbUserId,
+        niaUserId,
+        email,
+        coin: curUpper,
+        network: String(network ?? ''),
+        toAddress: toAddress.trim(),
+        amount: decAmount.toFixed(),
+        // W-7 (admin-configurable fee) has no data home yet — explicitly
+        // deferred to coin-management-screen work (A-5 §5/§6-10). "0" is
+        // honest here, not a placeholder guess: no fee config exists
+        // anywhere in this codebase yet to compute a nonzero value from.
+        feeAmount: '0',
+      });
+      return NextResponse.json({ ok: true, data: { id: wr.id, status: 'PENDING', pendingApproval: true } });
+    } catch (e) {
+      const err = e as Error & { code?: string };
+      if (err.code === 'INSUFFICIENT_AVAILABLE_BALANCE') {
+        const bal = await getUserCoinBalance(dbUserId, curUpper).catch(() => null);
+        return NextResponse.json(
+          { ok: false, error: `Insufficient balance. You have ${bal?.available ?? '0'} ${curUpper} available to withdraw.` },
+          { status: 400 },
+        );
+      }
+      console.error('[withdrawals] local create error:', e);
+      return NextResponse.json(
+        { ok: false, error: 'Withdrawal service unavailable. Please try again later.' },
+        { status: 503 },
+      );
+    } finally {
+      niaState.inFlightWithdrawals.delete(localInflightKey);
     }
   }
 

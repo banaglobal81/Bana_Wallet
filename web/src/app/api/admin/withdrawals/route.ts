@@ -6,12 +6,13 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 
-const STATUSES = ['PENDING', 'PROCESSING', 'APPROVED', 'REJECTED', 'FAILED'] as const;
+const STATUSES = ['PENDING', 'PROCESSING', 'AWAITING_ONCHAIN', 'APPROVED', 'REJECTED', 'FAILED'] as const;
 
 /**
  * GET /api/admin/withdrawals — withdrawal approval queue (ADMIN only).
- * Optional ?status=PENDING|PROCESSING|APPROVED|REJECTED|FAILED filters; default returns all
- * (newest first, capped). Also returns the count of PENDING for the nav badge.
+ * Optional ?status=PENDING|PROCESSING|AWAITING_ONCHAIN|APPROVED|REJECTED|FAILED
+ * filters; default returns all (newest first, capped). Also returns the count
+ * of PENDING for the nav badge.
  */
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
@@ -33,6 +34,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         // Pending first (oldest at top — FIFO queue), then everything by recency.
         orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
         take: 100,
+        // A-5 W-9 — the admin queue must show the LOCAL rail's verification
+        // evidence (§2.5) alongside the request, not just the current status.
+        include: { onchainVerificationAttempts: { orderBy: { checkedAt: 'desc' } } },
       }),
       prisma.withdrawalRequest.count({ where: { status: 'PENDING' } }),
     ]);

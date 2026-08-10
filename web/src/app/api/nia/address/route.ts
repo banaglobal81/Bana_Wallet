@@ -7,6 +7,7 @@ import { niaBearerRequest } from '@/lib/nia/client';
 import { resolveSessionUserId } from '@/lib/nia/resolve';
 import { niaState } from '@/lib/nia/state';
 import { ok, fail } from '@/lib/nia/respond';
+import { assertDepositAddressAllowed, CoinAuthorityBlockedError } from '@/lib/coinAuthority';
 
 // Asset/network codes are short alphanumeric tickers (e.g. USDC, ETH, TRX, BASE).
 // Enforce a strict shape server-side so arbitrary strings never reach the hub —
@@ -43,6 +44,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
   if (!CODE_RE.test(network)) {
     return NextResponse.json({ ok: false, error: 'network is required' }, { status: 400 });
+  }
+
+  // -- 2b. Coin-authority gate (A-2 §4.4, X-7): LOCAL-authority coins have no hub
+  //        deposit rail — address issuance is irreversible, so this is a real-time,
+  //        fail-closed check on every call, never skipped/cached. Must run before any
+  //        Nia-Hub call below. --
+  try {
+    await assertDepositAddressAllowed(currency);
+  } catch (e) {
+    if (e instanceof CoinAuthorityBlockedError) {
+      return NextResponse.json({ ok: false, error: e.message }, { status: 403 });
+    }
+    throw e;
   }
 
   // -- 3. In-flight guard: collapse concurrent duplicate creates for the same

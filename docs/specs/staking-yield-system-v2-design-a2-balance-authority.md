@@ -1,6 +1,29 @@
 # 설계 문서 A-2 — 잔고 권위 계층(Balance Authority Layer) Prisma 스키마 설계
 
-> 작성: `prisma-db-expert` · 2026-08-10
+> 작성: `prisma-db-expert` · 2026-08-10 · **개정: 2026-08-10 (wallet-security-expert 조건부 승인
+> 후속 보완 · rev04 검토 완료, 본문 변경 없음)**
+
+> **rev04 검토 (`staking-yield-system-v2-prd-rev04-core-design-synthesis.md`).** rev04는 도입부에서
+> 이 문서를 **"변경 없이 유효"** 목록에 명시적으로 포함한다 — rev04가 대체하는 세 절
+> (개정 02 §4.2, 개정 03 §3.4, A-3 §2.6, A-8 §5 DC-6) 중 어느 것도 이 문서의 소유 범위(`ManagedCoin`
+> 확장, `CoinAuthorityProbe`/`CoinAuthorityTransition`, `getCoinAuthority()`/`assertIssuanceAllowed()`
+> 등)에 속하지 않는다 — PoR-1″ 좌변 재정의(rev04 §1)와 componentRole 5값(rev04 §1.6, A-8 소유)은
+> 모두 A-3/A-8의 스키마·계약이지 A-2의 것이 아니다. **따라서 이 문서의 설계 본문에 반영할 내용이
+> 없다.** 유일한 접점은 rev04 §5.3(마이그레이션 범위 판정)이 "A-2는 Q-M5의 답과 무관하게
+> 필요하다"고 명시한 것과, §5.3 조건 ④("A-3/A-4/A-5 마이그레이션은 Q-M5 회신이 (나)일 때만
+> 허용, A-2는 ①~③만 충족하면 된다")뿐이며 — 둘 다 **§7의 3조건 체계 자체를 바꾸지 않는다.**
+>
+> **개정 이력.** `wallet-security-expert`가 A-2/A-3/A-5 설계를 검토해 **조건부 승인**했다.
+> 이 문서에 반영하는 필수 보완 1건(HIGH):
+> 3. **권위 직접 전환의 TOCTOU** — `canChangeAuthorityDirectly()`(잔고 0인 코인은 5단계 절차
+>    생략)의 "잔고 합계 == 0" 체크와 실제 필드 쓰기 사이에 동시성 보장이 없었다. §4.6을
+>    개정해 `ManagedCoin` 행 잠금(`SELECT ... FOR UPDATE`) 기반의 단일 직렬화 트랜잭션과
+>    `directAuthorityChangeInProgress` 플래그로 이를 닫는다. 이 잠금은 A-3(§4.2)의
+>    `creditLocalLedger`가 발행성 사유 코드에 대해 같은 `ManagedCoin` 행을 잠그도록 개정된
+>    것과 **한 쌍**이다 — 두 문서가 같은 행을 같은 방식으로 잠그기 때문에 서로를 배제한다.
+>
+> 이 보완은 rev03 §7.2의 3조건(아래 §5에서 재확인) 중 어느 것도 완화하지 않는다. 마스터 승인
+> 전까지 실제 코드 착수는 여전히 금지다.
 > **근거 문서(읽은 순서):** `staking-yield-system-v2-INDEX.md` →
 > `staking-yield-system-v2-prd.md`(개정 01, 특히 §8 데이터 모델 요구) →
 > `staking-yield-system-v2-prd-rev02-balance-authority.md`(개정 02, 모델 C·PoR-1) →
@@ -127,6 +150,15 @@ model ManagedCoin {
 
   authorityProbes      CoinAuthorityProbe[]
   authorityTransitions CoinAuthorityTransition[]
+
+  // ─── 신규 (A-2 개정 — 필수 보완 3, TOCTOU 방지) ────────────────────
+  // §4.6 changeAuthorityDirectly()가 이 행을 SELECT ... FOR UPDATE로 잠근 채 "잔고 합계==0"
+  // 확인과 balanceAuthority 필드 쓰기를 하나의 트랜잭션으로 묶는 동안 true로 세팅된다.
+  // assertIssuanceAllowed()(§4.3)가 이 플래그를 검사해 true인 동안 이 코인에 대한 모든 신규
+  // 발행성 크레딧(A-3 creditLocalLedger)을 차단한다 — FROZEN과 동일한 발행 정지 효과를,
+  // 5단계 절차 전체를 거치지 않고도 얻기 위함이다. 기본값 false — 이 필드 자체는 어떤 자금
+  // 경로도 열거나 닫지 않는다(§1 원칙 6과 같은 결).
+  directAuthorityChangeInProgress Boolean @default(false)
 
   @@index([balanceAuthority])
   @@index([authorityAlertStage])
@@ -265,7 +297,7 @@ model PlatformSetting {
 | **X-2** | 두 권위를 어떤 화면에서도 합산 금지 | 스키마 항목 아님 — §5 코드 계약(합산 코드 금지, 리뷰 체크리스트) |
 | **X-3′ T1** | 등재 감지 → 경고 + 신규 발행만 차단, 사용자 기능 유지 | `CoinAuthorityProbe.result = T1_LISTED` 기록 → `ManagedCoin.authorityAlertStage = T1_WARNING` 갱신 (§2.2/§2.3) |
 | **X-3′ T2** | 잔고 감지 → fail-closed, 발행·체결·출금 정지, 조회 유지, 자동 전환 금지 | `CoinAuthorityProbe.result = T2_VIOLATION` + 증거 필드(`hubBalanceUserId/Amount`) → `authorityAlertStage = T2_HALTED`. 자동 전환 금지는 스키마가 아니라 §5 코드 계약(전환은 오직 `CoinAuthorityTransition` 절차로만) |
-| **X-4′** | 권위 전환 5단계 절차. 잔고 0 아닌 코인은 절차 없이 필드만 바꾸는 경로 금지 | `CoinAuthorityTransition` 상태기계 (§2.4), 5개 상태 = 5단계. 필드 직접 변경 경로는 §5에서 명시적으로 봉쇄 |
+| **X-4′** | 권위 전환 5단계 절차. 잔고 0 아닌 코인은 절차 없이 필드만 바꾸는 경로 금지 | `CoinAuthorityTransition` 상태기계 (§2.4), 5개 상태 = 5단계. 필드 직접 변경 경로는 §4.6에서 명시적으로 봉쇄. **잔고 0 코인의 직접 변경 경로 자체의 TOCTOU는 `ManagedCoin` 행 잠금 + `directAuthorityChangeInProgress`로 닫음(필수 보완 3, §4.6 개정)** |
 | **X-6** | 주기적 프로브 결과 기록. 검사 실패는 위반 아님, N회 연속 시 T1 승격 | `CoinAuthorityProbe.consecutiveUnknownCount` + `PlatformSetting.authorityProbeUnknownEscalationCount` (§2.3/§2.5) |
 | **X-7** | 입금 주소 생성은 권위·허브 지원 여부 함께 검증. 판정 불가 시 fail-closed(주소 미발급) | 스키마 항목 아님(판정 시점 실시간 검사) — `balanceAuthority` + 현재 `networks[].depositEnabled`를 읽어 §5 계약대로 게이팅. 차단 이벤트는 기존 `AuditLog` 재사용 |
 | **X-8** | `ManagedCoin` 생성 시 권위 필수 입력, 기본값 LOCAL + 입금·출금 모두 비활성 | 컬럼 기본값 `LOCAL`(§2.2). "필수 입력"은 API 라우트 검증(§5) — DB 기본값과 별개로 요청 바디에 명시를 요구한다. 입금·출금 비활성 기본값은 `networks[].depositEnabled/withdrawEnabled`(기존 필드, JSON 내부) — 신규 코인 생성 라우트가 명시 `true`가 없는 한 `false`로 강제하도록 §5에서 계약 |
@@ -311,8 +343,10 @@ runAuthorityProbe(coin: ManagedCoin, opts): Promise<CoinAuthorityProbe>
   `authorityAlertStage`)가 증거(프로브 이력)와 어긋나는 상태가 생긴다.
 
 ```
-assertIssuanceAllowed(symbol): void  // throws on T2_HALTED, or on T1_WARNING without
-                                      // an explicit admin-approved override
+assertIssuanceAllowed(symbol): void  // throws on T2_HALTED, on T1_WARNING without
+                                      // an explicit admin-approved override, on
+                                      // directAuthorityChangeInProgress === true, or on an
+                                      // in-flight CoinAuthorityTransition (see below)
 assertExecutionAllowed(symbol, kind: 'WITHDRAWAL' | 'SETTLEMENT' | 'NEW_POSITION'): void
 ```
 - **T2_HALTED**: 무조건 차단. 사람이 §4.4 절차를 밟기 전까지 우회 경로 없음.
@@ -320,6 +354,15 @@ assertExecutionAllowed(symbol, kind: 'WITHDRAWAL' | 'SETTLEMENT' | 'NEW_POSITION
   승인한 예외 경로가 있다면, 그 예외는 **반드시 `AuditLog`에 별도 액션**
   (예: `AUTHORITY_T1_OVERRIDE`)으로 남는다. 이 문서는 예외 UI/절차 자체를 설계하지 않는다 —
   A-5/A-7이 필요 여부를 판단한다.
+- **`directAuthorityChangeInProgress === true`(개정 — 필수 보완 3)**: 무조건 차단. §4.6이
+  이 플래그를 세우는 동안 발행성 크레딧(A-3 §4.2)이 끼어들 수 없어야 하기 때문이다.
+- **진행 중인 `CoinAuthorityTransition`(개정 — 필수 보완 3 작업 중 발견한 인접 격차의 수정).**
+  기존 초안은 `CoinAuthorityTransitionStatus.FROZEN`의 주석에 "발행·체결·출금 실행 정지"라고
+  적어 뒀지만, 그 정지를 실제로 강제하는 코드 지점이 명시돼 있지 않았다. 이 개정으로 명확히
+  한다 — `assertIssuanceAllowed`/`assertExecutionAllowed`는 해당 코인에 대해
+  `status ∈ {FROZEN, SNAPSHOTTED, FUNDS_MOVED, RECONCILED}`(즉 `DRAFT`도 `COMPLETED`도
+  `ABORTED`도 아닌 "진행 중")인 `CoinAuthorityTransition` 행이 하나라도 있으면 무조건 차단한다.
+  `DRAFT`는 아직 정지 전이므로 차단하지 않는다 — 1단계(`frozenAt` 기록)가 실제 정지 시점이다.
 - 조회 자체(잔고 화면 등)는 T1이든 T2든 **항상 허용**(rev03 X-3′ 원문 — "조회는 유지한다").
 
 ### 4.4 입금 주소 게이팅 (X-7)
@@ -351,12 +394,50 @@ assertDepositAddressAllowed(symbol): void  // fail-closed
 
 ### 4.6 권위 전환 절차 (X-4′)
 
+**개정 — 필수 보완 3(심각도 HIGH, TOCTOU).** 원래 초안은 `canChangeAuthorityDirectly(symbol):
+Promise<boolean>`을 "판정만 하는" 순수 함수로 두고, 호출자가 그 결과를 보고 별도로
+`balanceAuthority`를 쓰는 두 단계짜리 흐름을 암묵적으로 가정했다. 이 두 단계 사이에
+클레임/그랜트 크레딧이 끼어들면 판정 시점엔 참이었던 "잔고 0"이 쓰기 시점엔 거짓이 될 수
+있다 — 판정과 쓰기를 하나의 함수, 하나의 트랜잭션으로 합친다.
+
 ```
-canChangeAuthorityDirectly(symbol): Promise<boolean>
+changeAuthorityDirectly(symbol, actor: { adminId: string, adminEmail: string })
+  : Promise<{ changed: boolean, managedCoin: ManagedCoin }>
+  // changed === false면 조건 미충족 — 호출자는 대신 CoinAuthorityTransition 5단계로 안내한다.
+  // 조건 충족 시 이 함수 자신이 즉시 필드를 쓴다. "판정 후 별도 쓰기 호출"의 2단계 API를
+  // 제공하지 않는다 — 그 틈이 바로 TOCTOU였다.
 ```
-- A-3(로컬 원장) 설계 완료 후: 로컬 잔고 합계 == "0" **그리고** 최근 프로브가 해당 코인에
-  대해 0이 아닌 허브 잔고를 관측한 적이 없으면 `true`. 이 경우에만 `ManagedCoin.balanceAuthority`를
-  **직접** 수정하는 관리자 액션을 허용하고, `AuditLog`(`COIN_AUTHORITY_DIRECT_CHANGE`)로 남긴다.
+
+**절차(전부 하나의 DB 트랜잭션 안에서, lock-then-check 순서 고정):**
+1. `ManagedCoin` 행을 `SELECT ... FOR UPDATE`로 잠근다. **이 잠금이 이 함수 전체의 동시성
+   보장 근거다** — A-3(§4.2 개정)의 `creditLocalLedger`도 발행성 사유 코드에 대해 같은 행을
+   같은 방식으로 잠그도록 개정됐으므로, 어느 쪽이 먼저 잠금을 획득하든 나머지 하나는 그
+   트랜잭션이 끝날 때까지 대기한다 — "잔고 합계 조회"와 "필드 쓰기" 사이에 어떤 크레딧도
+   물리적으로 끼어들 수 없다.
+2. 잠금 획득 후 재확인: `directAuthorityChangeInProgress === true`(이미 다른 직접 변경이
+   진행 중, 통상 발생하지 않아야 하나 방어적으로 검사) 또는 `authorityAlertStage === 'T2_HALTED'`
+   면 즉시 예외 — 이 경로가 아니라 §4.4/5단계 절차를 쓰라는 신호.
+3. `UPDATE ManagedCoin SET directAuthorityChangeInProgress = true WHERE id = ...`(같은 트랜잭션,
+   같은 잠금 보유 상태에서). 이 시점부터 §4.3의 `assertIssuanceAllowed`가 이 코인에 대한 신규
+   발행성 크레딧을 차단한다 — **FROZEN과 동일한 발행 정지 상태**(요구사항 원문)가 5단계 절차
+   전체를 거치지 않고도 성립한다.
+4. A-3의 `UserCoinBalance` 전 행(WHERE coin=symbol)을 조회해 `decimal.js`로 합산한다
+   (Postgres `SUM`이 아니라 애플리케이션 계층 합산 — CLAUDE.md 규칙 2). 행이 하나도 없으면
+   합계는 자연히 `"0"`이다.
+5. 판정: 합계 `"0"` **그리고** 최근 프로브가 해당 코인에 대해 0이 아닌 허브 잔고를 관측한 적이
+   없으면 조건 충족.
+   - **미충족 시**: `directAuthorityChangeInProgress = false`로 되돌리고(같은 트랜잭션),
+     `{ changed: false, managedCoin }`를 반환한다. 호출자는 `CoinAuthorityTransition`을
+     `DRAFT`로 생성하고 5단계(§2.4)를 순서대로 밟도록 안내받는다.
+   - **충족 시**: 같은 트랜잭션 안에서 `balanceAuthority`를 원하는 값으로 쓰고
+     `directAuthorityChangeInProgress = false`로 되돌린다. `AuditLog`
+     (`action: 'COIN_AUTHORITY_DIRECT_CHANGE'`)를 함께 남긴다. `{ changed: true, managedCoin }`
+     반환.
+6. 커밋과 동시에 `ManagedCoin` 행 잠금이 풀리고, 대기 중이던 `creditLocalLedger` 트랜잭션(있었다면)이
+   진행된다 — 이때는 이미 `balanceAuthority`가 바뀐 뒤이므로, 그 크레딧 호출은 A-2 §4.1
+   `getCoinAuthority()`를 다시 읽어 새 권위 기준으로 올바르게 라우팅된다(예: 방금 `LOCAL`로
+   바뀐 코인이면 이후 크레딧은 A-3 경로로, `HUB`로 바뀐 코인이면 허브 API 경로로 — 이 라우팅
+   자체는 각 크레딧 호출부의 책임이며 이 함수가 강제하지 않는다).
 - 그 외(잔고가 0이 아니거나 A-3 완료 전) — **직접 변경 경로를 제공하지 않는다.** 반드시
   `CoinAuthorityTransition`을 `DRAFT`로 생성하고 5단계(§2.4)를 순서대로 밟는다.
 - 각 단계 전이는 기존 `WithdrawalRequest`/N-30 패턴과 동일하게 **원자적 클레임**
@@ -414,6 +495,12 @@ name, visible FROM "ManagedCoin"`) — 데이터 변경 없음. 결과: **행 1�
    아니나, 향후 생기면 `CoinAuthorityProbe`/`CoinAuthorityTransition`의 `managedCoinId` FK를
    `Restrict`로 둘지, 아니면 관계를 끊고 `coinSymbol` 비정규화 필드만으로 감사 이력을
    보존할지 그때 결정한다(현재 초안은 관계 유지 + 비정규화 병행).
+5. **`ManagedCoin` 행 잠금이 새로운 직렬화 병목이 될 가능성 (개정 후 신규 항목).** §4.6/A-3
+   §4.2가 이제 발행성 크레딧·직접 권위 전환 전부에 대해 같은 `ManagedCoin` 행을 잠근다 —
+   오늘은 코인이 사실상 BANA 하나뿐이라 문제가 되지 않지만(§5), 로컬 권위 코인이 늘어나면
+   같은 코인에 대한 동시 클레임이 전부 이 잠금을 두고 직렬화된다. 처리량이 문제가 되는
+   시점이 오면 잠금 보유 시간을 최소화하는 방향(예: 판정에 필요한 값만 먼저 읽고 짧게
+   잠그는 최적화)을 검토할 것을 제안한다 — **A-4/A-5 구현 시 실측 후 결정**.
 
 ---
 
@@ -429,3 +516,5 @@ name, visible FROM "ManagedCoin"`) — 데이터 변경 없음. 결과: **행 1�
   지점(§6-3 등)을 전제로 별도 설계한다.
 - **코인 전수 매핑(G-0⁗ ①)의 완료가 아니다.** 그것은 운영 데이터 입력이며, 이 스키마는
   그 입력이 완료되지 않아도 안전하게 동작하도록(암묵적 HUB 폴백) 설계됐을 뿐이다.
+- **§4.6의 `changeAuthorityDirectly()`/잠금 기반 절차 구현 착수 승인도 아니다.** TOCTOU를
+  닫는 계약을 확정했을 뿐, 실제 코드 작성은 여전히 §5의 3조건 전부 충족 이후다.

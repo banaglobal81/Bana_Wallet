@@ -2,15 +2,16 @@
 
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
-import { LayoutDashboard, Coins, SlidersHorizontal, Sprout, CircleDollarSign } from 'lucide-react';
+import { LayoutDashboard, Coins, SlidersHorizontal, Sprout, CircleDollarSign, ShieldCheck } from 'lucide-react';
 
 // Mobile-only bottom navigation for the admin area (replaces the hamburger
 // drawer on small screens). Uses the silver accent for the active item.
 // Dashboard sits in the centre. (Users + Withdrawals live in the Settings page.)
-const ITEMS: { href: string; icon: typeof Coins; navKey: 'dashboard' | 'settlement' | 'settings' | 'staking' | 'coins' }[] = [
+const ITEMS: { href: string; icon: typeof Coins; navKey: 'dashboard' | 'settlement' | 'settings' | 'staking' | 'coins' | 'reserve' }[] = [
   { href: '/admin/settlement', icon: Coins, navKey: 'settlement' },
   { href: '/admin/staking', icon: Sprout, navKey: 'staking' },
   { href: '/admin/dashboard', icon: LayoutDashboard, navKey: 'dashboard' },
+  { href: '/admin/reserve', icon: ShieldCheck, navKey: 'reserve' },
   { href: '/admin/coins', icon: CircleDollarSign, navKey: 'coins' },
   { href: '/admin/settings', icon: SlidersHorizontal, navKey: 'settings' },
 ];

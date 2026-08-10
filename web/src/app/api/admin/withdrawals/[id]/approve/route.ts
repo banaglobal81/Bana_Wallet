@@ -6,15 +6,26 @@ import { prisma } from '@/lib/db';
 import { niaState } from '@/lib/nia/state';
 import { recordAudit } from '@/lib/audit';
 import { forwardWithdrawalToHub } from '@/lib/withdrawals';
+import { transitionLocalWithdrawalToAwaitingOnchain } from '@/lib/withdrawalOnchain';
+import { CoinAuthorityBlockedError } from '@/lib/coinAuthority';
 
 /**
  * POST /api/admin/withdrawals/[id]/approve — approve a pending withdrawal (ADMIN only).
- * This is the point where funds actually leave: the request is atomically claimed
- * (PENDING -> PROCESSING) and forwarded to Nia-Hub. On hub failure the row is
- * marked FAILED (with lastError) — never auto-retried — because the outcome is
- * unknown and a blind retry could double-spend; an operator must verify on the hub
- * (and can then clear a stuck row via reject). The idempotencyKey makes any
- * hub-side retry safe.
+ *
+ * HUB rail (balanceAuthorityAtRequest = 'HUB', the only rail that existed before
+ * V2-CORE): unchanged — this is the point where funds actually leave. The request
+ * is atomically claimed (PENDING -> PROCESSING) and forwarded to Nia-Hub. On hub
+ * failure the row is marked FAILED (with lastError) — never auto-retried — because
+ * the outcome is unknown and a blind retry could double-spend; an operator must
+ * verify on the hub (and can then clear a stuck row via reject). The
+ * idempotencyKey makes any hub-side retry safe.
+ *
+ * LOCAL rail (A-5 §1.5) — "approve" here means "execution intent confirmed", NOT
+ * "funds moved". PROCESSING -> AWAITING_ONCHAIN. No funds leave in this branch —
+ * the admin still has to execute the on-chain transfer outside this app and
+ * submit the resulting txHash via POST .../submit-tx (A-5 §1.5 steps 1-10,
+ * web/src/lib/withdrawalOnchain.ts submitWithdrawalOnchainTx()) before this
+ * request ever reaches APPROVED.
  */
 export async function POST(
   _req: Request,
@@ -56,6 +67,31 @@ export async function POST(
     }
     const wr = (await prisma.withdrawalRequest.findUnique({ where: { id } }))!;
 
+    if (wr.balanceAuthorityAtRequest === 'LOCAL') {
+      // LOCAL rail (A-5 §1.5) — no hub call, no funds move here.
+      try {
+        await transitionLocalWithdrawalToAwaitingOnchain(id, { adminId, adminEmail });
+      } catch (e) {
+        if (e instanceof CoinAuthorityBlockedError) {
+          // assertExecutionAllowed() blocked (T2_HALTED / transition in progress) —
+          // put the row back to PENDING so it doesn't sit stuck in PROCESSING
+          // owned by nobody (A-5 §1.5 open question 1).
+          await prisma.withdrawalRequest.updateMany({
+            where: { id, status: 'PROCESSING' },
+            data: { status: 'PENDING' },
+          });
+          return NextResponse.json({ ok: false, error: e.message }, { status: 409 });
+        }
+        throw e;
+      }
+      await recordAudit({
+        adminId, adminEmail, action: 'WITHDRAWAL_APPROVE_QUEUED_ONCHAIN',
+        targetType: 'withdrawal', targetId: id,
+        detail: `${wr.debitTotal ?? wr.amount} ${wr.currency} — queued for manual on-chain execution`,
+      });
+      return NextResponse.json({ ok: true, data: { status: 'AWAITING_ONCHAIN' } });
+    }
+
     // Forward to the hub — funds leave here (shared helper). On error the helper
     // marks the row FAILED (needs manual verification), never back to PENDING.
     const result = await forwardWithdrawalToHub(wr, { adminId });
@@ -70,7 +106,7 @@ export async function POST(
       targetType: 'withdrawal', targetId: id,
       detail: `${wr.amount} ${wr.currency} → ${wr.email}`,
     });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, data: { status: 'APPROVED' } });
   } catch (e) {
     console.error('[admin/withdrawals/approve] error:', e);
     return NextResponse.json(

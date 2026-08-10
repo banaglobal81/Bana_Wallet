@@ -16,6 +16,12 @@ interface NiaState {
   inFlightAddresses: Set<string>;
   webhookEvents: WebhookEvent[];
   webhookEventSeq: number;
+  // A-5 (V2-CORE) — fast-path dedup guard for POST /api/admin/withdrawals/[id]/submit-tx
+  // (key: `submit-tx:${withdrawalRequestId}`). Same pattern as inFlightWithdrawals; the
+  // real uniqueness guarantee is the WithdrawalOnchainSettlement DB unique constraint
+  // (A-5 §1.5/§2.9) — this is only the cheap in-process fast path. Unused until A-5's
+  // submit-tx route is wired up (web/src/lib/withdrawalOnchain.ts).
+  inFlightOnchainVerifications: Set<string>;
 }
 
 // Singleton that survives Next.js dev hot-reload by anchoring to globalThis.
@@ -31,5 +37,6 @@ s.inFlightWithdrawals ??= new Set<string>();
 s.inFlightAddresses ??= new Set<string>();
 s.webhookEvents ??= [];
 s.webhookEventSeq ??= 0;
+s.inFlightOnchainVerifications ??= new Set<string>();
 
 export const niaState: NiaState = s as NiaState;

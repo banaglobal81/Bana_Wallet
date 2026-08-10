@@ -4,10 +4,18 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { recordAudit } from '@/lib/audit';
+import { releaseHold } from '@/lib/localLedger';
 
 /**
  * POST /api/admin/withdrawals/[id]/reject — reject a pending withdrawal (ADMIN only).
  * Body: { reason?: string }. No hub call — funds never leave.
+ *
+ * LOCAL rail (A-3/A-5, V2-CORE): a rejected request must release its
+ * WITHDRAWAL_PENDING hold, or the user's "available" balance stays wrongly
+ * depressed forever (A-7 WD-11 — REJECTED reduces ⓓ only, ⓐ is unchanged).
+ * No code path creates a LOCAL WithdrawalRequest yet, so this branch is
+ * currently unreachable in production — added now so it is correct the day
+ * one does.
  */
 export async function POST(
   req: Request,
@@ -44,6 +52,21 @@ export async function POST(
       if (!exists) return NextResponse.json({ ok: false, error: 'Withdrawal not found' }, { status: 404 });
       return NextResponse.json({ ok: false, error: `Already ${exists.status.toLowerCase()}` }, { status: 409 });
     }
+
+    const wr = await prisma.withdrawalRequest.findUnique({
+      where: { id },
+      select: { balanceAuthorityAtRequest: true, localHoldId: true, currency: true, debitTotal: true, amount: true },
+    });
+    if (wr?.balanceAuthorityAtRequest === 'LOCAL' && wr.localHoldId) {
+      try {
+        await releaseHold(wr.localHoldId, 'WITHDRAWAL_REJECTED');
+      } catch (e) {
+        // The status flip above already committed — a hold already
+        // released/executed is logged, not fatal to the reject action itself.
+        console.error('[admin/withdrawals/reject] releaseHold failed:', e);
+      }
+    }
+
     await recordAudit({
       adminId, adminEmail, action: 'WITHDRAWAL_REJECT',
       targetType: 'withdrawal', targetId: id, detail: reason ?? undefined,

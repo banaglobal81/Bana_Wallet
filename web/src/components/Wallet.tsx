@@ -7,7 +7,9 @@ import { Screen, SystemSettings } from '../types'; // SystemSettings kept for Wa
 import { getNiaBalance, getNiaMarkets } from '../utils/niaApi';
 import { getStakePositions } from '../utils/stakingApi';
 import { getManagedCoins } from '../utils/coinsApi';
+import { getLocalBalance, type LocalBalanceCoin } from '../utils/localBalanceApi';
 import StakedSummaryCard from './staking/StakedSummaryCard';
+import LocalBalanceGroup from './wallet/LocalBalanceGroup';
 import {
   Wallet as WalletIcon,
   Download,
@@ -35,11 +37,24 @@ interface BalanceRow { walletType: string; currency: string; balance: string; lo
  * ACTIVE and MATURED both still hold the principal — only PAID has settled it
  * back to the wallet. Filtering to ACTIVE alone made a matured stake disappear
  * from the balances entirely, which is exactly when the user most wants to see it.
+ *
+ * `alreadyShownInLocalGroup` — A-7 LB-C1: for a LOCAL-authority coin, once the
+ * v2 local ledger actually holds that coin's principal (A-3
+ * STAKE_PRINCIPAL_LOCK, surfaced as Group 2's "locked for staking" figure),
+ * this legacy row would double the same principal on screen. Today no
+ * StakePositionV2 rows exist for any coin (V2-CORE staking isn't wired to any
+ * creation path yet), so this set is always empty in production and nothing
+ * here changes visually — the guard only activates the day that stops being
+ * true, so real legacy-staked balances are never hidden prematurely.
  */
-function stakedRows(positions: { coin: string; principal: string; status: string }[]): BalanceRow[] {
+function stakedRows(
+  positions: { coin: string; principal: string; status: string }[],
+  alreadyShownInLocalGroup: Set<string>,
+): BalanceRow[] {
   const byCoin = new Map<string, Decimal>();
   for (const p of positions) {
     if (p.status === 'PAID') continue;
+    if (alreadyShownInLocalGroup.has(p.coin.toUpperCase())) continue;
     byCoin.set(p.coin, (byCoin.get(p.coin) ?? new Decimal(0)).plus(p.principal || '0'));
   }
   return [...byCoin.entries()]
@@ -56,10 +71,17 @@ function stakedRows(positions: { coin: string; principal: string; status: string
  * Every coin the tenant supports — the hub's markets plus admin-added custom
  * coins (BANA lives there). Used to pad the table with real zero rows, so a coin
  * you can deposit is visible before you hold any of it.
+ *
+ * `excludeLocalAuthority` — A-7 LB-C3: a LOCAL-authority coin (BANA) is shown
+ * in Group 2 (LocalBalanceGroup) instead, including its own zero/empty state
+ * (LB-9). Padding it into this HUB-authority zero-row list too would put the
+ * same coin in both groups, which reads as an X-1′ violation even though it
+ * is "only" a display bug.
  */
 function supportedSymbols(
   markets: { currencies?: { symbol?: string }[] } | null,
   managed: { symbol: string }[],
+  excludeLocalAuthority: Set<string>,
 ): string[] {
   const out = new Set<string>();
   for (const c of markets?.currencies ?? []) {
@@ -68,6 +90,7 @@ function supportedSymbols(
   for (const m of managed) {
     if (m?.symbol) out.add(m.symbol.toUpperCase());
   }
+  for (const s of excludeLocalAuthority) out.delete(s);
   return [...out];
 }
 
@@ -95,6 +118,25 @@ export default function Wallet({ onNavigate }: WalletProps) {
   // an auth/provisioning problem as an outage and send people chasing the wrong bug.
   const [balError, setBalError] = useState<string | null>(null);
 
+  // Group 2 (LOCAL-authority / "platform-issued assets") — A-7 §3. A fully
+  // independent load: its own loading/ok/error state (LB-6), never shares
+  // balState with the HUB table above. A failure here must never hide the
+  // HUB balances, and a HUB failure must never hide this block.
+  const [localState, setLocalState] = useState<'loading' | 'ok' | 'error'>('loading');
+  const [localCoins, setLocalCoins] = useState<LocalBalanceCoin[]>([]);
+
+  const loadLocal = async () => {
+    setLocalState('loading');
+    try {
+      const coins = await getLocalBalance();
+      setLocalCoins(coins);
+      setLocalState('ok');
+    } catch {
+      setLocalCoins([]);
+      setLocalState('error');
+    }
+  };
+
   const loadUser = async () => {
     setBalState('loading');
     setBalError(null);
@@ -108,17 +150,30 @@ export default function Wallet({ onNavigate }: WalletProps) {
         getNiaMarkets().catch(() => null),
         getManagedCoins().catch(() => []),
       ]);
+      // Every coin the local-balance group already carries a nonzero staking
+      // hold for — LB-C1: don't let this legacy synthetic row double it. Best
+      // effort against whatever localCoins currently holds (may still be
+      // loading/empty on first paint; that's fine, see stakedRows' own note).
+      const shownInLocalGroup = new Set(
+        localCoins
+          .filter((c) => c.state === 'ok' && c.holds && !/^0(\.0+)?$/.test(c.holds.stakePrincipal))
+          .map((c) => c.coin.toUpperCase()),
+      );
       const held: BalanceRow[] = [
         ...(Array.isArray(data?.wallets) ? data.wallets : []),
         ...(Array.isArray(data?.tradingBalances) ? data.tradingBalances : []),
         ...(Array.isArray(data) ? data : []),
-        ...stakedRows(positions),
+        ...stakedRows(positions, shownInLocalGroup),
         // INSURANCE is an internal Nia-Hub wallet, never shown to users.
       ].filter((r) => (r.walletType ?? '').toUpperCase() !== 'INSURANCE');
       setRows(held);
+      // LB-C3 — LOCAL-authority coins (BANA) live in Group 2, not the HUB zero
+      // catalogue. Excluded here by symbol, sourced from ManagedCoin rows the
+      // local-balance route already scoped to balanceAuthority=LOCAL.
+      const localAuthoritySymbols = new Set(localCoins.map((c) => c.coin.toUpperCase()));
       // Kept separate from `rows` so the toggle never re-fetches: the catalogue
       // is only *displayed* on demand, not loaded on demand.
-      setAllZeroRows(zeroRows(held, supportedSymbols(markets, managed)));
+      setAllZeroRows(zeroRows(held, supportedSymbols(markets, managed, localAuthoritySymbols)));
       setBalState('ok');
     } catch (e) {
       setBalError((e as Error)?.message?.trim() || null);
@@ -126,7 +181,11 @@ export default function Wallet({ onNavigate }: WalletProps) {
     }
   };
 
-  useEffect(() => { loadUser(); }, []);
+  useEffect(() => { loadLocal(); }, []);
+  // Re-derive HUB rows once localCoins resolves, so the LB-C1/LB-C3 guards use
+  // real data rather than the empty initial state — without making Group 2's
+  // load block Group 1's (each effect is independently triggered).
+  useEffect(() => { loadUser(); }, [localCoins]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Held coins always first; the zero catalogue only when asked for.
   const visibleRows = showAll ? [...rows, ...allZeroRows] : rows;
@@ -202,8 +261,8 @@ export default function Wallet({ onNavigate }: WalletProps) {
                     {t('showAllCoins')}
                   </button>
                 )}
-                <button onClick={loadUser} aria-label={t('refreshBalancesAria')} className="p-2 bg-[#020d24]/60 hover:bg-[#1e3459] border border-[#1E3559] rounded-lg text-[#8c90a0] hover:text-white transition-colors cursor-pointer">
-                  <RefreshCw className={`h-4 w-4 ${balState === 'loading' ? 'animate-spin' : ''}`} />
+                <button onClick={() => { loadUser(); loadLocal(); }} aria-label={t('refreshBalancesAria')} className="p-2 bg-[#020d24]/60 hover:bg-[#1e3459] border border-[#1E3559] rounded-lg text-[#8c90a0] hover:text-white transition-colors cursor-pointer">
+                  <RefreshCw className={`h-4 w-4 ${balState === 'loading' || localState === 'loading' ? 'animate-spin' : ''}`} />
                 </button>
               </div>
             </div>
@@ -248,6 +307,11 @@ export default function Wallet({ onNavigate }: WalletProps) {
               </div>
             )}
           </div>
+
+          {/* Group 2 — LOCAL-authority ("platform-issued") balances. A deliberately
+              separate card from the HUB balances table above: its own
+              loading/error/empty states, and no total combining the two (A-7 LA-1). */}
+          <LocalBalanceGroup state={localState} coins={localCoins} onNavigate={onNavigate} />
 
           {/* Activity shortcut */}
           <button

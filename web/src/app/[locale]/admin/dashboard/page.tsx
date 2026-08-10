@@ -5,15 +5,20 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { LayoutDashboard, Users, ArrowUpRight, Check, ShieldCheck, RefreshCw, Download, ChevronRight } from 'lucide-react';
 import {
-  getAdminStats, listWithdrawals, getRecentDeposits, getStakingStats,
+  getAdminStats, listWithdrawals, getRecentDeposits, getStakingStats, getSolvency,
   type AdminStats, type WithdrawalRequest, type WithdrawalStatus, type DepositFeedItem, type AdminStakingStat,
+  type AdminSolvencyData,
 } from '@/utils/adminApi';
 import { StakingLiabilityDashboardStrip } from '@/components/admin/StakingLiabilityDashboardStrip';
 import { StakingIncidentBanner } from '@/components/admin/StakingIncidentBanner';
+import { ReserveDashboardStrip } from '@/components/admin/reserve/ReserveDashboardStrip';
+import { SolvencyIncidentBanner } from '@/components/admin/reserve/SolvencyIncidentBanner';
+import { AuthorityWarningBand } from '@/components/admin/reserve/AuthorityWarningBand';
 
 const STATUS_STYLE: Record<WithdrawalStatus, string> = {
   PENDING: 'bg-amber-500/10 text-amber-400 border-amber-500/25',
   PROCESSING: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/25',
+  AWAITING_ONCHAIN: 'bg-amber-500/10 text-amber-400 border-amber-500/25',
   APPROVED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25',
   REJECTED: 'bg-rose-500/10 text-rose-400 border-rose-500/25',
   FAILED: 'bg-orange-500/10 text-orange-400 border-orange-500/25',
@@ -32,6 +37,10 @@ export default function AdminDashboardPage() {
   const [stakingError, setStakingError] = useState<string | null>(null);
   const [stakingLoading, setStakingLoading] = useState(true);
   const [loading, setLoading] = useState(true);
+  // A-8 §7.2 AD-1~AD-6 — same "keep failure as failure, never as empty" rule.
+  const [solvency, setSolvency] = useState<AdminSolvencyData | null>(null);
+  const [solvencyError, setSolvencyError] = useState<string | null>(null);
+  const [solvencyLoading, setSolvencyLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -56,6 +65,18 @@ export default function AdminDashboardPage() {
       setStakingError((e as Error).message);
     } finally {
       setStakingLoading(false);
+    }
+
+    setSolvencyLoading(true);
+    try {
+      const sv = await getSolvency();
+      setSolvency(sv);
+      setSolvencyError(null);
+    } catch (e) {
+      setSolvency(null);
+      setSolvencyError((e as Error).message);
+    } finally {
+      setSolvencyLoading(false);
     }
   }, []);
 
@@ -87,8 +108,10 @@ export default function AdminDashboardPage() {
         </button>
       </header>
 
-      {/* D-6: incident banner — INV-1/2/3 violation. First screen an admin sees, so it belongs here too. */}
+      {/* D-6 / A-8 AD-5: incident banners. First screen an admin sees, so they belong here too. */}
       <StakingIncidentBanner stats={staking} />
+      {solvency && <SolvencyIncidentBanner incidents={solvency.incidents} />}
+      {solvency && <AuthorityWarningBand warnings={solvency.warnings} />}
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -109,6 +132,9 @@ export default function AdminDashboardPage() {
 
       {/* D-1..D-5: staking liability summary (unpaid interest headline + locked principal) */}
       <StakingLiabilityDashboardStrip stats={staking} error={stakingError} loading={stakingLoading} />
+
+      {/* A-8 §7.2: PoR-1″ reserve summary — links to /admin/reserve for the full breakdown. */}
+      <ReserveDashboardStrip data={solvency} error={solvencyError} loading={solvencyLoading} />
 
       {/* Transactions: recent withdrawals (real) + recent deposits (best-effort) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import CoinAvatar from '../wallet/CoinAvatar';
+import ClaimSlot from './ClaimSlot';
 
 // docs/specs/staking-page-v2-screen-flow-frd.md §4.2 — B2 YIELD PANEL.
 // PS-A only (docs/patterns/staking-v2-implementation-guide.md hand-off):
@@ -41,13 +42,16 @@ export default function YieldPanel({ rows }: { rows: YieldPanelRow[] }) {
               <YieldValueBox label={t('yield.lockedLabel')} help={t('yield.lockedHelp')} value={row.locked} testId="yield-locked" />
             </div>
 
-            {/* Claim slot — UNAVAILABLE only (PS-A). No [Details] link: the
-                S-INFO sheet body depends on an unresolved human/legal
-                decision (H-6), so no link is rendered until that lands
-                (FRD §3.3 — "빈 시트를 여는 것보다 낫다"). */}
-            <div data-testid="claim-slot-unavailable" className="state-chip-unavailable inline-flex items-center px-3 py-2 rounded-lg">
-              <span className="text-sm font-medium">{t('claim.unavailable')}</span>
-            </div>
+            {/* Claim slot — UNAVAILABLE only (PS-A / A-7 §4 intro: "이 절을
+                근거로 클레임 버튼을 만들지 않는다"). ClaimSlot itself
+                implements the full DISABLED/ENABLED/in-flight/state-refresh
+                machine (A-7 CLM-1~CLM-10) for the day yieldRail flips to
+                CLAIM_LIVE, but no caller in this codebase passes anything
+                but "UNAVAILABLE" yet — no [Details] link either: the S-INFO
+                sheet body depends on an unresolved human/legal decision
+                (H-6), so no link is rendered until that lands (FRD §3.3 —
+                "빈 시트를 여는 것보다 낫다"). */}
+            <ClaimSlot coin={row.coin} state="UNAVAILABLE" claimableAmount={row.ledgered} />
           </div>
         ))
       )}

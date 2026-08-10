@@ -76,7 +76,21 @@ export async function getUserWallet(userId: string): Promise<AdminUserWallet> {
 
 // ---- Withdrawal approval queue ----
 
-export type WithdrawalStatus = 'PENDING' | 'PROCESSING' | 'APPROVED' | 'REJECTED' | 'FAILED';
+// A-5 (V2-CORE, rev03 W-3) — AWAITING_ONCHAIN is the LOCAL-authority rail's
+// post-approval, pre-settlement state (see web/src/lib/withdrawalOnchain.ts).
+export type WithdrawalStatus = 'PENDING' | 'PROCESSING' | 'AWAITING_ONCHAIN' | 'APPROVED' | 'REJECTED' | 'FAILED';
+
+export type WithdrawalAuthority = 'HUB' | 'LOCAL';
+
+export interface WithdrawalOnchainVerificationAttempt {
+  id: string;
+  submittedTxHash: string;
+  result: string; // 'PASS' | OnchainVerifyFailureReason — rendered verbatim (A-7 ADM-20)
+  detail: string | null;
+  confirmationsAtCheck: number | null;
+  checkedByAdminId: string;
+  checkedAt: string;
+}
 
 export interface WithdrawalRequest {
   id: string;
@@ -92,6 +106,17 @@ export interface WithdrawalRequest {
   hubTxId: string | null;
   lastError: string | null;
   createdAt: string;
+  // A-5/A-7 (V2-CORE, rev04 N-4) — fee fields. Both nullable: null = "not yet
+  // computed by any code path" (never "fee confirmed zero" — A-3 principle 5).
+  feeAmount: string | null;
+  debitTotal: string | null;
+  // A-5 (V2-CORE) — LOCAL rail fields.
+  balanceAuthorityAtRequest: WithdrawalAuthority;
+  localHoldId: string | null;
+  onchainChainId: number | null;
+  onchainTxHash: string | null;
+  onchainVerifiedAt: string | null;
+  onchainVerificationAttempts?: WithdrawalOnchainVerificationAttempt[];
 }
 
 /** List the withdrawal queue (+ pending count). Optional status filter. */
@@ -105,14 +130,48 @@ export async function listWithdrawals(
   return { items: r.data?.items ?? [], pendingCount: r.data?.pendingCount ?? 0 };
 }
 
-/** Approve a pending withdrawal — forwards it to the hub (funds leave). */
-export async function approveWithdrawal(id: string): Promise<void> {
-  await postJson(`/api/admin/withdrawals/${id}/approve`, {});
+/**
+ * Approve a pending withdrawal. HUB rail: forwards it to the hub (funds leave
+ * now). LOCAL rail: only moves the request to AWAITING_ONCHAIN — no funds
+ * move here (A-5 §1.5); the admin still has to execute the on-chain transfer
+ * outside this app and call submitWithdrawalTx() with the resulting hash.
+ */
+export async function approveWithdrawal(id: string): Promise<{ status: WithdrawalStatus }> {
+  const r = await postJson<{ ok: boolean; data?: { status: WithdrawalStatus } }>(
+    `/api/admin/withdrawals/${id}/approve`,
+    {},
+  );
+  return { status: r.data?.status ?? 'APPROVED' };
 }
 
 /** Reject a pending withdrawal — no hub call. */
 export async function rejectWithdrawal(id: string, reason?: string): Promise<void> {
   await postJson(`/api/admin/withdrawals/${id}/reject`, { reason });
+}
+
+export type SubmitWithdrawalTxResult =
+  | { ok: true }
+  | { ok: false; error: string; reason: string };
+
+/**
+ * A-5 §1.5 steps 1-10 (LOCAL rail only). Submits an admin-observed txHash for
+ * read-only on-chain verification (verifyOnchainWithdrawal). Deliberately
+ * does NOT throw on a verification failure/uncertain outcome (W-5 — the
+ * request status stays AWAITING_ONCHAIN; the caller renders the 3-way
+ * outcome — pass / fail / inconclusive — from the returned reason).
+ */
+export async function submitWithdrawalTx(id: string, txHash: string): Promise<SubmitWithdrawalTxResult> {
+  const res = await fetch(`/api/admin/withdrawals/${id}/submit-tx`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ txHash }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok && res.status >= 500) {
+    throw new Error(body?.error || `Request failed (${res.status})`);
+  }
+  if (body?.ok === true) return { ok: true };
+  return { ok: false, error: body?.error ?? 'Verification failed.', reason: body?.reason ?? 'UNKNOWN' };
 }
 
 // ---- Dashboard KPIs + audit log ----
@@ -444,4 +503,160 @@ export async function uploadImage(file: File, folder = 'coin-logos'): Promise<st
   const body = await res.json().catch(() => ({}));
   if (!res.ok || body?.ok === false) throw new Error(body?.error || `Upload failed (${res.status})`);
   return body.data.key as string;
+}
+
+// ---- V2-CORE — PoR-1″ reserve dashboard (/admin/reserve) ----
+// docs/specs/staking-yield-system-v2-design-a8-admin-dashboard-frd.md §5.
+// A `Section<T>` mirrors the server's discriminated union (DC-1) — a fetch
+// failure on ONE section must never be silently rendered as a zero/empty value
+// (E-2′/E-3′). Components must switch on `.status` before reading anything else.
+
+export type AdminSection<T> = ({ status: 'OK' } & T) | { status: 'UNAVAILABLE'; reason: string };
+
+export type PorResult = 'PASS' | 'FAIL' | 'INCOMPLETE' | 'QUERY_FAILED' | 'NO_RESERVE_BASIS';
+export type PorComponentRole = 'ADDITIVE' | 'SUBSET_OF_LOCAL_BALANCE' | 'PROGRAM_COMMITMENT' | 'TIMING_ADJUSTMENT';
+
+export interface PorComponent {
+  key: string;
+  amount: string | null;
+  role: PorComponentRole;
+  blockedBy: 'H2_UNDECIDED' | null;
+}
+
+export interface ReserveSection {
+  latestRun: {
+    id: string;
+    ranAt: string;
+    trigger: string;
+    result: PorResult;
+    leftTotal: string | null;
+    rightTotal: string;
+    marginAmount: string | null;
+    breachDetail: string | null;
+    blocksIssuance: boolean;
+    controlledAddressCount: number;
+    components: PorComponent[];
+  } | null;
+  workerEnabled: boolean;
+  intervalMinutes: number;
+  staleAfterMinutes: number;
+  isStale: boolean;
+  consecutiveQueryFailedCount: number;
+  activeControlledAddressCount: number;
+  inFlightOnchainWithdrawalTotal: string | null;
+}
+
+export interface LiabilitySection {
+  leftTotal: string | null;
+  components: PorComponent[];
+  dailyAccrualRate: string | null;
+  onchainSettledTotal: string;
+  withdrawalRailStatus: 'NO_RAIL' | 'MANUAL_ONCHAIN';
+  claimRailStatus: 'DISABLED' | 'ENABLED';
+}
+
+export interface LocalLedgerSection {
+  balanceTotal: string;
+  heldTotal: string;
+  availableTotal: string;
+  heldByReason: { reasonCode: 'WITHDRAWAL_PENDING' | 'STAKE_PRINCIPAL_LOCK'; amount: string; count: number }[];
+  nonZeroBalanceUserCount: number;
+  ledgerEntryCount: number;
+  reconciliation: { lastRunAt: string | null; checkedCount: number | null; mismatchCount: number | null; versionDriftCount: number | null };
+  holdInvariant: { holdsTotal: string; openWithdrawalRequestTotal: string; matches: boolean };
+}
+
+export interface IssuanceGateSection {
+  blockers: Array<{ code: string; runId?: string; state?: string }>;
+  settlementWorkerEnabled: boolean;
+  claimEnabled: boolean;
+}
+
+export interface AuthorityWatchSection {
+  authority: 'HUB' | 'LOCAL';
+  alertStage: 'CLEAR' | 'T1_WARNING' | 'T2_HALTED';
+  alertSince: string | null;
+  lastProbeAt: string | null;
+  lastProbeResult: string | null;
+  consecutiveUnknownCount: number;
+  probeWorkerEnabled: boolean;
+  probeIsStale: boolean;
+  hubListed: boolean;
+  t2Evidence: { userId: string; amount: string; probedAt: string } | null;
+  activeTransition: { id: string; direction: string; status: string; startedAt: string } | null;
+  unknownEscalationThreshold: number;
+}
+
+export interface AdminSolvencyCoin {
+  coin: string;
+  authority: 'HUB' | 'LOCAL';
+  reserve: AdminSection<ReserveSection>;
+  liability: AdminSection<LiabilitySection>;
+  localLedger: AdminSection<LocalLedgerSection>;
+  issuanceGate: AdminSection<IssuanceGateSection>;
+  authorityWatch: AdminSection<AuthorityWatchSection>;
+}
+
+export interface SolvencyIncident {
+  code: string;
+  coin: string;
+  [key: string]: unknown;
+}
+
+export interface AdminSolvencyData {
+  coins: AdminSolvencyCoin[];
+  incidents: SolvencyIncident[];
+  warnings: SolvencyIncident[];
+}
+
+export async function getSolvency(): Promise<AdminSolvencyData> {
+  const r = await getJson<{ ok: boolean; data: AdminSolvencyData }>('/api/admin/solvency');
+  return r.data ?? { coins: [], incidents: [], warnings: [] };
+}
+
+/** HI-4 — manual, read-only PoR-1″ re-check for one coin. 30s per-coin cooldown server-side. */
+export async function runReserveVerificationNow(coin: string): Promise<{ id: string; result: PorResult }> {
+  const r = await postJson<{ ok: boolean; data: { id: string; result: PorResult } }>('/api/admin/reserve/verify', { coin });
+  return r.data;
+}
+
+// ---- PlatformControlledAddress registry (§6.4 — PoR-1″'s right-hand side) ----
+
+export interface PlatformControlledAddress {
+  id: string;
+  coin: string;
+  network: string;
+  address: string;
+  label: string;
+  addedByEmail: string;
+  active: boolean;
+  addedAt: string;
+  removedAt: string | null;
+  notes: string | null;
+}
+
+export async function listControlledAddresses(): Promise<PlatformControlledAddress[]> {
+  const r = await getJson<{ ok: boolean; data: PlatformControlledAddress[] }>('/api/admin/reserve/addresses');
+  return Array.isArray(r.data) ? r.data : [];
+}
+
+export async function addControlledAddress(input: {
+  coin: string;
+  network: string;
+  address: string;
+  label: string;
+  notes?: string;
+}): Promise<void> {
+  await postJson('/api/admin/reserve/addresses', input);
+}
+
+/** RG-4 — soft delete only. */
+export async function deactivateControlledAddress(id: string): Promise<void> {
+  const res = await fetch(`/api/admin/reserve/addresses/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ active: false }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || body?.ok === false) throw new Error(body?.error || `Request failed (${res.status})`);
 }

@@ -31,7 +31,10 @@ export interface Activity {
   toAmount: string;
   toSymbol: string;
   timestamp: string;
-  status: 'Completed' | 'Pending' | 'Rejected' | 'Failed';
+  // 'AwaitingOnchain' — V2-CORE LOCAL-rail withdrawal, approved but not yet
+  // sent on-chain (WithdrawalStatus.AWAITING_ONCHAIN). Deliberately distinct
+  // from 'Completed' — nothing has moved yet (A-7 §5.4/LA-5).
+  status: 'Completed' | 'Pending' | 'AwaitingOnchain' | 'Rejected' | 'Failed';
   txHash: string;
 }
 

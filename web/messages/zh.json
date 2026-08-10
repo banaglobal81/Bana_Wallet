@@ -18,7 +18,8 @@
     "adminConsole": "管理控制台",
     "coins": "币种",
     "coinManagement": "币种管理",
-    "invite": "邀请"
+    "invite": "邀请",
+    "reserve": "准备金"
   },
   "login": {
     "title": "登录",
@@ -414,15 +415,23 @@
     },
     "yield": {
       "recordedLabel": "已记录收益",
-      "recordedHelp": "已记录在您的质押账本中，不计入钱包余额。",
-      "claimedLabel": "已领取到钱包",
-      "claimedHelp": "已转入您的钱包余额。",
+      "recordedHelp": "已记录在您的质押账本中，不计入BANA余额。",
+      "claimedLabel": "已领取",
+      "claimedHelp": "已转入您的BANA余额。",
       "lockedLabel": "锁定本金",
-      "lockedHelp": "本金仍保留在您的钱包中，但在期限结束前无法提现。",
+      "lockedHelp": "本金仍保留在您的BANA余额中，但在期限结束前无法提现。",
       "empty": "目前还没有已记录的收益。"
     },
     "claim": {
-      "unavailable": "尚未提供发放到钱包的功能。"
+      "unavailable": "领取功能尚未提供。",
+      "confirmBody": "{amount} {coin}将转入您的BANA余额，这是截至目前记录的全部{coin}收益。",
+      "confirmNote2": "发送到外部地址是另一项需要先经过审核的申请。",
+      "confirmAction": "领取",
+      "cancel": "取消",
+      "succeeded": "{amount} {coin}已转入您的BANA余额。",
+      "resultUnknownRefresh": "无法确认结果。请重新加载状态以查看是否成功。",
+      "refreshStatus": "刷新状态",
+      "destinationNote": "领取后金额会立即计入您的BANA余额。要发送到外部地址，需要申请提现。"
     },
     "nav": {
       "stake": "质押",
@@ -445,7 +454,7 @@
     "position": {
       "recordedLabel": "已记录",
       "settledDays": "已结算 {d}/{total} 天",
-      "maturedNote": "期限结束后，本金将解除锁定并可在钱包中使用。已记录的收益不会自动转入钱包。"
+      "maturedNote": "期限结束后，本金将解除锁定并可在BANA余额中使用。已记录的收益不会自动转入。"
     },
     "yieldLog": {
       "title": "收益记录",
@@ -501,7 +510,13 @@
     "copyBtn": "复制",
     "sendOnlyWarning": "请仅向此地址发送 <b>{network}</b> 网络上的 <b>{coin}</b>。",
     "confirmationsNote": "网络确认后将到账。",
-    "selectCoinFirst": "请在上方选择币种和网络以查看充值地址。"
+    "selectCoinFirst": "请在上方选择币种和网络以查看充值地址。",
+    "unsupportedAsset": "暂不支持 {coin} 充值。",
+    "unsupportedBadge": "不支持充值",
+    "unsupportedBlockTitle": "无法充值的资产",
+    "unsupportedBlockBody": "{coins} 无法充值到此账户。请勿向其他位置显示的地址发送这些资产。",
+    "formerAddressWarning": "如果您之前获得过 {coin} 充值地址，请勿再使用。发送到该地址的资产不会自动入账。如已发送，请联系客服。",
+    "checkUnavailable": "目前无法检查，请稍后重试。"
   },
   "walletPage": {
     "title": "钱包",
@@ -525,7 +540,19 @@
     "transactionHistory": "交易记录",
     "transactionHistorySubtitle": "入金、提现与交易",
     "depositNow": "立即充值",
-    "depositWallet": "充值"
+    "depositWallet": "充值",
+    "groupCustody": "存取款账户",
+    "groupPlatform": "平台发行资产",
+    "groupPlatformHelp": "BANA 是 BANA 平台发行的资产。此余额由 BANA 记录。要发送到外部地址，需要申请提现；申请将经审核后再进行链上转账。",
+    "localBalanceLabel": "余额",
+    "localAvailableLabel": "可用",
+    "localHoldStake": "质押锁定",
+    "localHoldWithdrawal": "提现申请保留",
+    "localHoldOther": "其他保留",
+    "localHoldWithdrawalLink": "查看申请",
+    "localEmpty": "尚无已记录的 BANA。",
+    "localLoading": "加载中…",
+    "localLoadFailed": "无法加载此余额。"
   },
   "withdraw": {
     "backAria": "返回",
@@ -567,7 +594,27 @@
     "selectNetwork": "选择网络",
     "networkHint": "请确保选择与接收平台相同的网络。",
     "amountDestTitle": "金额与地址",
-    "selectCoinFirst": "请在上方选择币种以输入金额。"
+    "selectCoinFirst": "请在上方选择币种以输入金额。",
+    "railUnavailable": "暂不支持提现 {coin}。",
+    "railPaused": "{coin} 提现目前已暂停。",
+    "coinHalted": "该资产的提现处理已暂停。您的余额仍按原样记录。",
+    "availableLabel": "可提现金额",
+    "heldNote": "因您已提交的提现申请，{amount} {coin} 处于保留状态。",
+    "amountExceedsAvailable": "可提现金额为 {available} {coin}。",
+    "feeLocalLabel": "手续费",
+    "feeLocalHelp": "用于支付链上转账成本的手续费，以 {coin} 计收。",
+    "sendAmountLabel": "发送金额",
+    "debitTotalLabel": "从余额中扣除",
+    "statusPending": "等待审核",
+    "statusAwaitingOnchain": "已批准 · 等待转账",
+    "statusAwaitingOnchainHelp": "此申请已获批准，正在等待链上转账。",
+    "statusCompletedLocal": "已完成",
+    "statusRejected": "已拒绝",
+    "statusRejectedHelp": "保留的金额已重新计入您的余额。",
+    "statusFailed": "未处理",
+    "statusFailedHelp": "此申请未被处理，您的余额未发生变化。",
+    "txHashLabel": "交易",
+    "viewOnExplorer": "在区块浏览器中查看"
   },
   "settings": {
     "breadcrumbActivity": "活动",
@@ -616,6 +663,8 @@
     "syncing": "正在与 BANA 同步…",
     "liveRecords": "实时 • 来自 BANA 的 {count, plural, one {# 条记录} other {# 条记录}}",
     "awaitingApproval": "等待管理员审批",
+    "awaitingOnchain": "已批准 · 等待转账",
+    "awaitingOnchainDescription": "已批准，正在等待链上转账",
     "loadError": "无法加载活动"
   },
   "notifications": {
@@ -732,7 +781,20 @@
     "statusAPPROVED": "已批准",
     "statusREJECTED": "已拒绝",
     "statusFAILED": "失败",
-    "statusPROCESSING": "处理中"
+    "statusPROCESSING": "处理中",
+    "colRail": "通道",
+    "railLocal": "人工链上",
+    "railHub": "中心自动",
+    "statusAWAITING_ONCHAIN": "已批准 · 等待链上",
+    "feeAmount": "手续费 {fee}",
+    "debitTotal": "扣除 {total}",
+    "txHashPlaceholder": "交易哈希 (0x…)",
+    "verifyAndSettle": "验证并结算",
+    "verifyPassed": "验证通过 — 资金已到达用户。",
+    "verifyFailed": "验证失败",
+    "verifyInconclusive": "结果不确定",
+    "approveLocal": "批准（转入等待链上）",
+    "confirmApproveLocal": "确认批准此笔提现进入人工链上执行等待状态？此时资金尚未转移，您仍需亲自完成转账并提交交易哈希。"
   },
   "adminDashboard": {
     "pageTitle": "仪表板",
@@ -768,6 +830,12 @@
       "unpaid": "{coin} 未支付利息",
       "principalSub": "锁定 {amount} · 活跃 {n}",
       "error": "无法获取负债数据 — 请勿理解为零。"
+    },
+    "reserveStrip": {
+      "title": "准备金验证 (PoR-1″)",
+      "error": "无法加载准备金状态。",
+      "empty": "尚无本地权威币种。",
+      "notComputable": "无法计算"
     }
   },
   "adminSettings": {
@@ -1058,6 +1126,203 @@
         "FAILED_SYSTEM": "我们无法完成续约。",
         "FAILED_GRANTED_POSITION": "我们无法完成续约。"
       }
+    }
+  },
+  "adminReserve": {
+    "pageTitle": "准备金验证 (PoR-1″)",
+    "pageSubtitle": "按本地发行币种查看链上准备金证明、负债构成与发行闸门。",
+    "refresh": "刷新",
+    "loading": "加载中…",
+    "noCoins": "尚未配置任何管理币种。",
+    "noLocalCoins": "尚无本地权威币种 — 无可验证对象。",
+    "por": {
+      "title": "准备金验证 (PoR-1″)",
+      "left": {
+        "label": "总债权（左侧）"
+      },
+      "right": {
+        "label": "受控地址链上余额（右侧）",
+        "addressCount": "已登记地址 {n} 个"
+      },
+      "margin": {
+        "label": "余量（右侧 − 左侧）"
+      },
+      "inFlight": {
+        "label": "调整项 · 在途链上提现",
+        "note": "已在链上发出但尚未验证的金额。此金额不计入左右两侧任何一侧。"
+      },
+      "notComputable": "无法计算",
+      "whyIncomplete": {
+        "title": "为何目前无法判定"
+      },
+      "blockedBy": {
+        "a4": "{component} — 尚无法计算",
+        "h2": "{component} — 赠款本金处理方式尚未决定",
+        "addresses": "准备金一侧 — 尚未登记受控地址（公司钱包未回复）"
+      },
+      "lastRun": "上次检查 {absolute}（{relative}）· {trigger} · 运行 {id}",
+      "chip": {
+        "workerOff": "验证工作进程已关闭",
+        "staleVerdict": "判定已过期",
+        "addressSetChanged": "自本次运行后地址集合已变更"
+      },
+      "runNow": "立即运行验证",
+      "runNowTitle": "只读操作。重新计算账本合计并重新读取已登记地址的链上余额，不会转移任何资金。",
+      "state": {
+        "pass": {
+          "title": "验证通过",
+          "body": "所有负债构成项均已计算完成，且由已登记受控地址的链上余额覆盖。"
+        },
+        "fail": {
+          "title": "准备金违约",
+          "body": "已发行债权超过受控地址的链上余额。问题解决前请勿再发行任何金额。"
+        },
+        "neverRun": {
+          "title": "从未验证",
+          "body": "该币种没有任何验证运行记录。未检查不等于通过。"
+        },
+        "queryFailed": {
+          "title": "无法验证",
+          "body": "链上或账本查询失败。这是故障，不是判定结果。"
+        },
+        "stale": {
+          "title": "判定已过期",
+          "body": "上次运行距今已超过 {minutes} 分钟，请将此判定视为未验证。"
+        },
+        "incomplete": {
+          "title": "暂时无法验证",
+          "body": "部分负债构成项尚无法计算。既非通过也非失败 — 该检查目前没有答案。"
+        },
+        "unconfigured": {
+          "title": "准备金（右侧）未配置",
+          "body": "尚未登记受控地址，因此右侧为零。仅因两侧均为零才在算术上通过，这不能证明任何事情。"
+        },
+        "unavailable": {
+          "title": "无法获取准备金状态",
+          "body": "请勿将此空白解读为\"已验证\"或\"负债为零\"。"
+        }
+      }
+    },
+    "liability": {
+      "title": "债权构成",
+      "total": {
+        "label": "总债权",
+        "note": "这一全部金额都是公司钱包必须持有的数额。"
+      },
+      "additive": "构成项（计入总额）",
+      "subset": "构成项（已包含在其他行中 · 不再计入）",
+      "comp": {
+        "localBalance": "本地账本余额合计",
+        "unclaimedInterest": "未领取的已记账利息",
+        "grantPrincipal": "待发放的赠款本金",
+        "referralPayable": "待发放的推荐奖金",
+        "userPrincipal": "其中用户自行质押本金",
+        "withdrawalHold": "其中提现冻结额",
+        "compensationPlan": "奖励计划承诺额（尚未产生）",
+        "inFlight": "在途链上提现"
+      },
+      "accrualRate": "每个结算日 +{amount} {coin}",
+      "settled": {
+        "label": "已链上发送（负债已清偿）",
+        "note": "本面板中唯一代表已真正消失的负债的数值。"
+      },
+      "rail": {
+        "noRail": "无提现通道",
+        "manualOnchain": "人工链上通道"
+      },
+      "claimRail": {
+        "disabled": "领取功能已停用",
+        "enabled": "领取功能已启用",
+        "note": "领取只是把利息转入本地余额，并不会减少平台的负债。"
+      }
+    },
+    "ledger": {
+      "title": "本地账本",
+      "balance": "账本总额",
+      "heldLabel": "冻结合计",
+      "available": "可用合计",
+      "holders": "{n} 名持有人 · {rows} 条账本记录",
+      "held": {
+        "withdrawal": "提现待处理",
+        "stakeLock": "质押本金锁定",
+        "stakeLockNote": "软锁定 — 不从余额中扣除。"
+      },
+      "recon": {
+        "title": "对账状态",
+        "never": "从未对账",
+        "summary": "已检查 {checked} · 不一致 {mismatches} · 版本漂移 {drift}"
+      },
+      "holdInvariant": {
+        "ok": "冻结额与未结提现请求一致",
+        "broken": "冻结额 {holds} ≠ 未结提现请求 {requests}（差额 {diff}）"
+      }
+    },
+    "gate": {
+      "title": "发行闸门",
+      "none": "当前没有任何阻止发行的条件。",
+      "blocker": {
+        "t2": "权威违规（T2）— 已停止",
+        "t1": "权威上架警告（T1）— 新发行已阻止",
+        "porFail": "准备金违约 — 运行 {id}",
+        "porUnverified": "准备金未验证（{state}）",
+        "claimOff": "领取熔断开关已关闭",
+        "settlementOff": "结算工作进程已关闭",
+        "maintenance": "维护模式"
+      },
+      "hint": {
+        "authorityT2": "请通过权威转移流程解决。",
+        "authorityT1": "请参见下方的币种权威监控面板。",
+        "por": "请参见上方的准备金验证面板。",
+        "killSwitch": "平台设置。",
+        "maintenance": "平台设置。"
+      }
+    },
+    "authority": {
+      "title": "币种权威监控",
+      "hub": "中心化权威",
+      "local": "本地权威",
+      "stage": {
+        "clear": "正常",
+        "unverified": "未确认 — 监控已关闭或已过期",
+        "t1": "检测到上架（T1）",
+        "t2": "余额违规（T2）"
+      },
+      "hubListedYes": "该币种现已出现在中心枢纽的行情列表中。",
+      "t1": {
+        "impact": "未经管理员批准的新发行将被阻止。用户端功能不受影响。"
+      },
+      "t2": {
+        "impact": "发行、新建仓位与提现执行均已停止。查询功能仍可用。",
+        "evidence": "于 {when} 观测到用户 {userId} 存在非零的中心枢纽余额 {amount}。"
+      },
+      "noClear": "此警报无法在本页面手动解除，只有在探测恢复正常或权威转移流程完成后才会清除。",
+      "unknownRun": "连续未知探测次数：{n} / {threshold}",
+      "probeOff": "权威探测工作进程已关闭"
+    },
+    "registry": {
+      "title": "受控地址",
+      "add": "添加地址",
+      "empty": "尚未登记受控地址，因此准备金验证无法成立（公司钱包尚未回复）。",
+      "field": {
+        "coin": "币种",
+        "network": "网络",
+        "address": "地址",
+        "label": "标签",
+        "notes": "备注"
+      },
+      "addWarning": "此变更将从下一次验证运行起反映到准备金一侧。",
+      "explorer": "在浏览器中查看",
+      "deactivate": "停用",
+      "deactivateNote": "为审计保留"
+    },
+    "incident": {
+      "POR_FAIL": "准备金违约 — {coin} 的已发行债权超过受控地址的链上持有量（运行 {runId}）。本页上的余额数字仍然正确，但平台无法全部兑付。在准备金恢复或债权减少之前，请停止发行并暂停批准提现。",
+      "AUTHORITY_T2": "{coin} 发生权威违规（T2）— 针对一个本地权威币种，中心枢纽返回了非零的终端用户余额。使分割权威模型保持安全的唯一特性已被打破。发行、新建仓位与提现执行均已停止，请勿手动恢复，请通过权威转移流程解决。",
+      "AUTHORITY_T1": "检测到上架（T1）— {coin} 现已出现在中心枢纽的列表中。由于尚未在中心枢纽一侧观测到用户余额，这只是警告而非违规。未经管理员批准的新发行已被阻止，探测频率已提高。",
+      "HOLD_INVARIANT_BROKEN": "{coin} 的冻结不变式被打破 — 冻结合计 {holds}，未结提现请求合计 {requests}。要么用户可以提走已被其他方占用的资金，要么资金被无对应请求的冻结锁住。",
+      "HUB_COIN_HAS_LOCAL_BALANCE": "{coin} 被声明为中心枢纽权威，但存在本地账本记录。两者必有一方有误，无论哪种情况都意味着有一侧的余额不可见。",
+      "ISSUING_WITHOUT_VERIFICATION": "未经验证即发行 — {coin} 的发行处于启用状态，而准备金验证结果为\"{state}\"。准备金不变式是防止超额发行的唯一防线，目前它并未成立。",
+      "UNKNOWN_CODE": "未知事件代码 {code} — 此管理端构建版本可能比服务器旧，请勿假定其无害。"
     }
   }
 }

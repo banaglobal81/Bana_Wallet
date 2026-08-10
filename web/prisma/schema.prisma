@@ -23,9 +23,26 @@ enum Role {
 enum WithdrawalStatus {
   PENDING
   PROCESSING // atomically claimed for forwarding — prevents a double-forward
+  // A-5 (V2-CORE, rev03 W-3) — LOCAL-authority rail only. Inserted after PROCESSING,
+  // before the terminal APPROVED reuse ("SETTLED(=APPROVED)", A-5 §1.3). Approval on
+  // this rail means "execution intent confirmed", not "funds moved" — the admin still
+  // has to execute the on-chain transfer outside this app and submit the txHash via
+  // submit-tx (A-5 §1.5) before this ever reaches APPROVED. No code path writes this
+  // value yet — it only becomes reachable once web-shared-expert implements A-5.
+  AWAITING_ONCHAIN
   APPROVED
   REJECTED
   FAILED
+}
+
+// A-2 (V2-CORE, rev03 X-1′) — explicit per-coin balance-of-record venue. Never derive
+// this from ManagedCoin presence or hub markets responses — see getCoinAuthority()
+// contract in docs/specs/staking-yield-system-v2-design-a2-balance-authority.md §4.1.
+// Default LOCAL is required by X-8 and opens no fund path by itself — issuance still
+// requires the A-3/A-4 credit code, which does not exist yet in this migration.
+enum CoinBalanceAuthority {
+  HUB
+  LOCAL
 }
 
 enum StakingProductStatus {
@@ -65,30 +82,74 @@ enum StakeRenewalStatus {
 
 // Platform-wide policy, a single row (id = "singleton"). Admin-configurable.
 model PlatformSetting {
-  id                           String   @id @default("singleton")
+  id                           String  @id @default("singleton")
   // Only allow withdrawals to addresses saved in the user's address book.
-  whitelistOnly                Boolean  @default(false)
+  whitelistOnly                Boolean @default(false)
   // Withdrawals valued under this USD amount auto-approve (skip the queue).
   // null/empty = every withdrawal requires manual approval.
   autoApproveUnderUsd          String?
   // Pause all withdrawals (incident / hub outage). Users see a banner.
-  maintenanceMode              Boolean  @default(false)
+  maintenanceMode              Boolean @default(false)
   // Max total a single user can withdraw per rolling 24h (USD, stablecoins).
   dailyWithdrawalLimitUsd      String?
   // Allow new user registration.
-  signupsEnabled               Boolean  @default(true)
+  signupsEnabled               Boolean @default(true)
   // Platform identity shown to users.
   supportEmail                 String?
   displayName                  String?
   // Turns the persistent staking settlement worker on/off entirely.
-  stakingWorkerEnabled         Boolean  @default(true)
+  stakingWorkerEnabled         Boolean @default(true)
   // "INTERVAL" | "DAILY"
-  stakingWorkerMode            String   @default("INTERVAL")
+  stakingWorkerMode            String  @default("INTERVAL")
   // How often the worker runs when mode = INTERVAL.
-  stakingWorkerIntervalMinutes Int      @default(5)
+  stakingWorkerIntervalMinutes Int     @default(5)
   // "HH:mm", UTC — used when mode = DAILY
-  stakingWorkerDailyTime       String   @default("00:00")
-  updatedAt                    DateTime @updatedAt
+  stakingWorkerDailyTime       String  @default("00:00")
+
+  // ─── A-2 (V2-CORE, X-6) — periodic balance-authority probe worker ─────────────────
+  // Read-only observation worker (never moves funds) — default true is the one
+  // exception to "new fields default off" (design doc A-2 §1 principle 6): being on
+  // is itself the safeguard. No probe code exists yet in this migration; these
+  // columns are inert until web-shared-expert implements runAuthorityProbe().
+  authorityProbeWorkerEnabled            Boolean @default(true)
+  authorityProbeIntervalMinutes          Int     @default(15)
+  authorityProbeEscalatedIntervalMinutes Int     @default(2)
+  authorityProbeUnknownEscalationCount   Int     @default(3)
+
+  // ─── A-3 (V2-CORE) — reserve verification (PoR-1″) worker + synchronous gate ──────
+  // porVerificationWorkerEnabled: read-only worker, same "on by default is safe"
+  // reasoning as authorityProbeWorkerEnabled above — it only recomputes and records,
+  // never moves funds. No worker code exists yet; inert until implemented.
+  porVerificationWorkerEnabled   Boolean @default(true)
+  porVerificationIntervalMinutes Int     @default(15)
+  // porGateEnabled: on/off for assertReserveHealthyOrThrow() (A-3 §4.6). Default true
+  // is likewise "on is the safeguard" — this flag only ever blocks issuance, never
+  // permits it. Turning it false is a live safety-control removal and must be
+  // AuditLog'd by the admin route that flips it (design doc A-3 §2.7) — not enforced
+  // by this migration, which contains no application code.
+  porGateEnabled                 Boolean @default(true)
+  porGateMaxStalenessMinutes     Int     @default(20)
+
+  // ─── A-4 (V2-CORE) — v2 staking claim kill switch + settlement worker ─────────────
+  // stakingClaimEnabled: default false — the last remaining brake once issuance
+  // friction is otherwise removed (design doc A-4 §3.6, rev03 §4.4 C-6).
+  stakingClaimEnabled            Boolean @default(false)
+  // stakingV2WorkerEnabled: default false and deliberately independent of
+  // stakingWorkerEnabled above (legacy worker, legacy tables) so the two settlement
+  // workers can never both run in production during the CS-3 additive-only stage.
+  stakingV2WorkerEnabled         Boolean @default(false)
+  stakingV2WorkerMode            String  @default("INTERVAL")
+  stakingV2WorkerIntervalMinutes Int     @default(5)
+  stakingV2WorkerDailyTime       String  @default("00:00")
+
+  // ─── A-5 (V2-CORE, W-3~W-9) — on-chain withdrawal verification ────────────────────
+  // Conservative placeholder (exchange-practice floor) pending BSC confirmation-depth
+  // research (design doc A-5 §2.6) — not a final value. The application-level floor
+  // (MIN_WITHDRAWAL_ONCHAIN_CONFIRMATIONS_FLOOR = 3) that clamps this value against
+  // accidental/malicious reduction lives in code (web-shared-expert), not the DB.
+  withdrawalOnchainMinConfirmations Int @default(15)
+
+  updatedAt DateTime @updatedAt
 }
 
 // A user's saved/trusted withdrawal address (address book + whitelist).
@@ -126,7 +187,11 @@ model WithdrawalRequest {
   email           String // denormalized for the admin queue
   currency        String
   network         String
-  amount          String // canonical decimal string (never a float)
+  amount          String // canonical decimal string (never a float). HUB rail: unchanged
+  // meaning (amount forwarded to the hub). LOCAL rail (A-5): the
+  // on-chain transfer amount / on-chain-verification target — see
+  // feeAmount/debitTotal below (design doc A-7 §5.3 recommendation,
+  // rev04 N-4).
   toAddress       String
   idempotencyKey  String?
   status          WithdrawalStatus @default(PENDING)
@@ -137,8 +202,71 @@ model WithdrawalRequest {
   lastError       String?
   createdAt       DateTime         @default(now())
 
+  // ─── A-5/A-7 (V2-CORE) — fee fields (rev04 N-4, P-2) ──────────────────────────────
+  // Recommendation adopted verbatim from A-7 §5.3: amount = what arrives on-chain
+  // (verification target), feeAmount = platform fee, debitTotal = amount + feeAmount
+  // (what gets held/deducted from the user's balance — W-2 invariant restated as
+  // Σholds == Σ(amount + feeAmount)). Nullable, no default value written by any code
+  // in this migration — null here honestly means "not yet computed by any code path"
+  // (A-3 §1 principle 5's unknown-vs-zero distinction), not "fee confirmed zero".
+  // web-shared-expert fills these at request-creation time when A-5 is implemented.
+  feeAmount  String?
+  debitTotal String?
+
+  // ─── A-5 (V2-CORE, W-3~W-9) — AWAITING_ONCHAIN state + on-chain settlement ────────
+  // Request-creation-time snapshot of CoinBalanceAuthority (A-2). Default HUB
+  // preserves today's behavior (all-HUB-rail) with no backfill needed — production
+  // has 0 WithdrawalRequest rows as of this migration (verified read-only).
+  balanceAuthorityAtRequest CoinBalanceAuthority @default(HUB)
+  // LOCAL rail only — loose reference to LocalBalanceHold.id (A-3, no hard FK: A-3
+  // was designed before this table's extension existed, per A-3 §0).
+  localHoldId               String?
+
+  onchainChainId    Int?
+  onchainTxHash     String?
+  onchainVerifiedAt DateTime?
+
+  onchainVerificationAttempts WithdrawalOnchainVerificationAttempt[]
+  onchainSettlement           WithdrawalOnchainSettlement?
+
   @@index([status, createdAt])
   @@index([userId, createdAt])
+  @@index([balanceAuthorityAtRequest, status])
+}
+
+// A-5 (V2-CORE, W-5) — raw evidence of each verification attempt, one row per
+// attempt. Judgement (current status) and evidence (attempt history) are kept
+// separate — same principle as A-2's CoinAuthorityProbe. No verification code exists
+// yet in this migration.
+model WithdrawalOnchainVerificationAttempt {
+  id                   String            @id @default(cuid())
+  withdrawalRequestId  String
+  withdrawalRequest    WithdrawalRequest @relation(fields: [withdrawalRequestId], references: [id])
+  submittedTxHash      String
+  result               String // "PASS" | OnchainVerifyFailureReason (A-5 §2.3) — stored as
+  // a plain string, rendered verbatim to admins (no translation,
+  // CLAUDE.md-consistent incident-response requirement)
+  detail               String?
+  confirmationsAtCheck Int?
+  checkedByAdminId     String
+  checkedAt            DateTime          @default(now())
+
+  @@index([withdrawalRequestId, checkedAt])
+}
+
+// A-5 (V2-CORE, W-6) — reuse-prevention. A (chainId, txHash) pair is recorded here
+// exactly once, ever — the unique constraint is the final DB-level defense against
+// settling two withdrawal requests off the same on-chain transfer.
+model WithdrawalOnchainSettlement {
+  id                  String            @id @default(cuid())
+  withdrawalRequestId String            @unique
+  withdrawalRequest   WithdrawalRequest @relation(fields: [withdrawalRequestId], references: [id])
+  chainId             Int
+  txHash              String
+  observedAmount      String // decimal string — the actually-observed on-chain transfer amount
+  confirmedAt         DateTime          @default(now())
+
+  @@unique([chainId, txHash])
 }
 
 model User {
@@ -350,6 +478,191 @@ model StakingPayout {
   @@index([userId, paidAt])
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════
+// A-4 (V2-CORE) — v2 staking schema (product/position/settlement ledger).
+// docs/specs/staking-yield-system-v2-design-a4-staking-schema.md. The existing
+// StakingProduct/StakePosition/StakingPayout above are UNTOUCHED (no destructive
+// changes) — rev03 §5.4's 3-step cutover (additive → code cutover → cleanup DROP)
+// is only at step 1 here. The "V2" suffix is temporary (design doc A-4 §3.1): it
+// exists only because Prisma can't have two models of the same name during the
+// additive stage, and is expected to be dropped in the future cleanup migration
+// alongside the legacy tables' DROP. No code in this migration writes to these
+// tables — createStakePositionV2/runStakingSettlementV2/claimYield are not
+// implemented yet.
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+// Band-width 0 is the band model's special case, not a separate type (rev01 D-1/A1′)
+// — maxBonusPctOfBase = "0" represents a fixed-rate product without a code branch.
+model StakingProductV2 {
+  id       String @id @default(cuid())
+  coin     String // "BANA" only today (N-6) — not hardcoded
+  name     String
+  termDays Int
+
+  baseDailyRatePct String // renamed from dailyRatePct — "base" is required
+  // once a band model can add a bonus on top
+
+  // Max bonus percentage. Default "0" = zero band width = effectively fixed-rate.
+  // No code path in this codebase may create a product with a nonzero value here
+  // until the V2-BAND gate (H-1/H-3/H-4) is cleared — that gate is unrelated to
+  // this migration, which only opens the column.
+  maxBonusPctOfBase String @default("0")
+
+  minAmount String?
+  maxAmount String?
+  capacity  String?
+
+  status    StakingProductStatus @default(OPEN) // reuse existing enum — meaning unchanged
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  positions StakePositionV2[]
+
+  @@index([status])
+  @@index([coin, status])
+}
+
+// G-A — explicit field, never derived from grantedByAdminId (design doc A-4
+// principle 4). Renamed from USER_HUB (rev01) to USER_BALANCE (A-3 §6-2 adopted) —
+// on a LOCAL-authority coin, "hub" is no longer an accurate name.
+enum PositionFundingSource {
+  USER_BALANCE // Principal came from the user's own balance — hub balance if
+  // HUB authority, A-3 LocalBalanceHold(STAKE_PRINCIPAL_LOCK) if LOCAL.
+  PLATFORM_GRANT // Principal is a platform-granted notional position. No user balance
+  // of either authority is ever locked (see StakePositionV2 comment below).
+}
+
+// rev03 rebuild — no PAID state. Exhaustive grep of stakingRenew.ts found
+// StakePositionStatus.PAID is never assigned in the legacy code, so it is not
+// carried forward.
+enum StakePositionV2Status {
+  ACTIVE
+  MATURED
+}
+
+model StakePositionV2 {
+  id        String           @id @default(cuid())
+  userId    String // BANA DB user id (session-derived)
+  email     String // denormalized, admin-view convention
+  niaUserId String? // for a future HUB-authority coin's position payout. Unused today (LOCAL-only, BANA)
+  productId String
+  product   StakingProductV2 @relation(fields: [productId], references: [id])
+  coin      String
+
+  principal String // canonical decimal string
+
+  // --- Band snapshot (Q-1, A1′) — fixed once at position creation, never re-read ---
+  baseDailyRatePct  String
+  maxBonusPctOfBase String @default("0")
+  termDays          Int
+
+  startAt    DateTime              @default(now())
+  maturityAt DateTime
+  status     StakePositionV2Status @default(ACTIVE)
+
+  // --- Funding source (G-A) ---
+  fundingSource    PositionFundingSource
+  grantedByAdminId String? // audit/display only — no lock/available-balance
+  // logic may read this field (design doc A-4 §6 principle 4)
+
+  // Loose reference to A-3 LocalBalanceHold(STAKE_PRINCIPAL_LOCK). Structurally null
+  // forever when fundingSource=PLATFORM_GRANT (no code ever calls placeHold for a
+  // grant — "excluded by absence, not by a runtime filter", A-4 principle 5). Also
+  // null for a HUB-authority coin's USER_BALANCE position (that lock, if it ever
+  // exists, is expressed as a hub-balance query, not an A-3 hold — A-3 is LOCAL-only).
+  principalHoldId String? @unique
+
+  // --- Settlement ledger cache (F-C fix, A-4 principles 2/6) ---
+  // Σ StakeYieldLedgerEntry.amount for this position. Incremented only — never
+  // recomputed from scratch (design doc A-4 §5 SETTLE-1).
+  ledgeredYield  String    @default("0")
+  daysPaid       Int       @default(0)
+  lastSettledAt  DateTime? // replaces the legacy lastAccrualAt — there is no "accrual" concept
+  fullySettledAt DateTime? // replaces the legacy position-level paidAt
+
+  createdAt DateTime @default(now())
+
+  // --- Grant principal payout (H-2, undecided policy) ---
+  // Reserved column. No code may write to it until H-2 is decided as "a" (grant
+  // principal is also claimable) — requirement G-E (rev04 §1.8) enforces this as a
+  // fail-closed check at the grant-position-creation code path, not here.
+  grantPrincipalCreditedAt DateTime?
+
+  payouts StakeYieldLedgerEntry[]
+
+  // --- Auto-renewal (unchanged structure, carried forward from StakePosition) ---
+  autoRenew              Boolean            @default(false)
+  renewalStatus          StakeRenewalStatus @default(NONE) // reuse existing enum — meaning unchanged
+  renewedIntoPositionId  String?            @unique
+  renewedFromPositionId  String?
+  renewalProcessedAt     DateTime?
+  renewalAttempts        Int                @default(0)
+  renewalNotifiedAt      DateTime?
+  maturityReminderSentAt DateTime?
+
+  renewedTo   StakePositionV2? @relation("StakePositionV2Renewal", fields: [renewedIntoPositionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  renewedFrom StakePositionV2? @relation("StakePositionV2Renewal")
+
+  @@index([userId, status])
+  @@index([status])
+  @@index([renewedFromPositionId])
+  @@index([status, autoRenew, maturityAt])
+  @@index([userId, coin, status])
+  @@index([coin, fundingSource, status])
+}
+
+// Succeeds StakingPayout's role as the settlement ledger. Incremental (F-C fix) —
+// see design doc A-4 §5 for the exact transactional contract this table is built for.
+model StakeYieldLedgerEntry {
+  id         String          @id @default(cuid())
+  positionId String
+  position   StakePositionV2 @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  userId     String
+  coin       String
+  dayIndex   Int // 1-based, day-of-term — the entirety of R-3/DC-1 idempotency
+
+  // R-1 — amount == baseAmount + bonusAmount is an application-layer (decimal.js)
+  // invariant; Prisma cannot express a cross-column CHECK.
+  baseAmount  String
+  bonusAmount String @default("0") // always "0" during V2-CORE (product maxBonusPctOfBase is "0")
+  amount      String
+
+  // R-2 — null (not used in the computation) ≠ "0" (used, result was zero). During
+  // V2-CORE, mpSnapshot is always null (no band, so MP is never even looked up) and
+  // bonusPctSnapshot is always "0" (the applied bonus rate really is zero).
+  mpSnapshot       String?
+  bonusPctSnapshot String  @default("0")
+
+  settledAt DateTime @default(now()) // replaces the legacy paidAt
+
+  @@unique([positionId, dayIndex])
+  @@index([userId, coin])
+  @@index([userId, settledAt])
+}
+
+// Per-(userId, coin) yield summary cache — same cache/evidence split as A-3's
+// UserCoinBalance. Evidence lives in two places (StakeYieldLedgerEntry for the
+// ledgered side, LocalLedgerEntry WHERE reasonCode='STAKING_CLAIM' for the claimed
+// side); this cache avoids joining/aggregating both on every read of the yield
+// summary screen (rev01 R-U1).
+model UserCoinYieldSummary {
+  id     String @id @default(cuid())
+  userId String
+  coin   String
+
+  // Σ StakeYieldLedgerEntry.amount(userId, coin). Incremented only by the settlement
+  // transaction (design doc A-4 §5) — F-C does not recur here either.
+  ledgeredYieldTotal String @default("0")
+  // Σ LocalLedgerEntry.amount WHERE reasonCode='STAKING_CLAIM' (userId, coin).
+  // Incremented only inside claimYield() (design doc A-4 §6).
+  claimedYieldTotal  String @default("0")
+
+  version   Int      @default(0) // same "shared-function bypass" detector as A-3 UserCoinBalance.version
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, coin])
+  @@index([coin])
+}
+
 // MLM referral commission paid to an upline for one settlement "day" (Phase B).
 // One row per (user, dayKey) makes the daily payout idempotent. layer1 = 대·소실적
 // 매칭, layer2 = 유니레벨 부스트. Written only when REFERRAL_BONUS_ENABLED is on.
@@ -367,6 +680,41 @@ model ReferralBonusPayout {
   @@index([userId])
 }
 
+// A-2 (V2-CORE, X-3′) — raw signal of a periodic/opportunistic authority-violation
+// probe. One row per observation, not per judgement — CoinAuthorityAlertStage on
+// ManagedCoin is the fast-read cached judgement; this table is the evidence trail
+// that judgement is derived from (design doc A-2 §1 principle 5). No probe code
+// exists yet — inert until web-shared-expert implements runAuthorityProbe().
+enum CoinAuthorityProbeResult {
+  CLEAN
+  UNKNOWN
+  T1_LISTED
+  T2_VIOLATION
+}
+
+// Cached, fast-read judgement stage on ManagedCoin. CLEAR = normal.
+enum CoinAuthorityAlertStage {
+  CLEAR
+  T1_WARNING
+  T2_HALTED
+}
+
+enum CoinAuthorityTransitionDirection {
+  LOCAL_TO_HUB
+  HUB_TO_LOCAL
+}
+
+// X-4′ five-step procedure. DRAFT = created, not yet started (before step 1).
+enum CoinAuthorityTransitionStatus {
+  DRAFT
+  FROZEN
+  SNAPSHOTTED
+  FUNDS_MOVED
+  RECONCILED
+  COMPLETED
+  ABORTED
+}
+
 // An admin-managed coin shown in the user coin list. Custom EVM tokens are added
 // by contract address per network. Real deposits/withdrawals only work for coins
 // the Nia hub also supports (custom tokens are display-only until then).
@@ -380,4 +728,427 @@ model ManagedCoin {
   visible   Boolean  @default(true) // show in the user coin list
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // ─── A-2 (V2-CORE, X-1′~X-8) ────────────────────────────────────────────────────
+  // Explicit balance-of-record venue for this coin. Default LOCAL is required by X-8
+  // and, applied to the only existing row (BANA), matches the design doc's own
+  // analysis (A-2 §5) that this backfill is trivial and risk-free. Opens no fund
+  // path by itself — see the enum comment above.
+  balanceAuthority                CoinBalanceAuthority      @default(LOCAL)
+  // Fast-read cache of the latest probe judgement — see authorityProbes for evidence.
+  authorityAlertStage             CoinAuthorityAlertStage   @default(CLEAR)
+  authorityAlertSince             DateTime?
+  lastProbeAt                     DateTime?
+  lastProbeResult                 CoinAuthorityProbeResult?
+  // TOCTOU guard (A-2 §2.2, wallet-security-expert required fix 3) — set true only
+  // while changeAuthorityDirectly() holds this row's lock. assertIssuanceAllowed()
+  // must treat true as an unconditional block. Default false opens no fund path.
+  directAuthorityChangeInProgress Boolean                   @default(false)
+
+  authorityProbes      CoinAuthorityProbe[]
+  authorityTransitions CoinAuthorityTransition[]
+
+  @@index([balanceAuthority])
+  @@index([authorityAlertStage])
+}
+
+// A-2 (V2-CORE, X-3′/X-6) — see enum comment above for the evidence/judgement split.
+model CoinAuthorityProbe {
+  id               String               @id @default(cuid())
+  managedCoinId    String
+  managedCoin      ManagedCoin          @relation(fields: [managedCoinId], references: [id])
+  // Denormalized coin symbol — this row must remain readable after authority
+  // transitions or symbol corrections, independent of the coin record's current state.
+  coinSymbol       String
+  // The authority declared on the coin at the moment this probe ran — fixes the
+  // interpretation baseline for `result`.
+  authorityAtProbe CoinBalanceAuthority
+
+  result                  CoinAuthorityProbeResult
+  hubListed               Boolean // raw T1 signal: was the symbol present in the hub markets response
+  // Raw T2 signal — populated only when result = T2_VIOLATION. Evidence, not a
+  // referential-integrity target, so this is a plain string (internal userId), not an
+  // FK — user deletion/change must never erase the evidence.
+  hubBalanceUserId        String?
+  hubBalanceAmount        String? // decimal string — the balance observed at violation time
+  // X-6 escalation counter: consecutive UNKNOWN results immediately preceding (and
+  // including, if this probe is itself UNKNOWN) this one; reset to 0 otherwise.
+  consecutiveUnknownCount Int                      @default(0)
+
+  source   String // "WORKER_PERIODIC" | "WALLET_READ_OPPORTUNISTIC" | "MANUAL_ADMIN"
+  probedAt DateTime @default(now())
+
+  triggeredTransitions CoinAuthorityTransition[]
+
+  @@index([coinSymbol, probedAt])
+  @@index([managedCoinId, result, probedAt])
+}
+
+// A-2 (V2-CORE, X-4′) — the five-step authority-transition procedure itself as a
+// first-class state machine (not folded into the generic AuditLog — see design doc
+// A-2 §2.4 for why). No row in this table for a nonzero-balance coin's authority
+// change is created by any code in this migration — the procedure functions
+// (changeAuthorityDirectly / the 5-step flow) are not implemented yet.
+model CoinAuthorityTransition {
+  id            String                           @id @default(cuid())
+  managedCoinId String
+  managedCoin   ManagedCoin                      @relation(fields: [managedCoinId], references: [id])
+  coinSymbol    String // denormalized, same reason as CoinAuthorityProbe
+  direction     CoinAuthorityTransitionDirection
+  status        CoinAuthorityTransitionStatus    @default(DRAFT)
+
+  // If this transition is a response to a X-3′ T2 violation, link the evidence.
+  // Null for a planned/business-driven transition — not enforced.
+  triggeredByProbeId String?
+  triggeredByProbe   CoinAuthorityProbe? @relation(fields: [triggeredByProbeId], references: [id])
+
+  initiatedByAdminId String
+  initiatedByEmail   String // denormalized, same convention as AuditLog.adminEmail
+
+  // Step 1 — freeze
+  frozenAt               DateTime?
+  // Step 2 — snapshot (immutable once recorded)
+  snapshotAt             DateTime?
+  snapshotTotal          String? // decimal string — total at snapshot time, for this direction
+  snapshotRef            String? // A-3 §2.4: LocalBalanceSnapshotBatch.id (string reference,
+  // not a hard FK — see A-3 §2.4 for why)
+  // Step 3 — actual funds movement
+  fundsMovedAt           DateTime?
+  fundsMovedTxRef        String? // on-chain tx hash or hub reference
+  fundsMovedAmount       String? // decimal string
+  // Step 4 — reconciliation
+  reconciledAt           DateTime?
+  reconciliationMismatch String? // decimal string. Must be exactly "0" to proceed to step 5
+  // Step 5 — completion (authority field flip + resume) / or abort
+  completedAt            DateTime?
+  abortedAt              DateTime?
+  abortReason            String?
+
+  notes String? // free-form operator notes
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([managedCoinId, status])
+  @@index([status])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════
+// A-3 (V2-CORE) — Local Balance Ledger. Applies only to LOCAL-authority coins
+// (docs/specs/staking-yield-system-v2-design-a3-local-ledger.md, rev04 PoR-1″ addendum
+// merged into that document). No code in this migration writes a nonzero value to any
+// table below — creditLocalLedger/placeHold/etc. are not implemented yet (rule 2 of
+// the task that produced this migration: schema only).
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+// (userId, coin) balance cache for LOCAL-authority coins. `balance` is a derived
+// cache — LocalLedgerEntry is the only ground truth (A-3 §1 principle 1). `version`
+// is a cheap regression detector: it must always equal this (userId, coin)'s
+// LocalLedgerEntry row count; a mismatch means some code path bypassed the shared
+// credit/debit functions.
+model UserCoinBalance {
+  id      String @id @default(cuid())
+  userId  String
+  coin    String // ManagedCoin.symbol (denormalized, no FK — same convention as
+  // StakePosition.coin / WithdrawalRequest.currency)
+  balance String @default("0") // canonical decimal string
+
+  version Int @default(0)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@unique([userId, coin])
+  @@index([coin])
+}
+
+enum LocalLedgerEntryType {
+  CREDIT
+  DEBIT
+}
+
+// Every reason a LOCAL-authority coin's total balance can move. Hold placement/
+// release is NOT here (A-3 §1 principle 3) — only entries that actually move
+// UserCoinBalance.balance. Append-only axis: add new codes, never repurpose existing
+// ones (A-3 §1 principle 4).
+enum LocalLedgerReasonCode {
+  // ── credits ──────────────────────────────────────────────────────────────────
+  // A-4-dependent (unclaimed yield doesn't exist as a concept until A-4 ships).
+  STAKING_CLAIM
+  // rev04 H-2′ + requirement G-E (A-4 §1.8 note): grant creation is fail-closed
+  // until H-2 is decided. RESERVED — no code path may write this yet.
+  GRANT_PRINCIPAL_CREDIT
+  // Deposit rail itself is out of scope pending Q-M5/deposit-rail design. RESERVED.
+  DEPOSIT_CONFIRMED
+  // Unused while REFERRAL_BONUS_ENABLED is off. RESERVED.
+  REFERRAL_BONUS_CREDIT
+  // Authority transition (A-2 X-4′) step 3, HUB_TO_LOCAL direction.
+  AUTHORITY_TRANSITION_CREDIT_IN
+  // Manual correction. adminId/adminEmail/adjustmentReason required + an AuditLog
+  // row in the same transaction (enforced at the application layer, A-3 §4.2).
+  ADMIN_ADJUSTMENT_CREDIT
+
+  // ── debits ───────────────────────────────────────────────────────────────────
+  // Hold reaches EXECUTED (on-chain transfer verified, A-5 W-4) — the actual burn.
+  WITHDRAWAL_EXECUTED
+  // Authority transition (A-2 X-4′) step 3, LOCAL_TO_HUB direction.
+  AUTHORITY_TRANSITION_DEBIT_OUT
+  ADMIN_ADJUSTMENT_DEBIT
+}
+
+// Append-only, bank-statement-style ledger row. `LocalLedgerEntry` is the only
+// ground truth for a LOCAL-authority coin's balance — UserCoinBalance.balance is
+// its cache. Not implemented/written by any code in this migration.
+model LocalLedgerEntry {
+  id         String                @id @default(cuid())
+  userId     String
+  coin       String
+  type       LocalLedgerEntryType
+  reasonCode LocalLedgerReasonCode
+  amount     String // canonical decimal string, always positive — `type` carries the sign
+
+  // Snapshot of UserCoinBalance.balance immediately after this entry, written in the
+  // same transaction. Not the source of truth for "current balance" (that's
+  // UserCoinBalance.balance) — this is a reconstructable checkpoint for point-in-time
+  // audits without resumming the entire history from scratch.
+  balanceAfter String
+
+  // Idempotency key. Format varies by reason code (documented in design doc A-3 §2.2,
+  // e.g. "CLAIM:<coin>:<userId>:<batchId>", "DEPOSIT:<chainId>:<txHash>:<logIndex>",
+  // "WITHDRAWAL_EXECUTED:<withdrawalRequestId>"). ADMIN_ADJUSTMENT_* has no natural
+  // idempotency key and is left null — Postgres treats NULLs as distinct for unique
+  // constraints, so normal admin adjustments never collide on this constraint.
+  idempotencyKey String?
+
+  // Loose polymorphic reference to the record that caused this entry (StakeYieldLedgerEntry
+  // via UserCoinYieldSummary/A-4, WithdrawalRequest, CoinAuthorityTransition, etc.).
+  // No hard FK — same reasoning as CoinAuthorityProbe: the referenced record may be
+  // deleted/changed later, but the evidence must remain readable.
+  relatedType String?
+  relatedId   String?
+
+  // ADMIN_ADJUSTMENT_* only. Application layer enforces all three present together.
+  createdByAdminId String?
+  createdByEmail   String?
+  adjustmentReason String?
+
+  holds LocalBalanceHold[] // back-reference from LocalBalanceHold.executedLedgerEntry
+
+  createdAt DateTime @default(now())
+
+  @@unique([coin, idempotencyKey])
+  @@index([userId, coin, createdAt])
+  @@index([relatedType, relatedId])
+}
+
+// W-2 (withdrawal-pending) and stake-principal soft locks are one concept, not two —
+// they differ only by reasonCode and which status transitions are allowed (A-3 §1
+// principle 2). `available = balance − Σ(ACTIVE holds)` regardless of reasonCode.
+enum LocalHoldReasonCode {
+  // Created atomically alongside withdrawal-request creation. ACTIVE -> EXECUTED
+  // (A-5 W-4 verification passes, actual burn) or ACTIVE -> RELEASED (rejected/
+  // failed/refunded) — exactly one of the two, never both.
+  WITHDRAWAL_PENDING
+  // v2 (A-4) position principal soft lock. Never transitions to EXECUTED — principal
+  // is never actually debited by staking alone (rev02 §10-12 "soft lock" decision,
+  // carried forward by A-3 §1 principle 2). Only ACTIVE -> RELEASED (maturity/claim
+  // eligibility) exists for this reason code.
+  STAKE_PRINCIPAL_LOCK
+}
+
+enum LocalHoldStatus {
+  ACTIVE
+  RELEASED // returns to `available`. Balance unchanged.
+  EXECUTED // converted into a LocalLedgerEntry DEBIT (WITHDRAWAL_PENDING only).
+}
+
+// One row per outstanding claim against a user's available balance.
+// available = UserCoinBalance.balance − Σ(this user+coin's ACTIVE holds). Hold
+// creation/release never touches UserCoinBalance.balance — only LocalLedgerEntry
+// does (rev03 W-2: "request creation = available decreases (hold increases). Ledger
+// total is unchanged."). Not implemented/written by any code in this migration.
+model LocalBalanceHold {
+  id         String              @id @default(cuid())
+  userId     String
+  coin       String
+  amount     String // canonical decimal string, always positive
+  reasonCode LocalHoldReasonCode
+  status     LocalHoldStatus     @default(ACTIVE)
+
+  // Loose polymorphic reference — WITHDRAWAL_PENDING -> WithdrawalRequest.id,
+  // STAKE_PRINCIPAL_LOCK -> StakePositionV2.id. No hard FK to either (both tables
+  // were designed independently of this one — see A-3 §0/§2.3).
+  relatedType String // "WITHDRAWAL_REQUEST" | "STAKE_POSITION" | "ADMIN_MANUAL"
+  relatedId   String?
+
+  createdAt      DateTime  @default(now())
+  releasedAt     DateTime?
+  releasedReason String? // free text, e.g. "withdrawal rejected", "position matured"
+
+  // The ledger entry created when this hold transitions to EXECUTED. LocalLedgerEntry
+  // is owned by this same document, so a hard FK is safe here (unlike the loose
+  // references above).
+  executedLedgerEntryId String?           @unique
+  executedLedgerEntry   LocalLedgerEntry? @relation(fields: [executedLedgerEntryId], references: [id])
+
+  // At most one hold per (relatedType, relatedId, reasonCode) — DB-level guard
+  // against double-holding the same withdrawal request / position. NULL relatedId
+  // (ADMIN_MANUAL) rows never collide, since Postgres treats NULL as distinct.
+  @@unique([relatedType, relatedId, reasonCode])
+  @@index([userId, coin, status])
+  @@index([relatedType, relatedId])
+}
+
+// A-2 §6-3's snapshotRef question, answered: CoinAuthorityTransition.snapshotRef
+// stores a LocalBalanceSnapshotBatch.id (string reference for now — see A-3 §2.4).
+enum BalanceSnapshotPurpose {
+  AUTHORITY_TRANSITION // X-4′ step 2 — CoinAuthorityTransition.snapshotRef points here
+  POR_VERIFICATION // optional pairing with a ReserveVerificationRun's full-user detail
+  MANUAL_ADMIN
+}
+
+model LocalBalanceSnapshotBatch {
+  id                 String                    @id @default(cuid())
+  coin               String
+  purpose            BalanceSnapshotPurpose
+  takenAt            DateTime                  @default(now())
+  totalBalance       String // decimal string — sum of the rows below, fixed at snapshot time
+  rowCount           Int
+  initiatedByAdminId String?
+  initiatedByEmail   String?
+  rows               LocalBalanceSnapshotRow[]
+
+  @@index([coin, purpose, takenAt])
+}
+
+// Immutable detail rows. The application must never UPDATE a row here — corrections
+// create a new batch (X-4′ step 2: "recorded then immutable").
+model LocalBalanceSnapshotRow {
+  id        String                    @id @default(cuid())
+  batchId   String
+  batch     LocalBalanceSnapshotBatch @relation(fields: [batchId], references: [id])
+  userId    String
+  balance   String // decimal string — UserCoinBalance.balance at takenAt
+  heldTotal String // decimal string — this user's Σ(ACTIVE holds) at takenAt.
+  // Informational only (not included in the transfer total —
+  // holds are already claims against balance, not additive).
+  // Preserved for dispute resolution.
+
+  @@unique([batchId, userId])
+}
+
+// PoR-1″'s right-hand side (rev03 §3.4 / rev04 §1.3) must be explicitly managed
+// data, never a code constant (A-3 §1 principle 6). This is that registry. Empty at
+// migration time — filling it in is an operational data-entry task gated on Q-M3
+// (company wallet address), not a schema concern. An empty table is safe: PoR-G1
+// (below) guarantees a zero-row registry can never produce a false PASS.
+model PlatformControlledAddress {
+  id             String    @id @default(cuid())
+  coin           String
+  network        String // e.g. "BINANCE" (BSC) — matches ManagedCoin.networks[].code
+  address        String
+  label          String // e.g. "COMPANY_TREASURY", "DEPOSIT_SWEEP" — free text, UPPER_SNAKE by convention
+  addedByAdminId String
+  addedByEmail   String
+  active         Boolean   @default(true)
+  addedAt        DateTime  @default(now())
+  removedAt      DateTime?
+  notes          String? // e.g. block explorer link, purpose
+
+  @@unique([coin, network, address])
+  @@index([coin, active])
+}
+
+enum ReserveVerificationTrigger {
+  WORKER_PERIODIC
+  MANUAL_ADMIN
+  PRE_AUTHORITY_TRANSITION // run at CoinAuthorityTransition steps 1/4
+  PRE_ISSUANCE_GATE // ad-hoc check right before a settlement/grant/claim batch
+  // (whether this is actually wired as a gate is A-5/A-10's call)
+}
+
+enum ReserveVerificationResult {
+  PASS
+  FAIL
+  // One or more of the four ADDITIVE left-hand components is still uncomputable
+  // (e.g. A-4 not yet merged, so unclaimedLedgeredInterestTotal is unknown). Never
+  // substitute "0" for null — that is the quietest way to defeat this invariant
+  // (A-3 §1 principle 5).
+  INCOMPLETE
+  // The on-chain or hub lookup itself failed. A fault, not a verdict.
+  QUERY_FAILED
+  // rev04 PoR-G1 (P-17) — controlledAddressCount == 0: the reserve side has never
+  // been registered at all. "Reserves are zero" and "reserves were never entered"
+  // are different facts (principle 5 applied to the right-hand side too) — this
+  // value is never silently replaced by PASS, even when the left side also
+  // happens to be "0".
+  NO_RESERVE_BASIS
+}
+
+// PoR-1″ (rev04 §1.3, replacing rev02 §4.2 / rev03 §3.4's left-hand side) snapshot at
+// one point in time:
+//
+//   leftTotal = L1 localLedgerBalanceTotal + L2 unclaimedLedgeredInterestTotal
+//             + L3 grantPrincipalPayableTotal + L4 referralPayableTotal
+//   leftTotal  ≤  controlledOnchainBalanceTotal   (right-hand side, unchanged from rev03 §3.4)
+//
+// Columns not summed into leftTotal but always stored/displayed (componentRole,
+// aligned with A-8 §5 DC-6's 5-value set — see A-3 §2.6 for the full rationale):
+//   activeUserFundedPrincipalTotal / stakePrincipalHoldTotal / withdrawalPendingHoldTotal
+//     → SUBSET_OF_LOCAL_BALANCE ("already included in the local balance")
+//   compensationPlanCommitmentTotal → PROGRAM_COMMITMENT ("not yet an accrued liability")
+//   inFlightOnchainWithdrawalTotal  → TIMING_ADJUSTMENT ("in flight — not in either side")
+//
+// Every component is stored, not just the result — so a breach can be diagnosed
+// without replaying history.
+model ReserveVerificationRun {
+  id      String                     @id @default(cuid())
+  coin    String
+  trigger ReserveVerificationTrigger
+  ranAt   DateTime                   @default(now())
+
+  // ── left-hand side, the 4 components summed into leftTotal (L1–L4) ────────────
+  // decimal string. null = "not yet computable" (principle 5), never confused with "0".
+  localLedgerBalanceTotal        String // L1, ADDITIVE. Σ UserCoinBalance.balance — always computable from A-3 alone
+  unclaimedLedgeredInterestTotal String? // L2, ADDITIVE. A-4-dependent
+  // L3, ADDITIVE. rev04 H-2′: "0" (known value) once zero PLATFORM_GRANT positions
+  // exist; null only once ≥1 exists and H-2 remains undecided.
+  grantPrincipalPayableTotal     String?
+  // L4, ADDITIVE. rev04 Q8-a: Σ ReferralBonusPayout.total − Σ LocalLedgerEntry.amount
+  // WHERE reasonCode=REFERRAL_BONUS_CREDIT. Computable from this table alone — "0"
+  // today (0 rows) is a known value, not null.
+  referralPayableTotal           String?
+  leftTotal                      String? // L1+L2+L3+L4. Any of the four null makes this null too
+
+  // ── display / cross-check only — excluded from leftTotal (componentRole above) ─
+  // rev04 P-14/P-15: soft-locked principal already lives inside L1 — kept here
+  // (not deleted) so INV-P5 (design doc A-3 §4.4bis) can verify the subset relationship.
+  activeUserFundedPrincipalTotal  String? // A-4-dependent
+  stakePrincipalHoldTotal         String? // INV-P5's left-hand side — always computable from A-3 alone
+  withdrawalPendingHoldTotal      String? // SUBSET_OF_LOCAL_BALANCE
+  inFlightOnchainWithdrawalTotal  String? // TIMING_ADJUSTMENT — A-5-dependent (WithdrawalRequest.debitTotal sum)
+  compensationPlanCommitmentTotal String? // PROGRAM_COMMITMENT — admin-entered value, never a code constant.
+  // null = "not sized" (never rendered as "0")
+
+  // ── right-hand side (reserves) ──────────────────────────────────────────────
+  controlledAddressCount        Int
+  controlledOnchainBalanceTotal String // decimal string
+
+  result       ReserveVerificationResult
+  marginAmount String? // rightTotal − leftTotal. Negative = breach. null when result is
+  // INCOMPLETE/QUERY_FAILED/NO_RESERVE_BASIS
+  breachDetail String?
+
+  // rev04 PoR-G1: controlledAddressCount == 0 forces result = NO_RESERVE_BASIS and
+  // blocksIssuance = true, unconditionally — this column can never encode a false
+  // "safe to issue" for a coin whose reserves were never registered.
+  blocksIssuance Boolean @default(false)
+
+  // If this run executed alongside a full-user snapshot (POR_VERIFICATION batch).
+  snapshotBatchId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([coin, ranAt])
+  @@index([coin, result, ranAt])
 }
