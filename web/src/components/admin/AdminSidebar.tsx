@@ -4,8 +4,10 @@ import { Link, usePathname } from '@/i18n/navigation';
 import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
 import BanaLogo from '@/components/BanaLogo';
+import { useAdminCreditGateStatus } from '@/lib/useAdminCreditGate';
 import {
   LayoutDashboard, ArrowUpRight, Coins, Users, SlidersHorizontal, Building2, X, Sprout, CircleDollarSign, ShieldCheck,
+  Landmark,
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -21,6 +23,10 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }: Admi
   const nav = useTranslations('nav');
   const t = useTranslations('admin');
   const sb = useTranslations('sidebar');
+  // T-16 AC-13 — fail-closed: 'unknown' (still loading) and 'disabled' both
+  // resolve to "don't render this item" (useAdminCreditGateStatus never lets
+  // this flip true→appear before the kill-switch state is actually known true).
+  const creditGate = useAdminCreditGateStatus();
 
   const items = [
     { href: '/admin/dashboard', label: nav('dashboard'), icon: LayoutDashboard },
@@ -30,6 +36,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }: Admi
     { href: '/admin/reserve', label: nav('reserve'), icon: ShieldCheck },
     { href: '/admin/coins', label: nav('coinManagement'), icon: CircleDollarSign },
     { href: '/admin/users', label: nav('users'), icon: Users },
+    ...(creditGate === 'enabled' ? [{ href: '/admin/credit', label: nav('adminCredit'), icon: Landmark }] : []),
     { href: '/admin/settings', label: nav('settings'), icon: SlidersHorizontal },
   ];
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');

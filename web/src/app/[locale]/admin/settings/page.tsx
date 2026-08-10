@@ -2,13 +2,17 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { SlidersHorizontal, ShieldCheck, Zap, Wrench, Gauge, UserPlus, AtSign, Check, Loader2, Users, ArrowUpRight, Timer } from 'lucide-react';
+import { SlidersHorizontal, ShieldCheck, Zap, Wrench, Gauge, UserPlus, AtSign, Check, Loader2, Users, ArrowUpRight, Timer, Landmark } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { getPlatformPolicy, setPlatformPolicy, type PlatformPolicy } from '@/utils/adminApi';
+import { useAdminCreditGateStatus } from '@/lib/useAdminCreditGate';
 
 export default function AdminSettingsPage() {
   const t = useTranslations('adminSettings');
   const nav = useTranslations('nav');
+  // T-16 AC-13 — same fail-closed rule as the sidebar: only render this
+  // shortcut once the kill switch is confirmed on.
+  const creditGate = useAdminCreditGateStatus();
   const [policy, setPolicy] = useState<PlatformPolicy | null>(null);
   const [threshold, setThreshold] = useState('');
   const [dailyLimit, setDailyLimit] = useState('');
@@ -87,6 +91,18 @@ export default function AdminSettingsPage() {
           >
             <Users className="h-4 w-4" /> {nav('users')}
           </Link>
+          {/* T-16 AC-13 — balance adjustment is never in AdminBottomNav (same
+              treatment as Users/Withdrawals: a rare, high-risk action kept out
+              of the quick-access tab bar), and this shortcut itself only
+              renders once the kill switch is confirmed on. */}
+          {creditGate === 'enabled' && (
+            <Link
+              href="/admin/credit"
+              className="lg:hidden flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#112643]/70 border border-[#1E3559] text-[#afc6ff] hover:text-white hover:bg-[#1e3459] text-sm font-bold transition-colors"
+            >
+              <Landmark className="h-4 w-4" /> {nav('adminCredit')}
+            </Link>
+          )}
           {/* Your own account security — 2FA, passkeys, devices, email. */}
           <Link
             href="/admin/settings/security"

@@ -117,6 +117,10 @@ export interface WithdrawalRequest {
   onchainTxHash: string | null;
   onchainVerifiedAt: string | null;
   onchainVerificationAttempts?: WithdrawalOnchainVerificationAttempt[];
+  // T-16 DC-9 (admin-credit AC-10) — Σ ADMIN_ADJUSTMENT_CREDIT − Σ ADMIN_ADJUSTMENT_DEBIT
+  // for this request's (userId, coin). null = "couldn't compute" (query failure),
+  // never a "0" fallback — the UI must render a 4th "unknown" state, not treat it as none.
+  adminAdjustmentNetCredit: string | null;
 }
 
 /** List the withdrawal queue (+ pending count). Optional status filter. */
@@ -664,4 +668,144 @@ export async function deactivateControlledAddress(id: string): Promise<void> {
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok || body?.ok === false) throw new Error(body?.error || `Request failed (${res.status})`);
+}
+
+// ---- T-16 — admin balance adjustment (ADMIN_ADJUSTMENT_CREDIT / _DEBIT) ----
+// docs/specs/staking-yield-system-v2-design-t16-admin-credit-frd.md §5 (DC-1~DC-9)
+// Backed by /api/admin/credit/{context,target} and POST /api/admin/credit — all
+// three already gated server-side by requireAdmin() + the adminCreditEnabled kill
+// switch. This client layer never re-implements those checks (§4.6/AC-3 — the
+// server is the only authority the UI trusts).
+
+export type AdminCreditLimitKey = 'perTx' | 'perDay' | 'cumulative';
+
+export interface AdminCreditLimitRow {
+  key: AdminCreditLimitKey;
+  /** null = "not configured" (AC-6 reversed convention: null means BLOCKED, not unlimited). */
+  limit: string | null;
+  /** null = "not computed" (no coin selected yet, or the computation failed) — never "0". */
+  used: string | null;
+  /** Server-derived (DC-5) — never subtract `used` from `limit` on the client. */
+  remaining: string | null;
+}
+
+export interface AdminCreditCoinOption {
+  symbol: string;
+  balanceAuthority: 'HUB' | 'LOCAL';
+  authorityAlertStage: 'CLEAR' | 'T1_WARNING' | 'T2_HALTED';
+}
+
+export interface AdminCreditContext {
+  enabled: boolean | null;
+  coins: AdminCreditCoinOption[] | null;
+  limits: AdminCreditLimitRow[] | null;
+  /** 'error' means "one of enabled/coins/limits failed to compute" (DC-1 — no partial render). */
+  state: 'ok' | 'error';
+}
+
+/** DC-1 — screen-load context. Deliberately NOT gated by the kill switch server-side
+ * (so the page can render its DISABLED state honestly instead of LOAD_FAILED). */
+export async function getAdminCreditContext(coin?: string | null): Promise<AdminCreditContext> {
+  const qs = coin ? `?coin=${encodeURIComponent(coin)}` : '';
+  const r = await getJson<{ ok: boolean; data: AdminCreditContext }>(`/api/admin/credit/context${qs}`);
+  return r.data;
+}
+
+export interface AdminCreditTarget {
+  found: boolean | null;
+  userId: string | null;
+  email: string;
+  balance: string | null;
+  held: string | null;
+  available: string | null;
+  adminAdjustmentNet: string | null;
+  state: 'ok' | 'error';
+}
+
+/** DC-2 — target-account preview, shown before the confirm step (§4.4). Unlike
+ * /context, this route 403s with `{ ok:false, code, message }` while the kill
+ * switch is off — surfaced as an `AdminCreditApiError` (not a generic Error) so
+ * callers can key off `.code` the same way they do for the POST route. */
+export async function getAdminCreditTarget(email: string, coin: string): Promise<AdminCreditTarget> {
+  const res = await fetch(
+    `/api/admin/credit/target?email=${encodeURIComponent(email)}&coin=${encodeURIComponent(coin)}`,
+    { headers: { Accept: 'application/json' } },
+  );
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || body?.ok === false) {
+    throw new AdminCreditApiError(
+      body?.code ?? 'UNKNOWN',
+      body?.message || `Request failed (${res.status})`,
+      body?.detail ?? null,
+    );
+  }
+  return body.data as AdminCreditTarget;
+}
+
+export type AdminAdjustmentDirection = 'CREDIT' | 'DEBIT';
+
+export const ADMIN_ADJUSTMENT_REASON_TYPES = [
+  'E2E_VERIFICATION',
+  'RECONCILIATION_FIX',
+  'INCIDENT_COMPENSATION',
+  'OTHER',
+] as const;
+export type AdminAdjustmentReasonType = (typeof ADMIN_ADJUSTMENT_REASON_TYPES)[number];
+
+export interface AdminCreditSubmitInput {
+  direction: AdminAdjustmentDirection;
+  email: string;
+  coin: string;
+  /** Canonical decimal string — build with `new Decimal(x).toFixed()`, never a number. */
+  amount: string;
+  reasonType: AdminAdjustmentReasonType;
+  description: string;
+  confirmEmail: string;
+  confirmAmount: string;
+  idempotencyKey: string;
+}
+
+export interface AdminCreditSubmitResult {
+  entryId: string;
+  direction: AdminAdjustmentDirection;
+  coin: string;
+  amount: string;
+  userEmail: string;
+  balanceAfter: string;
+  availableAfter: string;
+  localLedgerBalanceTotalAfter: string;
+  adminAdjustmentNetCreditTotalAfter: string;
+  auditLogId: string | null;
+  idempotentReplay: boolean;
+}
+
+/** DC-8 — the route's structured error shape (`{ ok:false, code, message, detail? }`). */
+export class AdminCreditApiError extends Error {
+  readonly code: string;
+  readonly detail: Record<string, unknown> | null;
+  constructor(code: string, message: string, detail: Record<string, unknown> | null = null) {
+    super(message);
+    this.name = 'AdminCreditApiError';
+    this.code = code;
+    this.detail = detail;
+  }
+}
+
+/** DC-3 — POST /api/admin/credit. The server re-verifies confirmEmail/confirmAmount
+ * independently of whatever the client's own submit-button gating decided (AC-3). */
+export async function submitAdminCredit(input: AdminCreditSubmitInput): Promise<AdminCreditSubmitResult> {
+  const res = await fetch('/api/admin/credit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(input),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || body?.ok === false) {
+    throw new AdminCreditApiError(
+      body?.code ?? 'UNKNOWN',
+      body?.message || body?.error || `Request failed (${res.status})`,
+      body?.detail ?? null,
+    );
+  }
+  return body.data as AdminCreditSubmitResult;
 }

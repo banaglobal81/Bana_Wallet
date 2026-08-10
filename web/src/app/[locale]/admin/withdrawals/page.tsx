@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowUpRight, RefreshCw, Check, X, Loader2, ShieldAlert, ArrowLeft, Send, CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
+import Decimal from 'decimal.js';
+import { ArrowUpRight, RefreshCw, Check, X, Loader2, ShieldAlert, ArrowLeft, Send, CheckCircle2, AlertCircle, HelpCircle, CircleHelp } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import {
   listWithdrawals, approveWithdrawal, rejectWithdrawal, submitWithdrawalTx, getSolvency,
@@ -27,6 +28,36 @@ function verifyOutcomeBucket(reason: string): 'pass' | 'fail' | 'inconclusive' {
   if (reason === 'PASS') return 'pass';
   if (['TX_NOT_FOUND', 'TX_PENDING', 'INSUFFICIENT_CONFIRMATIONS', 'RPC_UNAVAILABLE'].includes(reason)) return 'inconclusive';
   return 'fail'; // TX_REVERTED / NO_TRANSFER_EVENT / WRONG_CONTRACT / WRONG_RECIPIENT / AMOUNT_MISMATCH / TX_ALREADY_CONSUMED
+}
+
+// T-16 §8.2 (AC-10, J-6) — 4-state admin-adjustment marker: net>0 / net<0 /
+// net==0 (nothing rendered) / net==null ("couldn't confirm", never "none").
+// Amount comparisons use decimal.js only (CLAUDE.md rule 2). Colors are
+// deliberately violet/slate — never amber/indigo/emerald/rose, which this row
+// already uses for the rail and status badges (§8.2 — "must be distinguishable").
+function AdminCreditMarker({ net, coin, t }: { net: string | null; coin: string; t: ReturnType<typeof useTranslations> }) {
+  const pill = 'mt-1 inline-flex items-center gap-1 w-fit text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border';
+  if (net == null) {
+    return (
+      <div data-testid="admin-credit-marker-unknown" title={t('adminCreditMarkerHint')} className={`${pill} bg-slate-500/10 text-slate-300 border-slate-500/25`}>
+        <CircleHelp className="h-2.5 w-2.5" /> {t('adminCreditMarkerUnknown')}
+      </div>
+    );
+  }
+  const d = new Decimal(net);
+  if (d.eq(0)) return null;
+  if (d.gt(0)) {
+    return (
+      <div data-testid="admin-credit-marker" title={t('adminCreditMarkerHint')} className={`${pill} bg-violet-500/10 text-violet-300 border-violet-500/25`}>
+        {t('adminCreditMarker', { amount: d.toFixed(), coin })}
+      </div>
+    );
+  }
+  return (
+    <div data-testid="admin-credit-marker-negative" title={t('adminCreditMarkerHint')} className={`${pill} bg-slate-500/10 text-slate-300 border-slate-500/25`}>
+      {t('adminCreditMarkerNegative', { amount: d.abs().toFixed(), coin })}
+    </div>
+  );
 }
 
 export default function AdminWithdrawalsPage() {
@@ -193,6 +224,9 @@ export default function AdminWithdrawalsPage() {
                           <div className="text-[10px] font-mono text-[#8c90a0]">{t('debitTotal', { total: w.debitTotal })}</div>
                         )}
                         <div className="text-[10px] font-mono text-[#8c90a0]">{w.network}</div>
+                        {/* T-16 §8.2 (AC-10) — judgement material only; never
+                            changes approve/reject button state (§8.2 rule). */}
+                        <AdminCreditMarker net={w.adminAdjustmentNetCredit} coin={w.currency} t={t} />
                       </td>
                       <td className="px-4 py-3">
                         <span
