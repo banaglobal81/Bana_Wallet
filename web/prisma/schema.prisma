@@ -149,6 +149,56 @@ model PlatformSetting {
   // accidental/malicious reduction lives in code (web-shared-expert), not the DB.
   withdrawalOnchainMinConfirmations Int @default(15)
 
+  // ─── §4A (rev05 Q-M7) — admin-credit surface (ADMIN_ADJUSTMENT_CREDIT), T-15 ──────
+  // This is the one route in the system that deliberately bypasses the PoR issuance
+  // gate (A-3 §4.2 / rev05 N-50) — approved narrowly for internal E2E seeding and
+  // reconciliation corrections only (rev05 AC-1), never for user-facing grants.
+  //
+  // adminCreditEnabled: kill switch for the whole surface. Default false — the route
+  // must 403 and the admin menu item must not render while off (AC-6). Opposite of the
+  // "on is the safeguard" fields above: here off is the safeguard. Toggling it is
+  // AuditLog'd by the route that flips it (AC-13), not enforced by this migration.
+  adminCreditEnabled Boolean @default(false)
+
+  // adminCreditMaxPerTx / adminCreditMaxPerDay / adminCreditCumulativeCap: three
+  // independent caps (single-mistake / per-admin-per-day / cumulative-per-coin) —
+  // rev05 AC-6 deliberately splits these rather than using one number, since each
+  // guards a different failure mode.
+  //
+  // NULL SEMANTICS ARE REVERSED FROM EVERY OTHER FIELD IN THIS MODEL: null here means
+  // "not configured, therefore deny" (fail-closed), not "unlimited". Every other
+  // String? limit in this model (e.g. dailyWithdrawalLimitUsd, autoApproveUnderUsd)
+  // treats null as "no limit". Do not assume the model-wide convention applies to
+  // these three fields (rev05 AC-6 explicit warning).
+  //
+  // Unset (null) — to be set via the T-18 admin UI once that surface exists. Do NOT
+  // seed a numeric default here: per wallet-security-expert's final T-17 review, a
+  // value asserted only by an agent's own narrative ("master-approved") cannot be
+  // independently verified, so the safe default is the fail-closed one below (kill
+  // switch off + these three unset = admin-credit surface cannot execute at all).
+  adminCreditMaxPerTx      String? // 1회 크레딧 상한. null = 거부(ADMIN_CREDIT_LIMIT_PER_TX)
+  adminCreditMaxPerDay     String? // 관리자 1인 24h 롤링 합계 상한. null = 거부(ADMIN_CREDIT_LIMIT_PER_DAY)
+  // Cumulative CAP (ceiling), not the running total. The running total —
+  // Σ ADMIN_ADJUSTMENT_CREDIT − Σ ADMIN_ADJUSTMENT_DEBIT per coin — is computed live
+  // from LocalLedgerEntry by the route at credit time (rev05 AC-6/AC-7), inside the
+  // same transaction and under the ManagedCoin row lock (AC-7), never cached here.
+  // null = 거부(ADMIN_CREDIT_CUMULATIVE_CAP)
+  adminCreditCumulativeCap String?
+
+  // rev05 CP-10 — caps the *interest liability* (not principal — principal is a soft
+  // lock already inside L1, rev04 P-14) a coin's OPEN StakingProductV2 rows may create:
+  //   Σ_(status=OPEN) capacity × (baseDailyRatePct / 100) × termDays  ≤  this value
+  // null = fail-closed: ALL product opens/capacity-raises are rejected, not "unlimited"
+  // (same reversed-null convention as the adminCredit* fields above). Raising this
+  // value is, by design, the single largest liability-increasing action available in
+  // this system and must be AuditLog'd (PLATFORM_SETTING_INTEREST_LIABILITY_CAP_CHANGE)
+  // by the route that changes it — not enforced by this migration.
+  // Unset (null) — same reasoning as the adminCredit* fields above: fail-closed until
+  // set via the T-18 admin UI, not seeded from an agent-asserted "master-approved"
+  // value that a reviewer cannot independently verify (wallet-security-expert, T-17
+  // final review). While unset, all StakingProductV2 opens/capacity-raises are denied.
+  maxInterestLiabilityCapBana String?
+
   updatedAt DateTime @updatedAt
 }
 
@@ -1099,6 +1149,7 @@ enum ReserveVerificationResult {
 // Columns not summed into leftTotal but always stored/displayed (componentRole,
 // aligned with A-8 §5 DC-6's 5-value set — see A-3 §2.6 for the full rationale):
 //   activeUserFundedPrincipalTotal / stakePrincipalHoldTotal / withdrawalPendingHoldTotal
+//   / adminAdjustmentNetCreditTotal
 //     → SUBSET_OF_LOCAL_BALANCE ("already included in the local balance")
 //   compensationPlanCommitmentTotal → PROGRAM_COMMITMENT ("not yet an accrued liability")
 //   inFlightOnchainWithdrawalTotal  → TIMING_ADJUSTMENT ("in flight — not in either side")
@@ -1130,6 +1181,18 @@ model ReserveVerificationRun {
   activeUserFundedPrincipalTotal  String? // A-4-dependent
   stakePrincipalHoldTotal         String? // INV-P5's left-hand side — always computable from A-3 alone
   withdrawalPendingHoldTotal      String? // SUBSET_OF_LOCAL_BALANCE
+  // rev05 AC-9 (§4A) — componentRole = SUBSET_OF_LOCAL_BALANCE. NOT summed into
+  // leftTotal: ADMIN_ADJUSTMENT_CREDIT already lands in UserCoinBalance.balance (Step 3
+  // of mutateLocalLedger is outside the issuance gate, rev05 N-50) and is therefore
+  // already inside L1 (localLedgerBalanceTotal). Adding it again here would recreate
+  // the double-count rev04 P-14 fixed. Purely a display/"how much of L1 bypassed PoR"
+  // cross-check:
+  //   = Σ LocalLedgerEntry(reasonCode=ADMIN_ADJUSTMENT_CREDIT).amount
+  //   − Σ LocalLedgerEntry(reasonCode=ADMIN_ADJUSTMENT_DEBIT).amount     (per coin)
+  // null = "not yet computed this run" (principle 5) — never substituted with "0".
+  // Computed by runReserveVerification() (web-shared-expert, T-17). Not implemented/
+  // written by any code in this migration.
+  adminAdjustmentNetCreditTotal   String?
   inFlightOnchainWithdrawalTotal  String? // TIMING_ADJUSTMENT — A-5-dependent (WithdrawalRequest.debitTotal sum)
   compensationPlanCommitmentTotal String? // PROGRAM_COMMITMENT — admin-entered value, never a code constant.
   // null = "not sized" (never rendered as "0")

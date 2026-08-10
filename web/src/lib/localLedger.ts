@@ -118,6 +118,10 @@ export interface LedgerMutationInput {
   createdByAdminId?: string | null;
   createdByEmail?: string | null;
   adjustmentReason?: string | null;
+  // rev05 §4A.3 AC-5 requirement 2(b) — ADMIN_ADJUSTMENT_* only. The caller (the admin
+  // route) is the only place with request-level context; localLedger.ts never reads
+  // headers itself.
+  requestIp?: string | null;
   tx?: Prisma.TransactionClient;
 }
 
@@ -132,11 +136,56 @@ interface LocalLedgerEntryRow {
   idempotencyKey: string | null;
   relatedType: string | null;
   relatedId: string | null;
+  // Set to true only when mutateLocalLedger short-circuited on a matching
+  // idempotencyKey replay (rev05a AC-17) — absent/undefined on a fresh write.
+  idempotentReplay?: boolean;
+  // ADMIN_ADJUSTMENT_* only (rev05 §4A.3 AC-5) — the AuditLog row id created in the
+  // same transaction as this entry. Undefined for every other reason code (no
+  // per-entry AuditLog row is created for those) and for a replayed entry (no new
+  // AuditLog row is created on replay — rev05a AC-17 requirement 4).
+  auditLogId?: string;
+}
+
+export interface LocalLedgerIdempotencyConflictDetail {
+  coin: string;
+  idempotencyKey: string;
+  existingEntryId: string;
+}
+
+/**
+ * rev05a (T-16 E-4 / AC-17) — thrown when a caller reuses an idempotencyKey with a
+ * request whose userId/coin/amount/direction(reasonCode)/createdByAdminId does not
+ * match the entry already stored under that key. This is a hard conflict, never a
+ * successful replay — "절대로 성공으로 응답하지 않는다" (rev05a §4 requirement 3). The
+ * matching replay case never throws; it returns the existing row with
+ * `idempotentReplay: true` instead (see mutateLocalLedger below).
+ */
+export class LocalLedgerIdempotencyConflictError extends Error {
+  readonly detail: LocalLedgerIdempotencyConflictDetail;
+  constructor(detail: LocalLedgerIdempotencyConflictDetail) {
+    super(
+      `${detail.coin}: idempotencyKey "${detail.idempotencyKey}" was already used for a different request (entry ${detail.existingEntryId}) — refusing to treat this as a replay.`,
+    );
+    this.name = 'LocalLedgerIdempotencyConflictError';
+    this.detail = detail;
+  }
 }
 
 async function mutateLocalLedger(
   input: LedgerMutationInput,
   type: 'CREDIT' | 'DEBIT',
+  opts?: {
+    // Set ONLY by executeHold's internal debit call below. That debit consumes a
+    // hold that is still ACTIVE (and therefore already counted in `held`) at the
+    // moment of the call — re-subtracting it from `available` here would double
+    // count and produce a false "insufficient available balance" rejection (see
+    // the available-balance check inside Step 3 below). Every other debit path —
+    // starting with ADMIN_ADJUSTMENT_DEBIT, which has no hold of its own — must
+    // go through that check, or a debit can push Σ ACTIVE holds above balance and
+    // break INV-P6 (rev05 N-48 / rev05 §4A AC-11). Do not pass this from any new
+    // caller without the same "this debit's own hold already covers it" reasoning.
+    skipAvailableCheck?: boolean;
+  },
 ): Promise<LocalLedgerEntryRow> {
   const amount = new Decimal(input.amount);
   if (!amount.isFinite() || amount.lte(0)) {
@@ -152,12 +201,30 @@ async function mutateLocalLedger(
   }
 
   const run = async (tx: Prisma.TransactionClient): Promise<LocalLedgerEntryRow> => {
-    // Idempotent no-op: a prior identical credit/debit already landed.
+    // Idempotent replay-or-conflict (rev05a AC-17 / E-4). A prior entry under this
+    // key is only a valid replay if EVERY request parameter matches — otherwise a
+    // second, different request that happens to reuse the key would silently be
+    // swallowed as a fake "success" (rev05a §4 requirement 3: never resolve a
+    // mismatch as success). `type` doubles as "direction" here (CREDIT/DEBIT).
     if (input.idempotencyKey) {
       const existing = await tx.localLedgerEntry.findUnique({
         where: { coin_idempotencyKey: { coin: input.coin, idempotencyKey: input.idempotencyKey } },
       });
-      if (existing) return existing;
+      if (existing) {
+        const matches =
+          existing.userId === input.userId &&
+          existing.coin === input.coin &&
+          existing.type === type &&
+          existing.reasonCode === input.reasonCode &&
+          new Decimal(existing.amount).eq(amount) &&
+          (existing.createdByAdminId ?? null) === (input.createdByAdminId ?? null);
+        if (matches) return { ...existing, idempotentReplay: true };
+        throw new LocalLedgerIdempotencyConflictError({
+          coin: input.coin,
+          idempotencyKey: input.idempotencyKey,
+          existingEntryId: existing.id,
+        });
+      }
     }
 
     const isIssuance = type === 'CREDIT' && ISSUANCE_CREDIT_REASON_CODES.has(input.reasonCode);
@@ -195,10 +262,41 @@ async function mutateLocalLedger(
 
     const currentBalance = new Decimal(current.balance);
     const newBalance = type === 'CREDIT' ? currentBalance.plus(amount) : currentBalance.minus(amount);
-    if (type === 'DEBIT' && newBalance.isNegative()) {
-      throw new Error(
-        `debitLocalLedger: insufficient balance for ${input.userId}/${input.coin} (balance ${current.balance}, debit ${amount.toFixed()}) — no partial debit.`,
-      );
+    if (type === 'DEBIT') {
+      if (newBalance.isNegative()) {
+        throw new Error(
+          `debitLocalLedger: insufficient balance for ${input.userId}/${input.coin} (balance ${current.balance}, debit ${amount.toFixed()}) — no partial debit.`,
+        );
+      }
+
+      // rev05 N-48 / rev05 §4A AC-11 (HIGH) — debitLocalLedger previously only checked
+      // `balance`, never `available` (= balance − Σ ACTIVE holds). That is correct for
+      // executeHold's WITHDRAWAL_EXECUTED debit (skipAvailableCheck — see the opts
+      // doc comment above) but wrong for every hold-less debit: without this check, an
+      // ADMIN_ADJUSTMENT_DEBIT against a balance with an ACTIVE stake-principal hold
+      // could push Σ ACTIVE holds above balance, breaking INV-P6. This is not a
+      // hypothetical — it is AC-1(a)'s normal E2E workflow ("credit → stake → debit
+      // back after verification") whenever the recovery debit lands before the stake
+      // matures/releases.
+      if (!opts?.skipAvailableCheck) {
+        const activeHolds = await tx.localBalanceHold.findMany({
+          where: { userId: input.userId, coin: input.coin, status: 'ACTIVE' },
+          select: { amount: true },
+        });
+        const held = activeHolds.reduce((acc, h) => acc.plus(new Decimal(h.amount)), new Decimal(0));
+        const available = currentBalance.minus(held);
+        if (amount.gt(available)) {
+          throw Object.assign(
+            new Error(
+              `debitLocalLedger: insufficient available balance for ${input.userId}/${input.coin} (balance ${currentBalance.toFixed()}, held ${held.toFixed()}, available ${available.toFixed()}, debit ${amount.toFixed()}).`,
+            ),
+            {
+              code: 'INSUFFICIENT_AVAILABLE_BALANCE',
+              detail: { balance: currentBalance.toFixed(), held: held.toFixed(), available: available.toFixed() },
+            },
+          );
+        }
+      }
     }
 
     const entry = await tx.localLedgerEntry.create({
@@ -224,16 +322,26 @@ async function mutateLocalLedger(
     });
 
     if (input.reasonCode.startsWith('ADMIN_ADJUSTMENT')) {
-      await tx.auditLog.create({
+      // rev05 §4A.3 AC-5 requirement 2 — beyond what the schema/A-3 §4.2 already
+      // forces (adminId/adminEmail/adjustmentReason present, same transaction as the
+      // entry — see the guard at the top of this function), the detail string also
+      // carries (b) the request IP and (c) this coin's L1 total immediately after
+      // this credit/debit — "the first question in any post-incident review is
+      // always how much liability this created" (rev05 §4A.3).
+      const localLedgerBalanceTotalAfter = await getLocalLedgerBalanceTotal(input.coin, { tx });
+      const audit = await tx.auditLog.create({
         data: {
           adminId: input.createdByAdminId!,
           adminEmail: input.createdByEmail!,
           action: type === 'CREDIT' ? 'LOCAL_LEDGER_ADMIN_ADJUSTMENT_CREDIT' : 'LOCAL_LEDGER_ADMIN_ADJUSTMENT_DEBIT',
           targetType: 'UserCoinBalance',
           targetId: current.id,
-          detail: `${input.userId}/${input.coin}: ${type} ${amount.toFixed()} — ${input.adjustmentReason}`,
+          detail:
+            `${input.userId}/${input.coin}: ${type} ${amount.toFixed()} — ${input.adjustmentReason} ` +
+            `· ip=${input.requestIp ?? 'unknown'} · localLedgerBalanceTotalAfter=${localLedgerBalanceTotalAfter}`,
         },
       });
+      return { ...entry, auditLogId: audit.id };
     }
 
     return entry;
@@ -374,16 +482,25 @@ export async function executeHold(
     // Debit first (also validates ACTIVE-ness indirectly via the hold's own amount) —
     // this is a pure debit reason code (not in ISSUANCE_CREDIT_REASON_CODES), so it
     // skips the ManagedCoin lock/gates entirely (A-3 §4.2 "pure debit codes skip 0-2").
-    const entry = await debitLocalLedger({
-      userId: hold.userId,
-      coin: hold.coin,
-      amount: hold.amount,
-      reasonCode: opts.reasonCode,
-      idempotencyKey: opts.idempotencyKey,
-      relatedType: opts.relatedType ?? hold.relatedType,
-      relatedId: opts.relatedId ?? hold.relatedId ?? undefined,
-      tx,
-    });
+    // Calls mutateLocalLedger directly (not the public debitLocalLedger wrapper) with
+    // skipAvailableCheck: true — this hold is still ACTIVE right now and therefore
+    // already counted in `held`, so the generic available-balance check (added for
+    // AC-11 above) would double count it. See that opts doc comment for the full
+    // reasoning.
+    const entry = await mutateLocalLedger(
+      {
+        userId: hold.userId,
+        coin: hold.coin,
+        amount: hold.amount,
+        reasonCode: opts.reasonCode,
+        idempotencyKey: opts.idempotencyKey,
+        relatedType: opts.relatedType ?? hold.relatedType,
+        relatedId: opts.relatedId ?? hold.relatedId ?? undefined,
+        tx,
+      },
+      'DEBIT',
+      { skipAvailableCheck: true },
+    );
 
     const claim = await tx.localBalanceHold.updateMany({
       where: { id: holdId, status: 'ACTIVE' },
@@ -596,6 +713,13 @@ export async function runReserveVerification(
   // carries the last stored value forward, never computes it (A-3 §4.5).
   const compensationPlanCommitmentTotal = lastRun?.compensationPlanCommitmentTotal ?? null;
 
+  // rev05 §4A.5 (AC-9 / N-50) — how much of localLedgerBalanceTotal (L1) above was
+  // created by the one route that bypasses the PoR issuance gate. componentRole is
+  // SUBSET_OF_LOCAL_BALANCE: this is a disclosure column, NOT added to leftTotal below
+  // (it is already inside L1 via UserCoinBalance.balance — adding it again would
+  // reintroduce the double-count rev04 P-14 fixed).
+  const adminAdjustmentNetCreditTotal = await getCoinAdminAdjustmentNet(coin);
+
   // INV-P5 cross-check.
   const stakeHoldMatchesPrincipal = stakePrincipalHoldTotal.equals(activeUserFundedPrincipalTotal);
   if (!stakeHoldMatchesPrincipal) {
@@ -681,6 +805,7 @@ export async function runReserveVerification(
       marginAmount: marginAmount?.toFixed() ?? null,
       breachDetail,
       blocksIssuance,
+      adminAdjustmentNetCreditTotal,
     },
   });
 }
@@ -799,4 +924,172 @@ export async function assertReserveHealthyOrThrow(coin: string, amount: string):
   if (isReserveGateBlocked(outcome)) {
     throw new ReserveGateBlockedError({ coin, amount, reason: outcome.reason, lastRun: lastRun ?? undefined });
   }
+}
+
+// ---------------------------------------------------------------------------
+// §4.7 — admin-adjustment gating (rev05 §4A / rev05a AC-15~AC-17). Consumed by
+// web/src/app/api/admin/credit/route.ts (T-17) — the ONE route allowed to write
+// ADMIN_ADJUSTMENT_CREDIT/ADMIN_ADJUSTMENT_DEBIT entries.
+// ---------------------------------------------------------------------------
+
+export type AdminAdjustmentDirection = 'CREDIT' | 'DEBIT';
+
+// rev05 §4A.1 (AC-1) — the only four approved reason types for this surface.
+export type AdminAdjustmentReasonType =
+  | 'E2E_VERIFICATION'
+  | 'RECONCILIATION_FIX'
+  | 'INCIDENT_COMPENSATION'
+  | 'OTHER';
+
+export interface ManagedCoinAdminGateRow {
+  id: string;
+  balanceAuthority: 'HUB' | 'LOCAL';
+  authorityAlertStage: 'CLEAR' | 'T1_WARNING' | 'T2_HALTED';
+}
+
+/**
+ * rev05a AC-15/AC-7 — locks the SAME ManagedCoin row, in the SAME mode
+ * (`SELECT ... FOR UPDATE`), that mutateLocalLedger's Step 0 above takes for
+ * ISSUANCE_CREDIT_REASON_CODES, and that changeAuthorityDirectly / the 5-step
+ * transition (coinAuthority.ts) take. ADMIN_ADJUSTMENT_CREDIT/DEBIT never go
+ * through Step 0 — they're deliberately excluded from ISSUANCE_CREDIT_REASON_CODES
+ * (N-50) — so the admin-credit route is responsible for taking this lock itself,
+ * inside its own transaction, BEFORE re-checking balanceAuthority/authorityAlertStage
+ * (AC-15's TOCTOU requirement: "화면 진입 시점의 context 응답만 믿으면 안 된다") and
+ * before calling creditLocalLedger/debitLocalLedger with that same `tx`. This helper
+ * exists so every caller locks with the identical SQL text — no "route used a
+ * different lock mode than the automatic issuance path" drift.
+ *
+ * Returns null when the coin has no ManagedCoin row at all — same "no row ⇒
+ * implicitly HUB-authority" contract as getCoinAuthority() (coinAuthority.ts §4.1),
+ * which evaluateAdminAdjustmentGate below then correctly rejects as COIN_NOT_LOCAL.
+ */
+export async function lockManagedCoinForAdminAdjustment(
+  tx: Prisma.TransactionClient,
+  coin: string,
+): Promise<ManagedCoinAdminGateRow | null> {
+  const rows = await tx.$queryRaw<ManagedCoinAdminGateRow[]>`
+    SELECT id, "balanceAuthority", "authorityAlertStage" FROM "ManagedCoin" WHERE symbol = ${coin} FOR UPDATE
+  `;
+  return rows[0] ?? null;
+}
+
+export type AdminAdjustmentGateReason = 'COIN_NOT_LOCAL' | 'T2_REASON_RESTRICTED';
+export type AdminAdjustmentGateOutcome = { ok: true } | { ok: false; reason: AdminAdjustmentGateReason };
+
+// Same strict:false discriminated-union caveat as isReserveGateBlocked above —
+// callers must use this type-predicate, never a bare `if (!outcome.ok)`.
+export function isAdminAdjustmentBlocked(
+  o: AdminAdjustmentGateOutcome,
+): o is Extract<AdminAdjustmentGateOutcome, { ok: false }> {
+  return o.ok === false;
+}
+
+/**
+ * Pure decision logic — unit-testable without a DB (mirrors the evaluateReserveGate
+ * split above). Callers MUST call this only AFTER taking
+ * lockManagedCoinForAdminAdjustment's lock in the same transaction; this function
+ * itself does no I/O and cannot enforce that TOCTOU requirement on its own.
+ *
+ * rev05a §3 (AC-15, E-3) — both CREDIT and DEBIT are restricted to
+ * balanceAuthority='LOCAL' coins. A HUB-authority coin with a nonzero local balance
+ * is exactly the state web/src/app/api/admin/solvency/route.ts alarms as
+ * HUB_COIN_HAS_LOCAL_BALANCE; this gate stops an admin from manufacturing that
+ * incident with a single adjustment (rev05a §3.1/§3.3 — DEBIT is restricted too,
+ * because a HUB-authority local row is ambiguous: it may be a bad LOCAL row to
+ * correct, or it may be the user's only real balance, in which case a "corrective"
+ * debit would erase real funds).
+ *
+ * rev05a §2 (AC-16, E-2) — CREDIT only, and only while authorityAlertStage is
+ * T2_HALTED, is further restricted to reasonType='RECONCILIATION_FIX' (the one use
+ * that resolves the halt rather than adding to the coin whose authority is already
+ * in violation). DEBIT is never reason-restricted at T2 (it only ever shrinks the
+ * liability). T1_WARNING carries no reason restriction at any direction (rev05a §2
+ * explicit — narrowing that far would make admins route around T1 by clearing it
+ * first, which converts a warning into an incentive to silence it).
+ */
+export function evaluateAdminAdjustmentGate(input: {
+  balanceAuthority: 'HUB' | 'LOCAL' | null;
+  authorityAlertStage: 'CLEAR' | 'T1_WARNING' | 'T2_HALTED' | null;
+  direction: AdminAdjustmentDirection;
+  reasonType: AdminAdjustmentReasonType;
+}): AdminAdjustmentGateOutcome {
+  if (input.balanceAuthority !== 'LOCAL') return { ok: false, reason: 'COIN_NOT_LOCAL' };
+
+  if (
+    input.direction === 'CREDIT' &&
+    input.authorityAlertStage === 'T2_HALTED' &&
+    input.reasonType !== 'RECONCILIATION_FIX'
+  ) {
+    return { ok: false, reason: 'T2_REASON_RESTRICTED' };
+  }
+
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// §4.7bis — admin-adjustment net helpers. Shared by the admin-credit route (target
+// preview / limit math) and runReserveVerification's AC-9 column below; also the
+// intended source for the AC-10 withdrawal-queue marker (T-18).
+// ---------------------------------------------------------------------------
+
+function sumLedgerNet(entries: { type: string; amount: string }[]): Decimal {
+  return entries.reduce(
+    (acc, e) => (e.type === 'CREDIT' ? acc.plus(new Decimal(e.amount)) : acc.minus(new Decimal(e.amount))),
+    new Decimal(0),
+  );
+}
+
+/** Σ ADMIN_ADJUSTMENT_CREDIT − Σ ADMIN_ADJUSTMENT_DEBIT for one user+coin (rev05 §4A.4 target preview). */
+export async function getUserAdminAdjustmentNet(
+  userId: string,
+  coin: string,
+  opts?: { tx?: Prisma.TransactionClient },
+): Promise<string> {
+  const client: Client = opts?.tx ?? prisma;
+  const entries = await client.localLedgerEntry.findMany({
+    where: { userId, coin, reasonCode: { in: ['ADMIN_ADJUSTMENT_CREDIT', 'ADMIN_ADJUSTMENT_DEBIT'] } },
+    select: { type: true, amount: true },
+  });
+  return sumLedgerNet(entries).toFixed();
+}
+
+/** Σ ADMIN_ADJUSTMENT_CREDIT − Σ ADMIN_ADJUSTMENT_DEBIT for one coin, all admins (rev05 AC-6/AC-9). */
+export async function getCoinAdminAdjustmentNet(
+  coin: string,
+  opts?: { tx?: Prisma.TransactionClient },
+): Promise<string> {
+  const client: Client = opts?.tx ?? prisma;
+  const entries = await client.localLedgerEntry.findMany({
+    where: { coin, reasonCode: { in: ['ADMIN_ADJUSTMENT_CREDIT', 'ADMIN_ADJUSTMENT_DEBIT'] } },
+    select: { type: true, amount: true },
+  });
+  return sumLedgerNet(entries).toFixed();
+}
+
+/**
+ * L1 — Σ UserCoinBalance.balance for one coin. Factored out of runReserveVerification
+ * (§4.5 below) so the admin-credit route (rev05 §4A.7 resultLiability / W-2) can show
+ * "this coin's local-ledger liability total after this adjustment" without
+ * re-implementing the sum.
+ */
+export async function getLocalLedgerBalanceTotal(coin: string, opts?: { tx?: Prisma.TransactionClient }): Promise<string> {
+  const client: Client = opts?.tx ?? prisma;
+  const balances = await client.userCoinBalance.findMany({ where: { coin }, select: { balance: true } });
+  return balances.reduce((acc, b) => acc.plus(new Decimal(b.balance)), new Decimal(0)).toFixed();
+}
+
+/** Σ ADMIN_ADJUSTMENT_CREDIT by one admin, for one coin, in the rolling window ending `now` (rev05 AC-6). */
+export async function getAdminCreditRollingUsage(
+  adminId: string,
+  coin: string,
+  since: Date,
+  opts?: { tx?: Prisma.TransactionClient },
+): Promise<string> {
+  const client: Client = opts?.tx ?? prisma;
+  const entries = await client.localLedgerEntry.findMany({
+    where: { coin, reasonCode: 'ADMIN_ADJUSTMENT_CREDIT', createdByAdminId: adminId, createdAt: { gte: since } },
+    select: { amount: true },
+  });
+  return entries.reduce((acc, e) => acc.plus(new Decimal(e.amount)), new Decimal(0)).toFixed();
 }
