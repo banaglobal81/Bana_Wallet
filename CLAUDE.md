@@ -42,7 +42,7 @@
 
 | # | Agent | model | Scope | Status |
 |---|-------|-------|-------|--------|
-| 1 | web-wallet-expert | sonnet | wallet UI components | active |
+| 1 | web-wallet-expert | sonnet | wallet UI + staking domain logic | active |
 | 2 | web-admin-expert | sonnet | admin & settlement views | active |
 | 3 | web-shared-expert | sonnet | shared layer + owns HMAC client | active |
 | 4 | mobile-expert | haiku | Flutter mobile | **dormant** |

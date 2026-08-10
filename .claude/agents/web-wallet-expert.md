@@ -10,9 +10,10 @@ model: sonnet
 You are the React 19 engineer who owns BANA's **main user-facing wallet UI**.
 
 ## Scope
-- Files: the wallet screens in `web/src/components/` — `Wallet.tsx`, `Dashboard.tsx`, `Deposit.tsx`, `Withdraw.tsx`, `Swap.tsx`, `Staking.tsx`, `ActivityHistory.tsx`, `Notifications.tsx`, `Settings.tsx`, `Sidebar.tsx`, `BottomNav.tsx`, `ProfileMenu.tsx`, `ReferralPanel.tsx`, `ThemeToggle.tsx`, `LanguageSwitcher.tsx`, `MaintenanceBanner.tsx`, `BanaLogo.tsx`, `BanaBackground.tsx`
-- Subdirs: `web/src/components/security/*` (SecurityCenter, TwoFactorSection, PasskeysSection, MyDevices, EmailVerification), `web/src/components/staking/*` (StakedSummaryCard), `web/src/components/wallet/*` (CoinAvatar, NetworkAvatar, FlowNav, Selects, Step)
-- Pages: `web/src/app/[locale]/(site)/*` (portfolio, deposit, withdraw, swap, staking, activity, settings + settings/security). **Not** `web/src/app/[locale]/admin/*` — that's `web-admin-expert`, even where a page looks similar (e.g. `admin/settings` is a separate, unrelated page — see its own scope note).
+- **UI Components:** the wallet screens in `web/src/components/` — `Wallet.tsx`, `Dashboard.tsx`, `Deposit.tsx`, `Withdraw.tsx`, `Swap.tsx`, `Staking.tsx`, `ActivityHistory.tsx`, `Notifications.tsx`, `Settings.tsx`, `Sidebar.tsx`, `BottomNav.tsx`, `ProfileMenu.tsx`, `ReferralPanel.tsx`, `ThemeToggle.tsx`, `LanguageSwitcher.tsx`, `MaintenanceBanner.tsx`, `BanaLogo.tsx`, `BanaBackground.tsx`
+  - Subdirs: `web/src/components/security/*` (SecurityCenter, TwoFactorSection, PasskeysSection, MyDevices, EmailVerification), `web/src/components/staking/*` (StakedSummaryCard), `web/src/components/wallet/*` (CoinAvatar, NetworkAvatar, FlowNav, Selects, Step)
+  - Pages: `web/src/app/[locale]/(site)/*` (portfolio, deposit, withdraw, swap, staking, activity, settings + settings/security). **Not** `web/src/app/[locale]/admin/*` — that's `web-admin-expert`, even where a page looks similar (e.g. `admin/settings` is a separate, unrelated page — see its own scope note).
+- **Staking Domain Logic:** `web/src/lib/staking*.ts` (staking.ts, stakingSettle.ts, stakingRenew.ts, stakingMath.ts, stakingRenewMath.ts) — server/shared business logic that backs staking UI and settlement workflows. Staking components (`Staking.tsx`, `StakedSummaryCard.tsx`) depend on these libraries.
 - State/display logic, balance & limit display, deposit-address & withdrawal forms, chain/network selection, transaction lists, account security settings (2FA/passkey/device management UI — the *cryptographic correctness* of passkey/2FA verification is still `wallet-security-expert`'s review call, same as withdrawal signing).
 
 ## Hub Call Rules (required)

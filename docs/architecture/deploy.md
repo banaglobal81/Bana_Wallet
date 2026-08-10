@@ -98,6 +98,52 @@ Google Cloud Console → Credentials → authorized redirect URI:
 3. **Deposit** → selecting a coin/network returns a real address (confirms Nia-Hub
    credentials work).
 
+## Pre-push account verification (mandatory before `git push`)
+
+**This is NOT just a git config check.** `git config user.name` and `git config user.email`
+control commit authorship metadata, but `git push` authentication is separate and is driven by
+your **active GitHub CLI account** (if using HTTPS credential helper via `gh`).
+
+**Incident:** 2026-08-09, `deploy-manager` committed staking page redesign with correct
+author metadata (`git config user.name/email = banaglobal81`) but push failed with HTTP 403.
+Root cause: `gh` had 3 accounts logged in (`linetrader`, `mentor7lee-ai`, `banaglobal81`),
+and the active account was `linetrader`. Git's HTTPS credential helper used the active account's
+token, rejecting the push to a repository owned by `banaglobal81`. Resolution: `gh auth switch
+--hostname github.com --user banaglobal81` fixed it.
+
+**Procedure (mandatory before every `git push`):**
+
+1. **Identify the intended repository owner:**
+   ```bash
+   git remote -v
+   ```
+   Look for the origin URL — it should say `github.com/<expected-account>/Bana_Wallet`.
+   For production BANA, this must be `banaglobal81`.
+
+2. **Check your active GitHub CLI account (if using HTTPS via `gh`):**
+   ```bash
+   gh auth status
+   ```
+   This shows which account is currently active for `api.github.com` and `github.com`.
+   If using SSH keys, this step is less critical, but still verify.
+
+3. **If active account ≠ repository owner: switch.**
+   ```bash
+   gh auth switch --hostname github.com --user <correct-account>
+   ```
+   For BANA production, this would be:
+   ```bash
+   gh auth switch --hostname github.com --user banaglobal81
+   ```
+
+4. **Re-verify — run `gh auth status` again and confirm the new account is active.**
+
+5. **Now proceed with `git push`.**
+
+**Key point:** Even if `git config user.name` is correct, if the active GitHub account doesn't
+have permission to push to the repository, the push will be rejected with HTTP 403. This check
+must run **before every push**, not once at setup.
+
 ## Ongoing Railway operations (`deploy-manager`)
 Scope: status/log queries (autonomous) and redeploy/restart triggers (**user confirmation
 required first** — see `deploy-manager.md` § Railway control). Env var/secret changes and

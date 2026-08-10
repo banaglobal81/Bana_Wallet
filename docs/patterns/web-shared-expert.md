@@ -13,3 +13,8 @@ Read on demand by `web-shared-expert` only, when the current task's scope overla
 - **Safe error shape**: `{ ok:false, error: e.message, code?: e.data?.code }` — raw `e.data` is never forwarded.
 - **`globalThis` singleton pattern for state**: `const g = globalThis as unknown as { __niaState?: NiaState }; export const niaState = g.__niaState ?? (g.__niaState = { ... });` — survives dev hot-reload.
 - **Railway deployment caveat**: in-memory withdrawal dedup + webhook event store are per-process. **Pin Railway to a SINGLE replica** (or use Redis for multi-replica scaling).
+
+### Scope Boundary Enforcement (Session 2026-08-09)
+- **Correct refusal pattern:** When requested to edit staking business logic files (`web/src/lib/staking*.ts`), `web-shared-expert` correctly refused — these files are **not** part of the shared layer (Nia HMAC client, route handlers, i18n infra). They are domain-specific staking logic that belongs to `web-wallet-expert`.
+- **Why this matters:** Scope boundaries prevent ownership conflicts, reduce merge collisions, and keep security/infrastructure concerns (this agent's domain) separate from business-domain concerns. Enforcing the boundary even when tempted to "just fix it" is the right call.
+- **Resolution:** After clarification, `web-wallet-expert` took ownership of these files, and this agent documented the boundary in `docs/architecture/code-tree.md` (2026-08-09).

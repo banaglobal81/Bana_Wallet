@@ -2,6 +2,16 @@
 
 Read on demand by `deploy-manager` only, when the current task's scope overlaps an entry below. See `CLAUDE.md` § Agent Self-Update Protocol for edit rules.
 
-### Pre-push account verification (2026-08-07)
-- BANA Wallet dev environments use multi-account tooling: `git` and `railway` CLI can be logged into different accounts independently. This creates a risk: if git is logged in under a personal account, `git push` will attribute commits to that account instead of the BANA account, even if the code is correct. Blindly pushing without verification broke BANA's git history and audit trail.
-- **Mitigation:** Before every `git push`, run `git config user.name` and `git config user.email` and verify they match the BANA account (`banaglobal81` / `banaglobal81@users.noreply.github.com`). If they don't match or are unset, **stop and flag to the user** — never auto-switch credentials or guess the intended account. This check is mandatory and enforced in the "Push authority" section of `deploy-manager.md`.
+### GitHub CLI account mismatch during push (2026-08-09) — critical incident
+- **Scenario:** `deploy-manager` committed staking page redesign with correct authorship (`git config user.name=banaglobal81`, `git config user.email=banaglobal81@users.noreply.github.com`). Push immediately rejected: HTTP 403.
+- **Root cause:** Multiple GitHub accounts were logged into the same `gh` CLI (`linetrader`, `mentor7lee-ai`, `banaglobal81`). The active account was `linetrader`. When pushing over HTTPS, `git` uses `gh auth git-credential`, which returns the **active account's token**. Since the repo is owned by `banaglobal81`, the push was rejected by GitHub.
+- **Critical insight:** `git config user.name/email` controls **commit authorship metadata** only — it has **no effect on push authentication**. Push auth is driven by whichever account is active in `gh auth status`. This is a separate concern from authorship.
+- **Resolution:** `gh auth switch --hostname github.com --user banaglobal81` → `gh auth status` confirmed new active account → `git push` succeeded.
+- **Mitigation:** Before every `git push`, run:
+  1. `git remote -v` — confirm origin is the intended repo owner (BANA = `banaglobal81/Bana_Wallet`)
+  2. `gh auth status` — **mandatory check** — confirm active GitHub account matches the repo owner
+  3. If mismatch: `gh auth switch --hostname github.com --user <correct-account>`
+  4. Re-verify with `gh auth status`
+  5. Only then proceed with `git push`
+  - This check must run **before every push**, not once. Multiple accounts can be logged in, and the active one can change between sessions.
+  - Procedure is documented in `docs/architecture/deploy.md` § Pre-push account verification and enforced in `deploy-manager.md` § Push authority.

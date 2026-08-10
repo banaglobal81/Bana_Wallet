@@ -283,6 +283,16 @@ export async function matureOrRenewPosition(positionId: string, now: Date = new 
  * successful send so a failure retries next cycle"). Used both right after
  * `matureOrRenewPosition` decides an outcome and as the retry sweep in
  * stakingSettle.ts (Pass 3).
+ *
+ * The retry sweep can overlap a concurrent call for the SAME position (e.g.
+ * a cron run and a manual settlement run racing each other) — both would
+ * pass the read-only eligibility checks below at the same time. To avoid
+ * sending the email twice, the actual send is gated behind an atomic
+ * `updateMany` claim (condition: `renewalNotifiedAt: null`) *before* the
+ * email goes out: only the caller that flips the stamp from null wins the
+ * right to send; every other concurrent caller sees `count === 0` and
+ * returns without sending. If the send itself fails, the claim is released
+ * back to null so the next pass retries.
  */
 export async function sendRenewalOutcomeIfNeeded(positionId: string): Promise<void> {
   const position = await prisma.stakePosition.findUnique({
@@ -296,37 +306,58 @@ export async function sendRenewalOutcomeIfNeeded(positionId: string): Promise<vo
   const user = await prisma.user.findUnique({ where: { id: position.userId }, select: { email: true, locale: true } });
   if (!user?.email) return;
 
+  let successor: { startAt: Date; maturityAt: Date } | null = null;
   if (position.renewalStatus === 'RENEWED') {
     if (!position.renewedIntoPositionId) return; // defensive — should never happen alongside RENEWED
-    const successor = await prisma.stakePosition.findUnique({
+    successor = await prisma.stakePosition.findUnique({
       where: { id: position.renewedIntoPositionId },
       select: { startAt: true, maturityAt: true },
     });
     if (!successor) return;
-
-    await sendRenewalOutcomeEmail(user.email, user.locale, {
-      outcome: 'RENEWED',
-      productName: position.product?.name ?? '',
-      principal: position.principal,
-      coin: position.coin,
-      termDays: position.termDays,
-      maturedAt: position.maturityAt,
-      startAt: successor.startAt,
-      newMaturityAt: successor.maturityAt,
-    });
-  } else {
-    await sendRenewalOutcomeEmail(user.email, user.locale, {
-      outcome: 'FAILED',
-      renewalStatus: position.renewalStatus as RenewalFailureStatus,
-      productName: position.product?.name ?? '',
-      principal: position.principal,
-      coin: position.coin,
-      maturedAt: position.maturityAt,
-      minAmount: position.product?.minAmount ?? null,
-      maxAmount: position.product?.maxAmount ?? null,
-      maxTermDays: AUTO_RENEW_MAX_TERM_DAYS,
-    });
   }
 
-  await prisma.stakePosition.update({ where: { id: positionId }, data: { renewalNotifiedAt: new Date() } });
+  // Atomic claim — see doc comment above. Must happen before the email is
+  // sent, not after, so two concurrent callers can't both pass the read
+  // checks above and both send.
+  const claimed = await prisma.stakePosition.updateMany({
+    where: { id: positionId, renewalNotifiedAt: null },
+    data: { renewalNotifiedAt: new Date() },
+  });
+  if (claimed.count === 0) return; // another concurrent call already claimed this send
+
+  try {
+    if (position.renewalStatus === 'RENEWED') {
+      await sendRenewalOutcomeEmail(user.email, user.locale, {
+        outcome: 'RENEWED',
+        productName: position.product?.name ?? '',
+        principal: position.principal,
+        coin: position.coin,
+        termDays: position.termDays,
+        maturedAt: position.maturityAt,
+        startAt: successor!.startAt,
+        newMaturityAt: successor!.maturityAt,
+      });
+    } else {
+      await sendRenewalOutcomeEmail(user.email, user.locale, {
+        outcome: 'FAILED',
+        renewalStatus: position.renewalStatus as RenewalFailureStatus,
+        productName: position.product?.name ?? '',
+        principal: position.principal,
+        coin: position.coin,
+        maturedAt: position.maturityAt,
+        minAmount: position.product?.minAmount ?? null,
+        maxAmount: position.product?.maxAmount ?? null,
+        maxTermDays: AUTO_RENEW_MAX_TERM_DAYS,
+      });
+    }
+  } catch (e) {
+    // Send failed — release the claim so the retry sweep in
+    // stakingSettle.ts (Pass 3) picks this position up again next cycle.
+    await prisma.stakePosition
+      .updateMany({ where: { id: positionId, renewalNotifiedAt: { not: null } }, data: { renewalNotifiedAt: null } })
+      .catch((e2) => {
+        console.error('[stakingRenew] failed to release renewalNotifiedAt claim for position', positionId, e2);
+      });
+    throw e;
+  }
 }

@@ -284,8 +284,11 @@ model StakePosition {
   // Outcome of the maturity-time renewal decision. Written exactly once,
   // inside the maturity transaction (matureOrRenewPosition).
   renewalStatus          StakeRenewalStatus @default(NONE)
-  // Link predecessor -> successor. @unique is the double-renewal guard: two
-  // renewals from one maturity become a DB-level constraint violation.
+  // Link predecessor -> successor. The double-renewal guard is the advisory
+  // lock + `status !== 'ACTIVE'` check in matureOrRenewPosition (stakingRenew.ts),
+  // not this @unique — @unique here just enforces the "at most one successor
+  // per predecessor" invariant structurally (a predecessor can't end up
+  // pointing at two successor rows).
   // This is the FK side of the self-relation (see `renewedTo` / `renewedFrom`
   // below) — it is unique, so both relation directions are naturally 1:1.
   renewedIntoPositionId  String?            @unique
