@@ -15,6 +15,7 @@ import {
   Users as UsersIcon,
   User,
   LogOut,
+  UserPlus,
 } from 'lucide-react';
 
 interface ProfileMenuProps {
@@ -139,6 +140,12 @@ export default function ProfileMenu({ settings, onNavigate }: ProfileMenuProps) 
                 </button>
                 <button onClick={() => go('STAKING_INTERFACE')} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
                   <Coins className="h-4 w-4 text-slate-400" /> {nav('staking')}
+                </button>
+                {/* Invite — docs/specs/referral-panel-relocation-frd.md §4.2.
+                    Non-admin branch only; the only mobile route in (RF-1) since
+                    the Sidebar drawer is unreachable on mobile. */}
+                <button onClick={() => go('REFERRAL_INTERFACE')} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
+                  <UserPlus className="h-4 w-4 text-slate-400" /> {nav('invite')}
                 </button>
                 <button onClick={() => go('SETTINGS_INTERFACE')} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors cursor-pointer">
                   <SettingsIcon className="h-4 w-4 text-slate-400" /> {nav('settings')}

@@ -113,6 +113,14 @@ export async function POST(req: Request): Promise<NextResponse> {
       termDays: product.termDays,
       startAt,
       maturityAt,
+      // R-5/R-6 (docs/specs/staking-auto-renew-ruling.md §2.4): marks this as
+      // an admin grant, which makes it ineligible for auto-renew at every
+      // layer (no toggle rendered, PATCH .../auto-renew 409s, E9 inside the
+      // maturity transaction). Note this route deliberately does NOT read an
+      // `autoRenew` field from the request body at all — an admin may not
+      // opt a user into a standing capital-lock instruction (R-6). `autoRenew`
+      // therefore stays at its schema default (false).
+      grantedByAdminId: (admin as { id?: string }).id ?? null,
     },
   });
 

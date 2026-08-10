@@ -1,15 +1,29 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import Decimal from 'decimal.js';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { requireUser } from '@/lib/auth/session';
 
-// GET /api/staking/rewards — the user's earned staking-interest rewards ledger:
-// total credited per coin (from the daily worker) + the most recent payouts.
-export async function GET(): Promise<NextResponse> {
+// GET /api/staking/rewards — the user's earned staking-interest rewards ledger.
+//
+// Always returns `totalByCoin` (credited-to-date per coin, from the position rows).
+//
+// The `payouts` page is shaped by three optional, independent query params:
+//   - (none)                → legacy/default: the caller's most recent payouts across
+//                             all positions, newest first. Default page size 20.
+//   - `since=<ISO date>`    → every payout credited to the caller strictly after that
+//                             timestamp, un-merged (one row per staking-day), oldest
+//                             first — for a catch-up read. Default page size 50.
+//   - `positionId=<id>`     → the full payout ledger for one position (ownership is
+//                             verified against the session), oldest day first. Default
+//                             page size 50.
+// `since` and `positionId` may be combined (AND'ed). `cursor` (a payout id from a
+// previous page's `nextCursor`) + `limit` (max 200) page through any of the above.
+// Truncation is never silent: `hasMore` / `nextCursor` / `total` are always returned.
+export async function GET(req: NextRequest): Promise<NextResponse> {
   let userId: string;
   try {
     await requireUser();
@@ -21,6 +35,44 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: err.message }, { status: err.status ?? 500 });
   }
 
+  const params = req.nextUrl.searchParams;
+  const sinceRaw = params.get('since');
+  const positionId = params.get('positionId') || undefined;
+  const cursor = params.get('cursor') || undefined;
+  const limitRaw = params.get('limit');
+
+  let since: Date | undefined;
+  if (sinceRaw) {
+    since = new Date(sinceRaw);
+    if (Number.isNaN(since.getTime())) {
+      return NextResponse.json({ ok: false, error: 'Invalid `since` timestamp' }, { status: 400 });
+    }
+  }
+
+  const wideMode = Boolean(since || positionId);
+  const defaultLimit = wideMode ? 50 : 20;
+  const MAX_LIMIT = 200;
+  let limit = defaultLimit;
+  if (limitRaw) {
+    const n = Number.parseInt(limitRaw, 10);
+    if (!Number.isFinite(n) || n < 1) {
+      return NextResponse.json({ ok: false, error: 'Invalid `limit`' }, { status: 400 });
+    }
+    limit = Math.min(n, MAX_LIMIT);
+  }
+
+  // D2: verify the position belongs to the caller before scoping the ledger to it.
+  // Identity is derived from the session throughout — never from the client (rule 8).
+  if (positionId) {
+    const owned = await prisma.stakePosition.findFirst({
+      where: { id: positionId, userId },
+      select: { id: true },
+    });
+    if (!owned) {
+      return NextResponse.json({ ok: false, error: 'Position not found' }, { status: 404 });
+    }
+  }
+
   const positions = await prisma.stakePosition.findMany({
     where: { userId },
     select: { coin: true, paidInterest: true },
@@ -30,15 +82,51 @@ export async function GET(): Promise<NextResponse> {
     totalByCoin[p.coin] = new Decimal(totalByCoin[p.coin] ?? 0).plus(p.paidInterest || '0').toFixed();
   }
 
-  const recent = await prisma.stakingPayout.findMany({
-    where: { userId },
-    orderBy: { paidAt: 'desc' },
-    take: 20,
-    select: { coin: true, amount: true, dayIndex: true, paidAt: true, positionId: true },
-  });
+  const where = {
+    userId,
+    ...(positionId ? { positionId } : {}),
+    ...(since ? { paidAt: { gt: since } } : {}),
+  };
+
+  // Ordering: per-position ledgers read chronologically by day; a `since` catch-up
+  // reads oldest-missed-first; the legacy default reads newest-first. `id` is a
+  // stable tiebreaker so cursor pagination never skips/repeats a row.
+  const orderBy = positionId
+    ? ([{ dayIndex: 'asc' }, { id: 'asc' }] as const)
+    : since
+      ? ([{ paidAt: 'asc' }, { id: 'asc' }] as const)
+      : ([{ paidAt: 'desc' }, { id: 'desc' }] as const);
+
+  const [rows, total] = await Promise.all([
+    prisma.stakingPayout.findMany({
+      where,
+      orderBy: orderBy as any,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      take: limit + 1,
+      select: { id: true, coin: true, amount: true, dayIndex: true, paidAt: true, positionId: true },
+    }),
+    prisma.stakingPayout.count({ where }),
+  ]);
+
+  const hasMore = rows.length > limit;
+  const page = hasMore ? rows.slice(0, limit) : rows;
+  const nextCursor = hasMore ? page[page.length - 1].id : null;
 
   return NextResponse.json({
     ok: true,
-    data: { totalByCoin, recent: recent.map((r) => ({ ...r, paidAt: r.paidAt.toISOString() })) },
+    data: {
+      totalByCoin,
+      payouts: page.map((r) => ({
+        id: r.id,
+        coin: r.coin,
+        amount: r.amount,
+        dayIndex: r.dayIndex,
+        paidAt: r.paidAt.toISOString(),
+        positionId: r.positionId,
+      })),
+      hasMore,
+      nextCursor,
+      total,
+    },
   });
 }

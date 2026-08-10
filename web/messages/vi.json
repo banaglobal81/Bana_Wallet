@@ -17,7 +17,8 @@
     "dashboard": "Bảng điều khiển",
     "adminConsole": "Bảng quản trị",
     "coins": "Coin",
-    "coinManagement": "Quản lý Coin"
+    "coinManagement": "Quản lý Coin",
+    "invite": "Mời bạn bè"
   },
   "login": {
     "title": "Đăng nhập",
@@ -241,7 +242,176 @@
     "statusACTIVE": "Đang chạy",
     "statusMATURED": "Đáo hạn",
     "statusPAID": "Đã trả",
-    "maturedNote": "Khi đáo hạn, tiền gốc được trả về ví và lãi được thanh toán."
+    "maturedNote": "Khi đáo hạn, tiền gốc của bạn sẽ khả dụng trong ví. Lãi đã nhận được ghi vào sổ lãi hiển thị ở trên, nhưng chưa được thanh toán vào số dư ví.",
+    "autoRenew": {
+      "optInLabel": "Tự động gia hạn khi đáo hạn",
+      "optInHelp": "Khi kỳ hạn này kết thúc, cùng số tiền sẽ được gửi tiếp trên sản phẩm này trong {termDays} ngày nữa. Lãi đã nhận không được bao gồm. Bạn có thể tắt chế độ này bất kỳ lúc nào trước khi đáo hạn.",
+      "stateOff": "Tự động gia hạn: Tắt",
+      "stateOn": "Tự động gia hạn: Bật · sẽ gia hạn vào {date}",
+      "stateOnClosed": "Tự động gia hạn: Bật · sản phẩm này đã đóng để gửi mới, vì vậy có thể không thể gia hạn được.",
+      "stateOnOverCap": "Tự động gia hạn: Bật · kỳ hạn của khoản gửi này dài hơn {maxTermDays} ngày, nên sẽ không được gia hạn. Tiền gốc của bạn sẽ khả dụng khi đáo hạn vào {date}.",
+      "stateOnGranted": "Tự động gia hạn: Bật · khoản gửi này được BANA cấp phát, nên sẽ không được gia hạn. Tiền gốc của bạn sẽ khả dụng khi đáo hạn vào {date}.",
+      "offToast": "Tự động gia hạn đã tắt. Tiền gốc sẽ khả dụng khi khoản gửi này đáo hạn vào {date}.",
+      "confirmTitle": "Bật tự động gia hạn?",
+      "confirmBody1": "Vào {maturityDate}, {principal} {coin} sẽ được gửi tiếp trên {productName} trong {termDays} ngày nữa, theo lãi suất được cung cấp vào thời điểm đó.",
+      "confirmLock": "Tiền gửi không thể rút trước khi kỳ hạn mới kết thúc.",
+      "confirmBody2": "Lãi đã nhận không được gửi tiếp.",
+      "confirmBody3": "Bạn có thể tắt chế độ này bất kỳ lúc nào trước {maturityDate}.",
+      "confirmYes": "Bật",
+      "confirmCancel": "Hủy",
+      "renewedHeading": "Đã tự động gia hạn",
+      "renewedCopy": "{principal} {coin} đã được gửi tiếp trên {productName} trong {termDays} ngày với lãi suất {dailyRatePct}%/ngày. Kỳ hạn mới bắt đầu từ {startAt}. Lãi kiếm được trong kỳ hạn trước không được bao gồm.",
+      "notRenewedHeading": "Không được gia hạn",
+      "notRenewedClosedCopy": "{productName} đã đóng để gửi mới. Tiền gốc {principal} {coin} của bạn khả dụng trong ví.",
+      "notRenewedTermTooLongCopy": "Tự động gia hạn không khả dụng cho các khoản gửi có kỳ hạn dài hơn {maxTermDays} ngày. Tiền gốc {principal} {coin} của bạn khả dụng trong ví.",
+      "notRenewedCapacityCopy": "{productName} đã đầy. Tiền gốc {principal} {coin} của bạn khả dụng trong ví.",
+      "notRenewedBelowMinCopy": "Tối thiểu cho {productName} hiện là {minAmount} {coin}. Tiền gốc {principal} {coin} của bạn khả dụng trong ví.",
+      "notRenewedAboveMaxCopy": "Tối đa cho {productName} hiện là {maxAmount} {coin}. Tiền gốc {principal} {coin} của bạn khả dụng trong ví.",
+      "notRenewedRateLoweredCopy": "Lãi suất cho {productName} đã thay đổi thành {dailyRatePct}%/ngày, thấp hơn {oldRate}%/ngày trên khoản gửi của bạn. Chúng tôi không gia hạn theo những điều khoản khác. Tiền gốc {principal} {coin} của bạn khả dụng trong ví.",
+      "notRenewedTermsChangedCopy": "Các điều khoản của {productName} đã thay đổi. Tiền gốc {principal} {coin} của bạn khả dụng trong ví.",
+      "notRenewedSystemErrorCopy": "Chúng tôi không thể hoàn tất gia hạn. Tiền gốc {principal} {coin} của bạn khả dụng trong ví.",
+      "error": {
+        "INVALID_REQUEST": "Yêu cầu không hợp lệ.",
+        "POSITION_NOT_FOUND": "Không tìm thấy khoản gửi.",
+        "POSITION_NOT_ACTIVE": "Khoản gửi này đã đáo hạn — không thể thay đổi tự động gia hạn nữa.",
+        "AUTO_RENEW_GRANTED_POSITION": "Khoản gửi này được BANA cấp phát và không thể được đặt để gia hạn. Khi đáo hạn, tiền gốc của bạn sẽ khả dụng trong ví.",
+        "AUTO_RENEW_TERM_TOO_LONG": "Tự động gia hạn khả dụng cho các khoản gửi có kỳ hạn {maxTermDays} ngày trở xuống. Kỳ hạn của khoản gửi này là {termDays} ngày."
+      }
+    },
+    "game": {
+      "hud": {
+        "stratum": "Tầng {n} · {name}",
+        "level": "Cấp {level}",
+        "xpProgress": "{current}/{next} XP",
+        "operatingDays": "{days} ngày vận hành",
+        "wellCount": "{active} giếng đang hoạt động"
+      },
+      "state": {
+        "reportingPaused": "Báo cáo sản lượng tạm dừng. Cập nhật lần cuối {time}. Lãi hợp đồng sẽ được quyết toán hồi tố khi hoạt động trở lại.",
+        "noActiveWell": "Không có giếng nào đang hoạt động.",
+        "disabled": "Deep Core hiện không khả dụng.",
+        "maintenance": "Đang bảo trì."
+      },
+      "empty": {
+        "cta": "Xem sản phẩm staking",
+        "ledgerNone": "Chưa có mục nào."
+      },
+      "nav": {
+        "crew": "Kíp thợ",
+        "depot": "Kho hậu cần",
+        "ledger": "Sổ ghi chép"
+      },
+      "crew": {
+        "title": "Kíp thợ",
+        "crew_boss": {
+          "name": "Hanna Sørren",
+          "role": "Trưởng giàn khoan (Giám sát hiện trường)"
+        },
+        "crew_mech": {
+          "name": "Dylan \"Chick\" Akabo",
+          "role": "Thợ cơ khí"
+        },
+        "crew_geo": {
+          "name": "Mei Lin",
+          "role": "Nhà địa chất"
+        },
+        "crew_ops": {
+          "name": "Omar Reiss",
+          "role": "Vận hành & Hậu cần"
+        },
+        "unit_k9": {
+          "name": "K-9 \"Core-Dog\"",
+          "role": "Đơn vị drone tự động hóa"
+        },
+        "state": {
+          "idle": "Chờ",
+          "working": "Đang vận hành",
+          "waiting": "Đang chờ (báo cáo bị trễ)",
+          "idle_empty": "Ngừng — không có giếng hoạt động",
+          "chapter_up": "Chuyển tầng"
+        }
+      },
+      "chapter": {
+        "1": {
+          "name": "Khoan bề mặt"
+        },
+        "2": {
+          "name": "Vượt tầng cát"
+        },
+        "3": {
+          "name": "Thềm bazan"
+        },
+        "4": {
+          "name": "Vực địa nhiệt"
+        },
+        "5": {
+          "name": "Hốc pha lê"
+        },
+        "6": {
+          "name": "Tầng Lõi"
+        }
+      },
+      "well": {
+        "badge": "Giếng #{seq} · Tầng {chapter}"
+      },
+      "stratum": {
+        "reached": "Đã đạt Tầng {n}"
+      },
+      "level": {
+        "unlocked": "Đã mở khóa: {items}"
+      },
+      "coreLog": {
+        "rank": "Nhật ký Lõi hạng {rank}",
+        "noYield": "Phần thưởng Nhật ký Lõi chỉ mang tính thẩm mỹ và không ảnh hưởng đến khoản chi trả."
+      },
+      "ledger": {
+        "title": "Sổ ghi chép",
+        "xpTotal": "Tổng XP",
+        "svTotal": "Tổng Salvage",
+        "sourceLift": "Sản lượng hằng ngày",
+        "sourceCharterOpen": "Mở giấy phép",
+        "sourceCharterComplete": "Hoàn tất giấy phép",
+        "sourceStratum": "Đạt tầng mới",
+        "sourceCoreLog": "Nhật ký Lõi"
+      },
+      "depot": {
+        "title": "Kho hậu cần",
+        "tabOutfitting": "Trang bị ngoài",
+        "balanceSV": "{n} SV",
+        "priceTiersTitle": "Mức giá",
+        "tier": {
+          "basic": "Biến thể cơ bản",
+          "standard": "Tiêu chuẩn",
+          "stratumLimited": "Theo tầng",
+          "coreLog": "Phần thưởng Nhật ký Lõi"
+        },
+        "slot": {
+          "crew_helmet": "Mũ bảo hộ kíp thợ",
+          "rig_paint": "Sơn giàn khoan",
+          "stratum_lighting": "Cài đặt ánh sáng theo tầng",
+          "drone_skin": "Giao diện drone",
+          "background_effect": "Hiệu ứng nền",
+          "rig_plate": "Biển tên giàn khoan"
+        },
+        "purchaseUnavailable": "Chức năng mua hiện chưa được kết nối."
+      },
+      "intro": {
+        "title": "Giấy phép đã được cấp.",
+        "body1": "Màn hình này hiển thị các vị thế staking của bạn dưới dạng giếng khoan.",
+        "body2": "Quyết toán được xử lý ở phía máy chủ và vẫn tiếp tục ngay cả khi bạn đóng màn hình này.",
+        "dismiss": "Đóng"
+      },
+      "pref": {
+        "title": "Hiển thị Deep Core",
+        "motionReduced": "Giảm chuyển động",
+        "hide": "Ẩn",
+        "hideHelp": "Việc ẩn không ảnh hưởng đến tiến trình hoặc khoản chi trả.",
+        "show": "Hiện"
+      },
+      "error": {
+        "GAME_LOAD_FAILED": "Không thể tải màn hình này. Chức năng staking vẫn hoạt động bình thường."
+      }
+    }
   },
   "deposit": {
     "backAria": "Quay lại",
@@ -626,7 +796,19 @@
     "product": "Gói",
     "principal": "Tiền gốc",
     "accrued": "Đã nhận",
-    "matures": "Đáo hạn"
+    "matures": "Đáo hạn",
+    "autoRenewWarning": {
+      "inlineTitle": "Giảm lãi suất sẽ từ chối {count, plural, one {# gia hạn tự động đang chờ} other {# gia hạn tự động đang chờ}}.",
+      "inlineBody": "{count, plural, one {# vị thế hoạt động} other {# vị thế hoạt động}} trên {productName} đã bật tự động gia hạn. Mỗi vị thế được kiểm tra so với lãi suất của sản phẩm này vào thời điểm đáo hạn. Nếu lãi suất được lưu thấp hơn lãi suất trên vị thế, gia hạn đó sẽ bị từ chối và tiền gốc sẽ được trả về ví của người dùng thay vì được gửi lại.",
+      "inlineRestore": "Nâng lãi suất lên trước khi vị thế đáo hạn sẽ khôi phục gia hạn của vị thế đó — chỉ giá trị vào thời điểm đáo hạn mới được sử dụng.",
+      "inlineSnapshot": "Các vị thế đã gửi giữ nguyên lãi suất lúc được gửi. Thay đổi này không ảnh hưởng đến thu nhập của bất kỳ vị thế hiện tại nào.",
+      "confirmTitle": "Lưu lãi suất thấp hơn trên {productName}?",
+      "confirmRates": "Lãi suất hàng ngày mới {newRate}% — hiện tại {oldRate}%",
+      "confirmBody": "{count, plural, one {# vị thế hoạt động} other {# vị thế hoạt động}} trên sản phẩm này có tự động gia hạn bật. Những gia hạn đó sẽ bị từ chối khi đáo hạn và tiền gốc sẽ được trả về ví của người dùng.",
+      "confirmSnapshot": "Các vị thế hiện tại giữ nguyên lãi suất lúc được gửi.",
+      "confirmYes": "Lưu lãi suất thấp hơn",
+      "confirmCancel": "Hủy"
+    }
   },
   "stakedSummary": {
     "title": "Staking",
@@ -665,5 +847,106 @@
     "withdrawLabel": "Rút",
     "depositToggleHint": "Bật/tắt việc người dùng nạp trên mạng này",
     "withdrawToggleHint": "Bật/tắt việc người dùng rút trên mạng này"
+  },
+  "oilfield": {
+    "title": "BANA Fields",
+    "subtitle": "Your staking positions, seen as a field.",
+    "statusStrip": "{n} wells on production",
+    "padEmpty": "Pad {n} — available",
+    "rigCaption": "{principal} {coin} · {productName}",
+    "depth": "Day {d} of {total}",
+    "countdown": "Total depth in {countdown}",
+    "tank": "{paid} {coin} credited of {full} {coin} full-term",
+    "accrualGap": "Accrued but not yet credited: {amount} {coin}",
+    "shiftReportTitle": "Shift report",
+    "shiftReportLine": "Well #{seq} · day {dayIndex}/{termDays} · +{amount} {coin}",
+    "shiftReportFooter": "Already credited to your rewards ledger.",
+    "shiftReportTruncation": "Showing the {n} most recent credits. Your full history is in your rewards ledger.",
+    "shiftReportDismiss": "Dismiss",
+    "completionTitle": "Total depth reached",
+    "completionBody": "{wellName} ran its full {termDays}-day term and credited {total} {coin}. Your {principal} {coin} is available again.",
+    "completionCta": "Spud another well",
+    "standby": "No wells on production. Your field is on standby.",
+    "reportingPaused": "Production reporting paused. Accrual continues; credited amounts will post when reporting resumes.",
+    "maintenance": "Operations are temporarily read-only for maintenance.",
+    "fieldLogTitle": "Field log",
+    "fieldLogEmpty": "No activity yet.",
+    "logSpudded": "Spudded {wellName} ({principal} {coin}, {termDays}-day term)",
+    "logCredited": "{wellName} credited +{amount} {coin} (day {d}/{total})",
+    "logCompleted": "{wellName} reached total depth after {termDays} days",
+    "logReportingPaused": "Production reporting paused",
+    "surveyStep1Title": "This is your field.",
+    "surveyStep1Body": "Each well is one staking position.",
+    "surveyStep2Title": "Wells take time.",
+    "surveyStep2Body": "A well produces every day and reaches total depth at the end of its term. It cannot be stopped early.",
+    "surveyStep3Title": "You choose the prospect.",
+    "surveyStep3Body": "Open products are the permits available today.",
+    "surveyNext": "Next",
+    "surveySkip": "Skip",
+    "surveyBack": "Back",
+    "surveyDone": "Go to permits",
+    "remoteWellsTitle": "Remote wells — producing, not shown on the yard.",
+    "totalDepthSettling": "Total depth reached. Settlement in progress.",
+    "menuLog": "Field log",
+    "menuSurvey": "About this field",
+    "motionPrefLabel": "Motion",
+    "motionPrefAuto": "Auto",
+    "motionPrefOn": "Motion on",
+    "motionPrefOff": "Motion off",
+    "back": "Back",
+    "loading": "Loading…",
+    "notEligibleTitle": "No field yet",
+    "notEligibleBody": "Your field appears once you've held a staking position.",
+    "backToStaking": "Back to Staking",
+    "rateSnapshot": "Daily rate",
+    "aprLabel": "APR",
+    "dayCounter": "Day {d} of {total}",
+    "ledgerTitle": "Per-day ledger",
+    "ledgerEmpty": "No credits yet.",
+    "loadEarlier": "Load earlier"
+  },
+  "referral": {
+    "pageTitle": "Mời bạn bè",
+    "subtitle": "Liên kết mời, mã giới thiệu và tóm tắt hoa hồng của bạn."
+  },
+  "emails": {
+    "autoRenewReminder": {
+      "subject": "Khoản gửi {productName} của bạn sẽ đáo hạn vào {maturityDate} và được đặt để tự động gia hạn",
+      "htmlIntro": "Khoản gửi {productName} của bạn sẽ đáo hạn vào {maturityDate}",
+      "body1": "Khoản gửi {principal} {coin} trên {productName} của bạn sẽ đáo hạn vào {maturityDate}.",
+      "body2": "Tự động gia hạn được bật cho khoản gửi này. Trừ khi bạn tắt nó trước khi đáo hạn, cùng số tiền — {principal} {coin} — sẽ được gửi lại trên {productName} trong {termDays} ngày nữa theo lãi suất được cung cấp vào thời điểm đó. Lãi đã nhận không được bao gồm.",
+      "lock": "Tiền gửi không thể rút trước khi kỳ hạn mới kết thúc.",
+      "body3": "Để tắt tự động gia hạn: mở BANA Wallet, đi đến Staking, tìm khoản gửi này trong Khoản gửi của tôi, và tắt tự động gia hạn. Chỉ cần một lần chạm, không có bước xác nhận, và bạn có thể làm điều này bất kỳ lúc nào trước {maturityDate}.",
+      "body4": "Nếu tự động gia hạn bị tắt khi khoản gửi này đáo hạn, tiền gốc của bạn sẽ đơn giản là khả dụng trong ví.",
+      "cta": "Quản lý khoản gửi này"
+    },
+    "autoRenewOutcome": {
+      "renewedSubject": "Khoản gửi {productName} của bạn đã được tự động gia hạn trong {termDays} ngày nữa",
+      "renewedIntro": "Khoản gửi của bạn trên {productName} đã đáo hạn vào {maturedAt} và được gửi lại.",
+      "renewedAmountLabel": "Số tiền được gửi lại",
+      "renewedProductLabel": "Sản phẩm",
+      "renewedTermLabel": "Kỳ hạn mới",
+      "renewedStartLabel": "Kỳ hạn mới bắt đầu",
+      "renewedEndLabel": "Kỳ hạn mới kết thúc",
+      "renewedInterestNote": "Lãi kiếm được trong kỳ hạn trước không được bao gồm — chỉ tiền gốc được gửi lại.",
+      "lock": "Tiền gửi không thể rút trước khi kỳ hạn mới kết thúc.",
+      "renewedStillOn": "Tự động gia hạn vẫn bật cho khoản gửi mới. Để tắt nó, mở Staking trong BANA Wallet và tắt nó trên khoản gửi này.",
+      "notRenewedSubject": "Khoản gửi {productName} của bạn đã đáo hạn và không được gia hạn",
+      "notRenewedIntro": "Khoản gửi của bạn trên {productName} đã đáo hạn vào {maturedAt} và không được gửi lại.",
+      "notRenewedPrincipalAvailable": "Tiền gốc {principal} {coin} của bạn khả dụng trong ví.",
+      "notRenewedCta": "Nếu bạn muốn gửi lại, hãy mở Staking trong BANA Wallet.",
+      "cta": "Xem khoản gửi này",
+      "reason": {
+        "FAILED_PRODUCT_CLOSED": "{productName} đã đóng để gửi mới.",
+        "FAILED_TERM_TOO_LONG": "Tự động gia hạn không khả dụng cho các khoản gửi có kỳ hạn dài hơn {maxTermDays} ngày.",
+        "FAILED_CAPACITY": "{productName} đã đầy.",
+        "FAILED_BELOW_MIN": "Tối thiểu cho {productName} hiện là {minAmount} {coin}.",
+        "FAILED_ABOVE_MAX": "Tối đa cho {productName} hiện là {maxAmount} {coin}.",
+        "FAILED_RATE_LOWERED": "Lãi suất cho {productName} hiện thấp hơn lãi suất trên khoản gửi của bạn, vì vậy chúng tôi không gia hạn theo những điều khoản khác.",
+        "FAILED_TERMS_CHANGED": "Các điều khoản của {productName} đã thay đổi.",
+        "FAILED_SYSTEM": "Chúng tôi không thể hoàn tất gia hạn.",
+        "FAILED_GRANTED_POSITION": "Chúng tôi không thể hoàn tất gia hạn."
+      }
+    }
   }
 }

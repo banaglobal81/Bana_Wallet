@@ -17,7 +17,8 @@
     "dashboard": "ダッシュボード",
     "adminConsole": "管理コンソール",
     "coins": "コイン",
-    "coinManagement": "コイン管理"
+    "coinManagement": "コイン管理",
+    "invite": "招待"
   },
   "login": {
     "title": "ログイン",
@@ -241,7 +242,176 @@
     "statusACTIVE": "進行中",
     "statusMATURED": "満期",
     "statusPAID": "支払済",
-    "maturedNote": "満期になると元本がウォレットに戻り、利息が支払われます。"
+    "maturedNote": "満期になると元本はウォレットで利用可能になります。獲得した利息は上に表示されている利息履歴に記録されますが、ウォレット残高への支払いはまだ行われません。",
+    "autoRenew": {
+      "optInLabel": "満期時に自動更新",
+      "optInHelp": "この期間が終了すると、同じ金額が再びこの商品に{termDays}日間ステーキングされます。既に獲得した利息は含まれません。満期前であればいつでもこれをオフにできます。",
+      "stateOff": "自動更新：オフ",
+      "stateOn": "自動更新：オン · {date}に更新予定",
+      "stateOnClosed": "自動更新：オン · この商品は新規ステーキングを受け付けていないため、更新ができない可能性があります。",
+      "stateOnOverCap": "自動更新：オン · このステーキングの期間が{maxTermDays}日を超えているため更新されません。元本は{date}に満期を迎えるときに利用可能になります。",
+      "stateOnGranted": "自動更新：オン · このステーキングはBANAから付与されたため更新されません。元本は{date}に満期を迎えるときに利用可能になります。",
+      "offToast": "自動更新がオフになりました。元本はこのステーキングが{date}に満期を迎えるときに利用可能になります。",
+      "confirmTitle": "自動更新をオンにしますか？",
+      "confirmBody1": "{maturityDate}に、{principal} {coin}がこの商品に再度{termDays}日間ステーキングされ、その時点で提示される金利が適用されます。",
+      "confirmLock": "ステーキングされた資金は新しい期間が終了する前に引き出すことはできません。",
+      "confirmBody2": "既に獲得した利息は再ステーキングされません。",
+      "confirmBody3": "{maturityDate}前であればいつでもこれをオフにできます。",
+      "confirmYes": "オンにする",
+      "confirmCancel": "キャンセル",
+      "renewedHeading": "自動更新されました",
+      "renewedCopy": "{principal} {coin}がこの商品に再度{termDays}日間ステーキングされました（日利{dailyRatePct}%）。新しい期間は{startAt}から開始されました。前の期間に獲得した利息は含まれていません。",
+      "notRenewedHeading": "更新されませんでした",
+      "notRenewedClosedCopy": "{productName}は新規ステーキングを受け付けていません。元本{principal} {coin}はウォレットで利用可能です。",
+      "notRenewedTermTooLongCopy": "自動更新は期間が{maxTermDays}日を超えるステーキングでは利用できません。元本{principal} {coin}はウォレットで利用可能です。",
+      "notRenewedCapacityCopy": "{productName}は満杯です。元本{principal} {coin}はウォレットで利用可能です。",
+      "notRenewedBelowMinCopy": "{productName}の最小金額が{minAmount} {coin}に変更されました。元本{principal} {coin}はウォレットで利用可能です。",
+      "notRenewedAboveMaxCopy": "{productName}の最大金額が{maxAmount} {coin}に変更されました。元本{principal} {coin}はウォレットで利用可能です。",
+      "notRenewedRateLoweredCopy": "{productName}の金利が日利{dailyRatePct}%に変更されました。これはステーキングの日利{oldRate}%より低くなっています。異なる条件では更新しませんでした。元本{principal} {coin}はウォレットで利用可能です。",
+      "notRenewedTermsChangedCopy": "{productName}の条件が変更されました。元本{principal} {coin}はウォレットで利用可能です。",
+      "notRenewedSystemErrorCopy": "更新を完了できませんでした。元本{principal} {coin}はウォレットで利用可能です。",
+      "error": {
+        "INVALID_REQUEST": "無効なリクエストです。",
+        "POSITION_NOT_FOUND": "ステーキングが見つかりません。",
+        "POSITION_NOT_ACTIVE": "このステーキングは既に満期になっているため、自動更新は変更できません。",
+        "AUTO_RENEW_GRANTED_POSITION": "このステーキングはBANAから付与されたため更新に設定できません。満期になると元本はウォレットで利用可能になります。",
+        "AUTO_RENEW_TERM_TOO_LONG": "自動更新は期間が{maxTermDays}日以下のステーキングで利用できます。このステーキングの期間は{termDays}日です。"
+      }
+    },
+    "game": {
+      "hud": {
+        "stratum": "地層 {n}・{name}",
+        "level": "LV {level}",
+        "xpProgress": "{current}/{next} XP",
+        "operatingDays": "累計稼働日数 {days}日",
+        "wellCount": "稼働中の坑井 {active}基"
+      },
+      "state": {
+        "reportingPaused": "産出報告は一時停止中です。最終更新 {time}。契約利息は再開時に遡って精算されます。",
+        "noActiveWell": "稼働中の坑井はありません。",
+        "disabled": "現在ディープコアはご利用いただけません。",
+        "maintenance": "メンテナンス中です。"
+      },
+      "empty": {
+        "cta": "ステーキング商品を見る",
+        "ledgerNone": "まだ記録はありません。"
+      },
+      "nav": {
+        "crew": "クルー",
+        "depot": "デポ",
+        "ledger": "記録"
+      },
+      "crew": {
+        "title": "クルー",
+        "crew_boss": {
+          "name": "ハンナ・セーレン",
+          "role": "リグボス(現場統括)"
+        },
+        "crew_mech": {
+          "name": "ディラン・アカボ",
+          "role": "整備士"
+        },
+        "crew_geo": {
+          "name": "メイ・リン",
+          "role": "地質学者"
+        },
+        "crew_ops": {
+          "name": "オマール・ライス",
+          "role": "運用・物流"
+        },
+        "unit_k9": {
+          "name": "K-9「コアドッグ」",
+          "role": "自動化ドローンユニット"
+        },
+        "state": {
+          "idle": "待機",
+          "working": "稼働中",
+          "waiting": "待機中(報告遅延)",
+          "idle_empty": "休止 — 稼働中の坑井なし",
+          "chapter_up": "地層移行"
+        }
+      },
+      "chapter": {
+        "1": {
+          "name": "地表掘削"
+        },
+        "2": {
+          "name": "砂層突破"
+        },
+        "3": {
+          "name": "玄武岩棚"
+        },
+        "4": {
+          "name": "地熱深部"
+        },
+        "5": {
+          "name": "結晶空洞"
+        },
+        "6": {
+          "name": "コア層"
+        }
+      },
+      "well": {
+        "badge": "坑井 #{seq}・地層 {chapter}"
+      },
+      "stratum": {
+        "reached": "地層 {n} 到達"
+      },
+      "level": {
+        "unlocked": "解放: {items}"
+      },
+      "coreLog": {
+        "rank": "ディープログ {rank}段",
+        "noYield": "ディープログの報酬は外観のみで、支払額には影響しません。"
+      },
+      "ledger": {
+        "title": "記録",
+        "xpTotal": "XP合計",
+        "svTotal": "サルベージ合計",
+        "sourceLift": "日次揚収",
+        "sourceCharterOpen": "認可開始",
+        "sourceCharterComplete": "認可完遂",
+        "sourceStratum": "地層到達",
+        "sourceCoreLog": "ディープログ"
+      },
+      "depot": {
+        "title": "デポ",
+        "tabOutfitting": "外装",
+        "balanceSV": "サルベージ {n}",
+        "priceTiersTitle": "価格帯",
+        "tier": {
+          "basic": "基本バリエーション",
+          "standard": "標準",
+          "stratumLimited": "地層限定",
+          "coreLog": "ディープログ報酬"
+        },
+        "slot": {
+          "crew_helmet": "クルーヘルメット",
+          "rig_paint": "リグ塗装",
+          "stratum_lighting": "地層照明プリセット",
+          "drone_skin": "ドローンスキン",
+          "background_effect": "背景エフェクト",
+          "rig_plate": "リグ銘板"
+        },
+        "purchaseUnavailable": "購入処理は現在接続されていません。"
+      },
+      "intro": {
+        "title": "認可書が発行されました。",
+        "body1": "この画面はあなたのステーキングポジションを坑井として表示します。",
+        "body2": "精算はサーバー側で処理され、この画面を閉じても継続します。",
+        "dismiss": "閉じる"
+      },
+      "pref": {
+        "title": "ディープコア表示",
+        "motionReduced": "モーションを減らす",
+        "hide": "非表示",
+        "hideHelp": "非表示にしても進行状況や支払いには影響しません。",
+        "show": "表示する"
+      },
+      "error": {
+        "GAME_LOAD_FAILED": "画面を読み込めませんでした。ステーキング機能は通常どおりご利用いただけます。"
+      }
+    }
   },
   "deposit": {
     "backAria": "戻る",
@@ -626,7 +796,19 @@
     "product": "商品",
     "principal": "元本",
     "accrued": "獲得",
-    "matures": "満期"
+    "matures": "満期",
+    "autoRenewWarning": {
+      "inlineTitle": "金利を引き下げると{count, plural, one {# 件の保留中の自動更新} other {# 件の保留中の自動更新}}が拒否されます。",
+      "inlineBody": "{productName}の{count, plural, one {# 件のアクティブなポジション} other {# 件のアクティブなポジション}}で自動更新がオンになっています。それぞれは満期時のこの商品の金利に対して確認されます。保存された金利がポジションの金利より低い場合、その更新は拒否され、元本は再度ステーキングされるのではなくユーザーのウォレットに返却されます。",
+      "inlineRestore": "ポジションが満期になる前に金利を引き上げると、そのポジションの更新が復元されます。満期時点の値のみが使用されます。",
+      "inlineSnapshot": "既にステーキングされているポジションはステーキングされた時点の金利を保ちます。この変更は既存ポジションの収益に影響しません。",
+      "confirmTitle": "{productName}でより低い金利を保存しますか？",
+      "confirmRates": "新しい日利{newRate}% — 現在{oldRate}%",
+      "confirmBody": "この商品の{count, plural, one {# 件のアクティブなポジション} other {# 件のアクティブなポジション}}で自動更新がオンになっています。これらの更新は満期時に拒否され、元本はユーザーのウォレットに返却されます。",
+      "confirmSnapshot": "既存ポジションはステーキングされた時点の金利を保ちます。",
+      "confirmYes": "より低い金利を保存",
+      "confirmCancel": "キャンセル"
+    }
   },
   "stakedSummary": {
     "title": "ステーキング",
@@ -665,5 +847,106 @@
     "withdrawLabel": "出金",
     "depositToggleHint": "このネットワークでの入金可否を切り替えます",
     "withdrawToggleHint": "このネットワークでの出金可否を切り替えます"
+  },
+  "oilfield": {
+    "title": "BANA Fields",
+    "subtitle": "Your staking positions, seen as a field.",
+    "statusStrip": "{n} wells on production",
+    "padEmpty": "Pad {n} — available",
+    "rigCaption": "{principal} {coin} · {productName}",
+    "depth": "Day {d} of {total}",
+    "countdown": "Total depth in {countdown}",
+    "tank": "{paid} {coin} credited of {full} {coin} full-term",
+    "accrualGap": "Accrued but not yet credited: {amount} {coin}",
+    "shiftReportTitle": "Shift report",
+    "shiftReportLine": "Well #{seq} · day {dayIndex}/{termDays} · +{amount} {coin}",
+    "shiftReportFooter": "Already credited to your rewards ledger.",
+    "shiftReportTruncation": "Showing the {n} most recent credits. Your full history is in your rewards ledger.",
+    "shiftReportDismiss": "Dismiss",
+    "completionTitle": "Total depth reached",
+    "completionBody": "{wellName} ran its full {termDays}-day term and credited {total} {coin}. Your {principal} {coin} is available again.",
+    "completionCta": "Spud another well",
+    "standby": "No wells on production. Your field is on standby.",
+    "reportingPaused": "Production reporting paused. Accrual continues; credited amounts will post when reporting resumes.",
+    "maintenance": "Operations are temporarily read-only for maintenance.",
+    "fieldLogTitle": "Field log",
+    "fieldLogEmpty": "No activity yet.",
+    "logSpudded": "Spudded {wellName} ({principal} {coin}, {termDays}-day term)",
+    "logCredited": "{wellName} credited +{amount} {coin} (day {d}/{total})",
+    "logCompleted": "{wellName} reached total depth after {termDays} days",
+    "logReportingPaused": "Production reporting paused",
+    "surveyStep1Title": "This is your field.",
+    "surveyStep1Body": "Each well is one staking position.",
+    "surveyStep2Title": "Wells take time.",
+    "surveyStep2Body": "A well produces every day and reaches total depth at the end of its term. It cannot be stopped early.",
+    "surveyStep3Title": "You choose the prospect.",
+    "surveyStep3Body": "Open products are the permits available today.",
+    "surveyNext": "Next",
+    "surveySkip": "Skip",
+    "surveyBack": "Back",
+    "surveyDone": "Go to permits",
+    "remoteWellsTitle": "Remote wells — producing, not shown on the yard.",
+    "totalDepthSettling": "Total depth reached. Settlement in progress.",
+    "menuLog": "Field log",
+    "menuSurvey": "About this field",
+    "motionPrefLabel": "Motion",
+    "motionPrefAuto": "Auto",
+    "motionPrefOn": "Motion on",
+    "motionPrefOff": "Motion off",
+    "back": "Back",
+    "loading": "Loading…",
+    "notEligibleTitle": "No field yet",
+    "notEligibleBody": "Your field appears once you've held a staking position.",
+    "backToStaking": "Back to Staking",
+    "rateSnapshot": "Daily rate",
+    "aprLabel": "APR",
+    "dayCounter": "Day {d} of {total}",
+    "ledgerTitle": "Per-day ledger",
+    "ledgerEmpty": "No credits yet.",
+    "loadEarlier": "Load earlier"
+  },
+  "referral": {
+    "pageTitle": "招待",
+    "subtitle": "招待リンク、紹介コード、コミッションの概要です。"
+  },
+  "emails": {
+    "autoRenewReminder": {
+      "subject": "あなたの {productName} ステーキングは {maturityDate} に満期を迎え、自動更新に設定されています",
+      "htmlIntro": "あなたの {productName} ステーキングは {maturityDate} に満期を迎えます",
+      "body1": "{productName} での {principal} {coin} のステーキングは {maturityDate} に満期を迎えます。",
+      "body2": "このステーキングの自動更新がオンになっています。満期前にこれをオフにしない限り、同じ金額 — {principal} {coin} — が {productName} に再度 {termDays} 日間ステーキングされ、その時点で提示される金利が適用されます。既に獲得した利息は含まれません。",
+      "lock": "ステーキングされた資金は新しい期間が終了する前に引き出すことはできません。",
+      "body3": "自動更新をオフにするには：BANA Wallet を開き、ステーキングに移動し、マイステーキングからこのステーキングを見つけて、自動更新をオフにします。1 タップで済み、確認ステップはなく、{maturityDate} 前であればいつでも行えます。",
+      "body4": "このステーキングが満期を迎えるときに自動更新がオフの場合、元本は単にウォレットで利用可能になります。",
+      "cta": "このステーキングを管理"
+    },
+    "autoRenewOutcome": {
+      "renewedSubject": "あなたの {productName} ステーキングが {termDays} 日間再び更新されました",
+      "renewedIntro": "{productName} でのステーキングは {maturedAt} に満期を迎え、再びステーキングされました。",
+      "renewedAmountLabel": "再びステーキングされた金額",
+      "renewedProductLabel": "商品",
+      "renewedTermLabel": "新しい期間",
+      "renewedStartLabel": "新しい期間開始",
+      "renewedEndLabel": "新しい期間終了",
+      "renewedInterestNote": "前の期間に獲得した利息は含まれていません — 元本のみが再ステーキングされました。",
+      "lock": "ステーキングされた資金は新しい期間が終了する前に引き出すことはできません。",
+      "renewedStillOn": "新しいステーキングの自動更新はまだオンです。オフにするには、BANA Wallet でステーキングを開き、このステーキングで自動更新をオフにしてください。",
+      "notRenewedSubject": "あなたの {productName} ステーキングは満期を迎え、更新されませんでした",
+      "notRenewedIntro": "{productName} でのステーキングは {maturedAt} に満期を迎え、再ステーキングされませんでした。",
+      "notRenewedPrincipalAvailable": "元本 {principal} {coin} はウォレットで利用可能です。",
+      "notRenewedCta": "再ステーキングしたい場合は、BANA Wallet でステーキングを開いてください。",
+      "cta": "このステーキングを表示",
+      "reason": {
+        "FAILED_PRODUCT_CLOSED": "{productName} は新規ステーキングを受け付けていません。",
+        "FAILED_TERM_TOO_LONG": "自動更新は期間が {maxTermDays} 日を超えるステーキングでは利用できません。",
+        "FAILED_CAPACITY": "{productName} は満杯です。",
+        "FAILED_BELOW_MIN": "{productName} の最小金額が {minAmount} {coin} に変更されました。",
+        "FAILED_ABOVE_MAX": "{productName} の最大金額が {maxAmount} {coin} に変更されました。",
+        "FAILED_RATE_LOWERED": "{productName} の金利がステーキングの金利より低くなったため、異なる条件では更新しませんでした。",
+        "FAILED_TERMS_CHANGED": "{productName} の条件が変更されました。",
+        "FAILED_SYSTEM": "更新を完了できませんでした。",
+        "FAILED_GRANTED_POSITION": "更新を完了できませんでした。"
+      }
+    }
   }
 }

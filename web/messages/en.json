@@ -17,7 +17,8 @@
     "dashboard": "Dashboard",
     "adminConsole": "Admin Console",
     "coins": "Coins",
-    "coinManagement": "Coin Management"
+    "coinManagement": "Coin Management",
+    "invite": "Invite"
   },
   "login": {
     "title": "Sign in",
@@ -241,7 +242,176 @@
     "statusACTIVE": "Active",
     "statusMATURED": "Matured",
     "statusPAID": "Paid",
-    "maturedNote": "When a stake matures, your principal returns to your wallet and the earned interest is paid out."
+    "maturedNote": "When a stake matures, your principal becomes available in your wallet. Interest earned is credited to your staking ledger, shown above — it is not yet paid out to your wallet balance.",
+    "autoRenew": {
+      "optInLabel": "Auto-renew at maturity",
+      "optInHelp": "When this term ends, the same amount is staked again on this product for another {termDays} days. Interest already earned is not included. You can turn this off any time before maturity.",
+      "stateOff": "Auto-renew: Off",
+      "stateOn": "Auto-renew: On · renews {date}",
+      "stateOnClosed": "Auto-renew: On · this product is closed to new stakes, so renewal will probably not be possible.",
+      "stateOnOverCap": "Auto-renew: On · this stake's term is longer than {maxTermDays} days, so it will not renew. Your principal will be available when it matures on {date}.",
+      "stateOnGranted": "Auto-renew: On · this stake was granted by BANA, so it will not renew. Your principal will be available when it matures on {date}.",
+      "offToast": "Auto-renew is off. Your principal will be available when this stake matures on {date}.",
+      "confirmTitle": "Turn on auto-renew?",
+      "confirmBody1": "On {maturityDate}, {principal} {coin} will be staked again on {productName} for another {termDays} days at the rate offered at that time.",
+      "confirmLock": "Staked funds cannot be withdrawn before the new term ends.",
+      "confirmBody2": "Interest already earned is not restaked.",
+      "confirmBody3": "You can turn this off any time before {maturityDate}.",
+      "confirmYes": "Turn on",
+      "confirmCancel": "Cancel",
+      "renewedHeading": "Auto-renewed",
+      "renewedCopy": "{principal} {coin} was staked again on {productName} for {termDays} days at {dailyRatePct}%/day. The new term started {startAt}. Interest earned on the previous term was not included.",
+      "notRenewedHeading": "Not renewed",
+      "notRenewedClosedCopy": "{productName} is closed to new stakes. Your {principal} {coin} principal is available in your wallet.",
+      "notRenewedTermTooLongCopy": "Auto-renew isn't available on stakes with a term longer than {maxTermDays} days. Your {principal} {coin} principal is available in your wallet.",
+      "notRenewedCapacityCopy": "{productName} is full. Your {principal} {coin} principal is available in your wallet.",
+      "notRenewedBelowMinCopy": "The minimum for {productName} is now {minAmount} {coin}. Your {principal} {coin} principal is available in your wallet.",
+      "notRenewedAboveMaxCopy": "The maximum for {productName} is now {maxAmount} {coin}. Your {principal} {coin} principal is available in your wallet.",
+      "notRenewedRateLoweredCopy": "The rate for {productName} changed to {dailyRatePct}%/day, lower than the {oldRate}%/day on your stake. We didn't renew on different terms. Your {principal} {coin} principal is available in your wallet.",
+      "notRenewedTermsChangedCopy": "The terms of {productName} changed. Your {principal} {coin} principal is available in your wallet.",
+      "notRenewedSystemErrorCopy": "We couldn't complete the renewal. Your {principal} {coin} principal is available in your wallet.",
+      "error": {
+        "INVALID_REQUEST": "Invalid request.",
+        "POSITION_NOT_FOUND": "Stake not found.",
+        "POSITION_NOT_ACTIVE": "This stake has already matured — auto-renew can no longer be changed.",
+        "AUTO_RENEW_GRANTED_POSITION": "This stake was granted by BANA and can't be set to renew. When it matures, your principal becomes available in your wallet.",
+        "AUTO_RENEW_TERM_TOO_LONG": "Auto-renew is available on stakes with a term of {maxTermDays} days or less. This stake's term is {termDays} days."
+      }
+    },
+    "game": {
+      "hud": {
+        "stratum": "Stratum {n} · {name}",
+        "level": "LV {level}",
+        "xpProgress": "{current}/{next} XP",
+        "operatingDays": "{days} operating days",
+        "wellCount": "{active} wells active"
+      },
+      "state": {
+        "reportingPaused": "Output reporting is paused. Last updated {time}. Contract interest settles on resume.",
+        "noActiveWell": "No active wells.",
+        "disabled": "Deep Core is currently unavailable.",
+        "maintenance": "Under maintenance."
+      },
+      "empty": {
+        "cta": "View staking products",
+        "ledgerNone": "No entries yet."
+      },
+      "nav": {
+        "crew": "Crew",
+        "depot": "Depot",
+        "ledger": "Ledger"
+      },
+      "crew": {
+        "title": "Crew",
+        "crew_boss": {
+          "name": "Hanna Sørren",
+          "role": "Rig Boss (Field Lead)"
+        },
+        "crew_mech": {
+          "name": "Dylan \"Chick\" Akabo",
+          "role": "Mechanic"
+        },
+        "crew_geo": {
+          "name": "Mei Lin",
+          "role": "Geologist"
+        },
+        "crew_ops": {
+          "name": "Omar Reiss",
+          "role": "Operations & Logistics"
+        },
+        "unit_k9": {
+          "name": "K-9 \"Core-Dog\"",
+          "role": "Automation Drone Unit"
+        },
+        "state": {
+          "idle": "Idle",
+          "working": "Working",
+          "waiting": "Waiting",
+          "idle_empty": "Idle — no active wells",
+          "chapter_up": "Stratum change"
+        }
+      },
+      "chapter": {
+        "1": {
+          "name": "Surface Cut"
+        },
+        "2": {
+          "name": "The Sand Barrier"
+        },
+        "3": {
+          "name": "Basalt Shelf"
+        },
+        "4": {
+          "name": "Geothermal Deep"
+        },
+        "5": {
+          "name": "Crystal Vault"
+        },
+        "6": {
+          "name": "Core Stratum"
+        }
+      },
+      "well": {
+        "badge": "Well #{seq} · Stratum {chapter}"
+      },
+      "stratum": {
+        "reached": "Stratum {n} reached"
+      },
+      "level": {
+        "unlocked": "Unlocked: {items}"
+      },
+      "coreLog": {
+        "rank": "Core Log rank {rank}",
+        "noYield": "Core Log rewards are cosmetic only and do not affect payouts."
+      },
+      "ledger": {
+        "title": "Ledger",
+        "xpTotal": "Total XP",
+        "svTotal": "Total Salvage",
+        "sourceLift": "Daily lift",
+        "sourceCharterOpen": "Charter opened",
+        "sourceCharterComplete": "Charter completed",
+        "sourceStratum": "Stratum reached",
+        "sourceCoreLog": "Core Log"
+      },
+      "depot": {
+        "title": "Depot",
+        "tabOutfitting": "Outfitting",
+        "balanceSV": "{n} SV",
+        "priceTiersTitle": "Price tiers",
+        "tier": {
+          "basic": "Basic variant",
+          "standard": "Standard",
+          "stratumLimited": "Stratum-gated",
+          "coreLog": "Core Log reward"
+        },
+        "slot": {
+          "crew_helmet": "Crew helmet",
+          "rig_paint": "Rig paint",
+          "stratum_lighting": "Stratum lighting preset",
+          "drone_skin": "Drone skin",
+          "background_effect": "Background effect",
+          "rig_plate": "Rig plate"
+        },
+        "purchaseUnavailable": "Purchases are not yet connected."
+      },
+      "intro": {
+        "title": "Charter issued.",
+        "body1": "This view shows your staking positions as wells.",
+        "body2": "Settlement runs server-side and continues even when this view is closed.",
+        "dismiss": "Close"
+      },
+      "pref": {
+        "title": "Deep Core display",
+        "motionReduced": "Reduce motion",
+        "hide": "Hide",
+        "hideHelp": "Hiding does not affect progress or payouts.",
+        "show": "Show"
+      },
+      "error": {
+        "GAME_LOAD_FAILED": "Could not load the view. Staking works normally."
+      }
+    }
   },
   "deposit": {
     "backAria": "Back",
@@ -626,7 +796,19 @@
     "product": "Product",
     "principal": "Principal",
     "accrued": "Earned",
-    "matures": "Matures"
+    "matures": "Matures",
+    "autoRenewWarning": {
+      "inlineTitle": "Lowering the rate will refuse {count, plural, one {# pending auto-renewal} other {# pending auto-renewals}}.",
+      "inlineBody": "{count, plural, one {# active position} other {# active positions}} on {productName} {count, plural, one {has} other {have}} auto-renew on. Each one is checked against this product's rate at the moment it matures. If the saved rate is lower than the rate on the position, that renewal is refused and the principal is released to the user's wallet instead of being staked again.",
+      "inlineRestore": "Raising the rate back before a position matures restores that position's renewal — only the value at the moment of maturity is used.",
+      "inlineSnapshot": "Positions already staked keep the rate they were staked at. This change does not alter what any existing position earns.",
+      "confirmTitle": "Save a lower rate on {productName}?",
+      "confirmRates": "New daily rate {newRate}% — currently {oldRate}%.",
+      "confirmBody": "{count, plural, one {# active position} other {# active positions}} on this product {count, plural, one {has} other {have}} auto-renew on. Those renewals will be refused at maturity and the principal released to the user's wallet.",
+      "confirmSnapshot": "Existing positions keep the rate they were staked at.",
+      "confirmYes": "Save lower rate",
+      "confirmCancel": "Cancel"
+    }
   },
   "stakedSummary": {
     "title": "Staking",
@@ -665,5 +847,106 @@
     "withdrawLabel": "Withdraw",
     "depositToggleHint": "Toggle whether users can deposit on this network",
     "withdrawToggleHint": "Toggle whether users can withdraw on this network"
+  },
+  "oilfield": {
+    "title": "BANA Fields",
+    "subtitle": "Your staking positions, seen as a field.",
+    "statusStrip": "{n} wells on production",
+    "padEmpty": "Pad {n} — available",
+    "rigCaption": "{principal} {coin} · {productName}",
+    "depth": "Day {d} of {total}",
+    "countdown": "Total depth in {countdown}",
+    "tank": "{paid} {coin} credited of {full} {coin} full-term",
+    "accrualGap": "Accrued but not yet credited: {amount} {coin}",
+    "shiftReportTitle": "Shift report",
+    "shiftReportLine": "Well #{seq} · day {dayIndex}/{termDays} · +{amount} {coin}",
+    "shiftReportFooter": "Already credited to your rewards ledger.",
+    "shiftReportTruncation": "Showing the {n} most recent credits. Your full history is in your rewards ledger.",
+    "shiftReportDismiss": "Dismiss",
+    "completionTitle": "Total depth reached",
+    "completionBody": "{wellName} ran its full {termDays}-day term and credited {total} {coin}. Your {principal} {coin} is available again.",
+    "completionCta": "Spud another well",
+    "standby": "No wells on production. Your field is on standby.",
+    "reportingPaused": "Production reporting paused. Accrual continues; credited amounts will post when reporting resumes.",
+    "maintenance": "Operations are temporarily read-only for maintenance.",
+    "fieldLogTitle": "Field log",
+    "fieldLogEmpty": "No activity yet.",
+    "logSpudded": "Spudded {wellName} ({principal} {coin}, {termDays}-day term)",
+    "logCredited": "{wellName} credited +{amount} {coin} (day {d}/{total})",
+    "logCompleted": "{wellName} reached total depth after {termDays} days",
+    "logReportingPaused": "Production reporting paused",
+    "surveyStep1Title": "This is your field.",
+    "surveyStep1Body": "Each well is one staking position.",
+    "surveyStep2Title": "Wells take time.",
+    "surveyStep2Body": "A well produces every day and reaches total depth at the end of its term. It cannot be stopped early.",
+    "surveyStep3Title": "You choose the prospect.",
+    "surveyStep3Body": "Open products are the permits available today.",
+    "surveyNext": "Next",
+    "surveySkip": "Skip",
+    "surveyBack": "Back",
+    "surveyDone": "Go to permits",
+    "remoteWellsTitle": "Remote wells — producing, not shown on the yard.",
+    "totalDepthSettling": "Total depth reached. Settlement in progress.",
+    "menuLog": "Field log",
+    "menuSurvey": "About this field",
+    "motionPrefLabel": "Motion",
+    "motionPrefAuto": "Auto",
+    "motionPrefOn": "Motion on",
+    "motionPrefOff": "Motion off",
+    "back": "Back",
+    "loading": "Loading…",
+    "notEligibleTitle": "No field yet",
+    "notEligibleBody": "Your field appears once you've held a staking position.",
+    "backToStaking": "Back to Staking",
+    "rateSnapshot": "Daily rate",
+    "aprLabel": "APR",
+    "dayCounter": "Day {d} of {total}",
+    "ledgerTitle": "Per-day ledger",
+    "ledgerEmpty": "No credits yet.",
+    "loadEarlier": "Load earlier"
+  },
+  "referral": {
+    "pageTitle": "Invite",
+    "subtitle": "Your invite link, referral code, and commission summary."
+  },
+  "emails": {
+    "autoRenewReminder": {
+      "subject": "Your {productName} stake matures on {maturityDate} and is set to renew",
+      "htmlIntro": "Your {productName} stake matures on {maturityDate}",
+      "body1": "Your stake of {principal} {coin} on {productName} matures on {maturityDate}.",
+      "body2": "Auto-renew is on for this stake. Unless you turn it off before then, the same amount — {principal} {coin} — will be staked again on {productName} for another {termDays} days at the rate offered at that time. Interest already earned is not included.",
+      "lock": "Staked funds cannot be withdrawn before the new term ends.",
+      "body3": "To turn auto-renew off: open BANA Wallet, go to Staking, find this stake under My Stakes, and switch auto-renew off. It takes one tap, there is no confirmation step, and you can do it any time before {maturityDate}.",
+      "body4": "If auto-renew is off when this stake matures, your principal simply becomes available in your wallet.",
+      "cta": "Manage this stake"
+    },
+    "autoRenewOutcome": {
+      "renewedSubject": "Your {productName} stake renewed for another {termDays} days",
+      "renewedIntro": "Your stake on {productName} matured on {maturedAt} and was staked again.",
+      "renewedAmountLabel": "Amount staked again",
+      "renewedProductLabel": "Product",
+      "renewedTermLabel": "New term",
+      "renewedStartLabel": "New term started",
+      "renewedEndLabel": "New term ends",
+      "renewedInterestNote": "Interest earned on the previous term was not included — only the principal was staked again.",
+      "lock": "Staked funds cannot be withdrawn before the new term ends.",
+      "renewedStillOn": "Auto-renew is still on for the new stake. To turn it off, open Staking in BANA Wallet and switch it off on this stake.",
+      "notRenewedSubject": "Your {productName} stake matured and was not renewed",
+      "notRenewedIntro": "Your stake on {productName} matured on {maturedAt} and was not staked again.",
+      "notRenewedPrincipalAvailable": "Your {principal} {coin} principal is available in your wallet.",
+      "notRenewedCta": "If you want to stake it again, open Staking in BANA Wallet.",
+      "cta": "View this stake",
+      "reason": {
+        "FAILED_PRODUCT_CLOSED": "{productName} is closed to new stakes.",
+        "FAILED_TERM_TOO_LONG": "Auto-renew isn't available on stakes with a term longer than {maxTermDays} days.",
+        "FAILED_CAPACITY": "{productName} is full.",
+        "FAILED_BELOW_MIN": "The minimum stake for {productName} is now {minAmount} {coin}, which is more than your stake.",
+        "FAILED_ABOVE_MAX": "The maximum stake for {productName} is now {maxAmount} {coin}, which is less than your stake.",
+        "FAILED_RATE_LOWERED": "The rate for {productName} is now lower than the rate on your stake, so it was not staked again on different terms.",
+        "FAILED_TERMS_CHANGED": "The terms of {productName} changed.",
+        "FAILED_SYSTEM": "We couldn't complete the renewal.",
+        "FAILED_GRANTED_POSITION": "We couldn't complete the renewal."
+      }
+    }
   }
 }

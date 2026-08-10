@@ -17,7 +17,8 @@
     "dashboard": "仪表板",
     "adminConsole": "管理控制台",
     "coins": "币种",
-    "coinManagement": "币种管理"
+    "coinManagement": "币种管理",
+    "invite": "邀请"
   },
   "login": {
     "title": "登录",
@@ -241,7 +242,176 @@
     "statusACTIVE": "进行中",
     "statusMATURED": "已到期",
     "statusPAID": "已支付",
-    "maturedNote": "质押到期后本金返回您的钱包，利息将发放。"
+    "maturedNote": "质押到期后，本金将在您的钱包中变为可用。已赚取的利息会记入上方显示的利息账本，但尚未支付到您的钱包余额。",
+    "autoRenew": {
+      "optInLabel": "到期时自动续约",
+      "optInHelp": "此期限结束时，同一金额将在本产品再次质押{termDays}天。已赚取的利息不包含在内。您可以在到期前随时将其关闭。",
+      "stateOff": "自动续约：已关闭",
+      "stateOn": "自动续约：已启用 · 将在{date}续约",
+      "stateOnClosed": "自动续约：已启用 · 本产品已停止接受新的质押，因此续约可能无法进行。",
+      "stateOnOverCap": "自动续约：已启用 · 此质押的期限超过{maxTermDays}天，因此将不会续约。您的本金将在{date}到期时变为可用。",
+      "stateOnGranted": "自动续约：已启用 · 此质押由BANA授予，因此将不会续约。您的本金将在{date}到期时变为可用。",
+      "offToast": "自动续约已关闭。您的本金将在此质押于{date}到期时变为可用。",
+      "confirmTitle": "启用自动续约？",
+      "confirmBody1": "在{maturityDate}，{principal} {coin}将在本产品再次质押{termDays}天，按那时提供的利率计算。",
+      "confirmLock": "质押的资金在新期限结束前无法提取。",
+      "confirmBody2": "已赚取的利息不会再次质押。",
+      "confirmBody3": "您可以在{maturityDate}前随时将其关闭。",
+      "confirmYes": "启用",
+      "confirmCancel": "取消",
+      "renewedHeading": "已自动续约",
+      "renewedCopy": "{principal} {coin}已在本产品再次质押{termDays}天（日利率{dailyRatePct}%）。新期限从{startAt}开始。前一期限赚取的利息未包含在内。",
+      "notRenewedHeading": "未续约",
+      "notRenewedClosedCopy": "{productName}已停止接受新的质押。您的本金{principal} {coin}可在钱包中获得。",
+      "notRenewedTermTooLongCopy": "自动续约不适用于期限超过{maxTermDays}天的质押。您的本金{principal} {coin}可在钱包中获得。",
+      "notRenewedCapacityCopy": "{productName}已满。您的本金{principal} {coin}可在钱包中获得。",
+      "notRenewedBelowMinCopy": "{productName}的最低金额现为{minAmount} {coin}。您的本金{principal} {coin}可在钱包中获得。",
+      "notRenewedAboveMaxCopy": "{productName}的最高金额现为{maxAmount} {coin}。您的本金{principal} {coin}可在钱包中获得。",
+      "notRenewedRateLoweredCopy": "{productName}的利率已变更为日利率{dailyRatePct}%，低于您质押的日利率{oldRate}%。我们没有以不同条款进行续约。您的本金{principal} {coin}可在钱包中获得。",
+      "notRenewedTermsChangedCopy": "{productName}的条款已更改。您的本金{principal} {coin}可在钱包中获得。",
+      "notRenewedSystemErrorCopy": "我们无法完成续约。您的本金{principal} {coin}可在钱包中获得。",
+      "error": {
+        "INVALID_REQUEST": "请求无效。",
+        "POSITION_NOT_FOUND": "未找到质押。",
+        "POSITION_NOT_ACTIVE": "此质押已到期 — 无法再更改自动续约。",
+        "AUTO_RENEW_GRANTED_POSITION": "此质押由BANA授予，不能设置为续约。到期时，您的本金将在钱包中变为可用。",
+        "AUTO_RENEW_TERM_TOO_LONG": "自动续约仅适用于期限为{maxTermDays}天或更短的质押。此质押的期限为{termDays}天。"
+      }
+    },
+    "game": {
+      "hud": {
+        "stratum": "地层 {n}·{name}",
+        "level": "LV {level}",
+        "xpProgress": "{current}/{next} XP",
+        "operatingDays": "累计运行 {days} 天",
+        "wellCount": "{active} 口井在产"
+      },
+      "state": {
+        "reportingPaused": "产量报告已暂停。最后更新于 {time}。合同利息将在恢复后补记。",
+        "noActiveWell": "没有正在生产的井。",
+        "disabled": "深核当前不可用。",
+        "maintenance": "维护中。"
+      },
+      "empty": {
+        "cta": "查看质押产品",
+        "ledgerNone": "暂无记录。"
+      },
+      "nav": {
+        "crew": "船员",
+        "depot": "补给站",
+        "ledger": "记录"
+      },
+      "crew": {
+        "title": "船员",
+        "crew_boss": {
+          "name": "汉娜·索伦",
+          "role": "钻井队长(现场总监)"
+        },
+        "crew_mech": {
+          "name": "迪伦·阿卡博",
+          "role": "机械师"
+        },
+        "crew_geo": {
+          "name": "梅琳",
+          "role": "地质学家"
+        },
+        "crew_ops": {
+          "name": "奥马尔·赖斯",
+          "role": "运营与后勤"
+        },
+        "unit_k9": {
+          "name": "K-9「核心犬」",
+          "role": "自动化无人机单元"
+        },
+        "state": {
+          "idle": "待命",
+          "working": "作业中",
+          "waiting": "等待中(报告延迟)",
+          "idle_empty": "闲置 — 无在产井",
+          "chapter_up": "地层切换"
+        }
+      },
+      "chapter": {
+        "1": {
+          "name": "地表钻探"
+        },
+        "2": {
+          "name": "沙层突破"
+        },
+        "3": {
+          "name": "玄武岩层"
+        },
+        "4": {
+          "name": "地热深层"
+        },
+        "5": {
+          "name": "水晶空腔"
+        },
+        "6": {
+          "name": "核心层"
+        }
+      },
+      "well": {
+        "badge": "井 #{seq}·地层 {chapter}"
+      },
+      "stratum": {
+        "reached": "到达地层 {n}"
+      },
+      "level": {
+        "unlocked": "已解锁：{items}"
+      },
+      "coreLog": {
+        "rank": "深层记录 {rank} 阶",
+        "noYield": "深层记录奖励仅为外观，不影响实际收益。"
+      },
+      "ledger": {
+        "title": "记录",
+        "xpTotal": "XP 总计",
+        "svTotal": "打捞值总计",
+        "sourceLift": "每日产出",
+        "sourceCharterOpen": "开立许可",
+        "sourceCharterComplete": "许可完成",
+        "sourceStratum": "到达地层",
+        "sourceCoreLog": "深层记录"
+      },
+      "depot": {
+        "title": "补给站",
+        "tabOutfitting": "外装",
+        "balanceSV": "打捞值 {n}",
+        "priceTiersTitle": "价格档位",
+        "tier": {
+          "basic": "基础款",
+          "standard": "标准款",
+          "stratumLimited": "地层限定",
+          "coreLog": "深层记录奖励"
+        },
+        "slot": {
+          "crew_helmet": "船员头盔",
+          "rig_paint": "钻机涂装",
+          "stratum_lighting": "地层灯光预设",
+          "drone_skin": "无人机皮肤",
+          "background_effect": "背景特效",
+          "rig_plate": "钻机铭牌"
+        },
+        "purchaseUnavailable": "购买功能尚未接入。"
+      },
+      "intro": {
+        "title": "许可证已签发。",
+        "body1": "此界面将您的质押仓位显示为油井。",
+        "body2": "结算在服务器端进行，关闭此界面后仍会继续。",
+        "dismiss": "关闭"
+      },
+      "pref": {
+        "title": "深核显示",
+        "motionReduced": "减少动效",
+        "hide": "隐藏",
+        "hideHelp": "隐藏不会影响进度或发放。",
+        "show": "显示"
+      },
+      "error": {
+        "GAME_LOAD_FAILED": "无法加载该界面。质押功能可正常使用。"
+      }
+    }
   },
   "deposit": {
     "backAria": "返回",
@@ -626,7 +796,19 @@
     "product": "产品",
     "principal": "本金",
     "accrued": "已赚",
-    "matures": "到期"
+    "matures": "到期",
+    "autoRenewWarning": {
+      "inlineTitle": "降低利率将拒绝{count, plural, one {# 项待处理的自动续约} other {# 项待处理的自动续约}}。",
+      "inlineBody": "{productName}上的{count, plural, one {# 个活跃持仓} other {# 个活跃持仓}}已启用自动续约。每个持仓都将根据其到期时本产品的利率进行检查。如果保存的利率低于持仓的利率，该续约将被拒绝，本金将返还给用户的钱包，而不是再次质押。",
+      "inlineRestore": "在持仓到期前提高利率将恢复该持仓的续约 — 仅使用到期时刻的数值。",
+      "inlineSnapshot": "已质押的持仓保留其质押时的利率。此更改不会改变任何现有持仓的收益。",
+      "confirmTitle": "在{productName}上保存更低的利率？",
+      "confirmRates": "新的日利率{newRate}% — 当前{oldRate}%",
+      "confirmBody": "本产品的{count, plural, one {# 个活跃持仓} other {# 个活跃持仓}}已启用自动续约。这些续约将在到期时被拒绝，本金将返还给用户的钱包。",
+      "confirmSnapshot": "现有持仓保留其质押时的利率。",
+      "confirmYes": "保存更低利率",
+      "confirmCancel": "取消"
+    }
   },
   "stakedSummary": {
     "title": "质押",
@@ -665,5 +847,106 @@
     "withdrawLabel": "提现",
     "depositToggleHint": "切换用户是否可在此网络充值",
     "withdrawToggleHint": "切换用户是否可在此网络提现"
+  },
+  "oilfield": {
+    "title": "BANA Fields",
+    "subtitle": "Your staking positions, seen as a field.",
+    "statusStrip": "{n} wells on production",
+    "padEmpty": "Pad {n} — available",
+    "rigCaption": "{principal} {coin} · {productName}",
+    "depth": "Day {d} of {total}",
+    "countdown": "Total depth in {countdown}",
+    "tank": "{paid} {coin} credited of {full} {coin} full-term",
+    "accrualGap": "Accrued but not yet credited: {amount} {coin}",
+    "shiftReportTitle": "Shift report",
+    "shiftReportLine": "Well #{seq} · day {dayIndex}/{termDays} · +{amount} {coin}",
+    "shiftReportFooter": "Already credited to your rewards ledger.",
+    "shiftReportTruncation": "Showing the {n} most recent credits. Your full history is in your rewards ledger.",
+    "shiftReportDismiss": "Dismiss",
+    "completionTitle": "Total depth reached",
+    "completionBody": "{wellName} ran its full {termDays}-day term and credited {total} {coin}. Your {principal} {coin} is available again.",
+    "completionCta": "Spud another well",
+    "standby": "No wells on production. Your field is on standby.",
+    "reportingPaused": "Production reporting paused. Accrual continues; credited amounts will post when reporting resumes.",
+    "maintenance": "Operations are temporarily read-only for maintenance.",
+    "fieldLogTitle": "Field log",
+    "fieldLogEmpty": "No activity yet.",
+    "logSpudded": "Spudded {wellName} ({principal} {coin}, {termDays}-day term)",
+    "logCredited": "{wellName} credited +{amount} {coin} (day {d}/{total})",
+    "logCompleted": "{wellName} reached total depth after {termDays} days",
+    "logReportingPaused": "Production reporting paused",
+    "surveyStep1Title": "This is your field.",
+    "surveyStep1Body": "Each well is one staking position.",
+    "surveyStep2Title": "Wells take time.",
+    "surveyStep2Body": "A well produces every day and reaches total depth at the end of its term. It cannot be stopped early.",
+    "surveyStep3Title": "You choose the prospect.",
+    "surveyStep3Body": "Open products are the permits available today.",
+    "surveyNext": "Next",
+    "surveySkip": "Skip",
+    "surveyBack": "Back",
+    "surveyDone": "Go to permits",
+    "remoteWellsTitle": "Remote wells — producing, not shown on the yard.",
+    "totalDepthSettling": "Total depth reached. Settlement in progress.",
+    "menuLog": "Field log",
+    "menuSurvey": "About this field",
+    "motionPrefLabel": "Motion",
+    "motionPrefAuto": "Auto",
+    "motionPrefOn": "Motion on",
+    "motionPrefOff": "Motion off",
+    "back": "Back",
+    "loading": "Loading…",
+    "notEligibleTitle": "No field yet",
+    "notEligibleBody": "Your field appears once you've held a staking position.",
+    "backToStaking": "Back to Staking",
+    "rateSnapshot": "Daily rate",
+    "aprLabel": "APR",
+    "dayCounter": "Day {d} of {total}",
+    "ledgerTitle": "Per-day ledger",
+    "ledgerEmpty": "No credits yet.",
+    "loadEarlier": "Load earlier"
+  },
+  "referral": {
+    "pageTitle": "邀请",
+    "subtitle": "您的邀请链接、推荐码与佣金摘要。"
+  },
+  "emails": {
+    "autoRenewReminder": {
+      "subject": "您的 {productName} 质押将于 {maturityDate} 到期，且已设置自动续约",
+      "htmlIntro": "您的 {productName} 质押将于 {maturityDate} 到期",
+      "body1": "您在 {productName} 上质押的 {principal} {coin} 将于 {maturityDate} 到期。",
+      "body2": "此质押的自动续约已启用。除非您在到期前关闭它，否则相同数量 — {principal} {coin} — 将在 {productName} 上再次质押 {termDays} 天，按那时提供的利率计算。已赚取的利息不包含在内。",
+      "lock": "质押的资金在新期限结束前无法提取。",
+      "body3": "关闭自动续约：打开 BANA Wallet，进入质押页面，在我的质押下找到此质押，然后关闭自动续约。只需一次点击，无需确认步骤，您可以在 {maturityDate} 前的任何时间执行此操作。",
+      "body4": "当此质押到期时，如果自动续约已关闭，您的本金将简单地在钱包中变为可用。",
+      "cta": "管理此质押"
+    },
+    "autoRenewOutcome": {
+      "renewedSubject": "您的 {productName} 质押已续约 {termDays} 天",
+      "renewedIntro": "您在 {productName} 上的质押于 {maturedAt} 到期，并已再次质押。",
+      "renewedAmountLabel": "再次质押的金额",
+      "renewedProductLabel": "产品",
+      "renewedTermLabel": "新期限",
+      "renewedStartLabel": "新期限开始",
+      "renewedEndLabel": "新期限结束",
+      "renewedInterestNote": "前一期限赚取的利息未包含在内 — 仅本金被再次质押。",
+      "lock": "质押的资金在新期限结束前无法提取。",
+      "renewedStillOn": "新质押的自动续约仍处于启用状态。要关闭它，请在 BANA Wallet 中打开质押，并在此质押上关闭自动续约。",
+      "notRenewedSubject": "您的 {productName} 质押已到期且未续约",
+      "notRenewedIntro": "您在 {productName} 上的质押于 {maturedAt} 到期，但未再次质押。",
+      "notRenewedPrincipalAvailable": "您的本金 {principal} {coin} 可在钱包中获得。",
+      "notRenewedCta": "如果要再次质押，请在 BANA Wallet 中打开质押页面。",
+      "cta": "查看此质押",
+      "reason": {
+        "FAILED_PRODUCT_CLOSED": "{productName} 已停止接受新的质押。",
+        "FAILED_TERM_TOO_LONG": "自动续约不适用于期限超过 {maxTermDays} 天的质押。",
+        "FAILED_CAPACITY": "{productName} 已满。",
+        "FAILED_BELOW_MIN": "{productName} 的最低金额现为 {minAmount} {coin}。",
+        "FAILED_ABOVE_MAX": "{productName} 的最高金额现为 {maxAmount} {coin}。",
+        "FAILED_RATE_LOWERED": "{productName} 的利率现已低于您的质押利率，因此未以不同条款进行续约。",
+        "FAILED_TERMS_CHANGED": "{productName} 的条款已更改。",
+        "FAILED_SYSTEM": "我们无法完成续约。",
+        "FAILED_GRANTED_POSITION": "我们无法完成续约。"
+      }
+    }
   }
 }

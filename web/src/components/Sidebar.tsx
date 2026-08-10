@@ -17,6 +17,7 @@ import {
   LayoutDashboard,
   X,
   Building2,
+  UserPlus,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -197,6 +198,25 @@ export default function Sidebar({
           >
             <Activity className={`h-5 w-5 ${isActive('ACTIVITY_HISTORY') ? 'text-indigo-400' : 'text-slate-400'}`} />
             {nav('activity')}
+          </a>
+
+          {/* Invite — docs/specs/referral-panel-relocation-frd.md §4.2. Sits
+              between Activity and Settings, keeping the money-path cluster
+              (Wallet / Swap / Staking) contiguous and unbroken. */}
+          <a
+            href="#referral"
+            onClick={(e) => {
+              e.preventDefault();
+              navigateTo('REFERRAL_INTERFACE');
+            }}
+            className={`flex items-center gap-4 px-4 py-3.5 rounded-xl font-sans text-[15px] font-semibold transition-all duration-300 ${
+              isActive('REFERRAL_INTERFACE')
+                ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.15)] font-bold'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 border border-transparent'
+            }`}
+          >
+            <UserPlus className={`h-5 w-5 ${isActive('REFERRAL_INTERFACE') ? 'text-indigo-400' : 'text-slate-400'}`} />
+            {nav('invite')}
           </a>
 
           {/* Settings Section */}

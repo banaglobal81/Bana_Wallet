@@ -17,7 +17,8 @@
     "dashboard": "แดชบอร์ด",
     "adminConsole": "คอนโซลผู้ดูแล",
     "coins": "เหรียญ",
-    "coinManagement": "จัดการเหรียญ"
+    "coinManagement": "จัดการเหรียญ",
+    "invite": "เชิญเพื่อน"
   },
   "login": {
     "title": "เข้าสู่ระบบ",
@@ -241,7 +242,176 @@
     "statusACTIVE": "กำลังดำเนิน",
     "statusMATURED": "ครบกำหนด",
     "statusPAID": "จ่ายแล้ว",
-    "maturedNote": "เมื่อครบกำหนด เงินต้นจะกลับเข้ากระเป๋าและจ่ายดอกเบี้ย"
+    "maturedNote": "เมื่อครบกำหนด เงินต้นของคุณจะใช้ได้ในกระเป๋าเงิน ดอกเบี้ยที่ได้รับจะถูกบันทึกในบัญชีดอกเบี้ยที่แสดงด้านบน แต่ยังไม่จ่ายเข้ายอดคงเหลือในกระเป๋าเงิน",
+    "autoRenew": {
+      "optInLabel": "สเตกกิ้งอัตโนมัติเมื่อครบกำหนด",
+      "optInHelp": "เมื่อระยะเวลานี้สิ้นสุด จำนวนเดียวกันจะถูกสเตกกิ้งบนผลิตภัณฑ์นี้อีก {termDays} วัน ดอกเบี้ยที่ได้รับแล้วจะไม่รวมอยู่ คุณสามารถปิดตั้งค่านี้ได้ตลอดเวลาก่อนครบกำหนด",
+      "stateOff": "สเตกกิ้งอัตโนมัติ: ปิด",
+      "stateOn": "สเตกกิ้งอัตโนมัติ: เปิด · จะสเตกกิ้งอีกครั้งในวันที่ {date}",
+      "stateOnClosed": "สเตกกิ้งอัตโนมัติ: เปิด · ผลิตภัณฑ์นี้ถูกปิดสำหรับการสเตกกิ้งใหม่ ดังนั้นการสเตกกิ้งอีกครั้งอาจจะไม่สามารถทำได้",
+      "stateOnOverCap": "สเตกกิ้งอัตโนมัติ: เปิด · ระยะเวลาของการสเตกกิ้งนี้ยาวกว่า {maxTermDays} วัน ดังนั้นจึงจะไม่สเตกกิ้งอีกครั้ง เงินต้นของคุณจะใช้ได้เมื่อครบกำหนดในวันที่ {date}",
+      "stateOnGranted": "สเตกกิ้งอัตโนมัติ: เปิด · การสเตกกิ้งนี้ได้รับการมอบให้โดย BANA ดังนั้นจึงจะไม่สเตกกิ้งอีกครั้ง เงินต้นของคุณจะใช้ได้เมื่อครบกำหนดในวันที่ {date}",
+      "offToast": "สเตกกิ้งอัตโนมัติปิดแล้ว เงินต้นของคุณจะใช้ได้เมื่อการสเตกกิ้งนี้ครบกำหนดในวันที่ {date}",
+      "confirmTitle": "เปิดสเตกกิ้งอัตโนมัติหรือไม่?",
+      "confirmBody1": "ในวันที่ {maturityDate} จะสเตกกิ้ง {principal} {coin} บนผลิตภัณฑ์นี้อีก {termDays} วัน ในอัตราที่เสนอในเวลานั้น",
+      "confirmLock": "ไม่สามารถถอนเงินสเตกกิ้งได้ก่อนสิ้นสุดระยะเวลาใหม่",
+      "confirmBody2": "ดอกเบี้ยที่ได้รับแล้วจะไม่ถูกสเตกกิ้งใหม่",
+      "confirmBody3": "คุณสามารถปิดตั้งค่านี้ได้ตลอดเวลาก่อนวันที่ {maturityDate}",
+      "confirmYes": "เปิด",
+      "confirmCancel": "ยกเลิก",
+      "renewedHeading": "สเตกกิ้งอัตโนมัติแล้ว",
+      "renewedCopy": "จำนวน {principal} {coin} ถูกสเตกกิ้งบนผลิตภัณฑ์นี้อีก {termDays} วัน ในอัตรา {dailyRatePct}%/วัน ระยะเวลาใหม่เริ่มต้นในวันที่ {startAt} ดอกเบี้ยที่ได้รับในระยะเวลาก่อนหน้าไม่ได้รวมไว้",
+      "notRenewedHeading": "ไม่ได้สเตกกิ้งอีกครั้ง",
+      "notRenewedClosedCopy": "{productName} ปิดสำหรับการสเตกกิ้งใหม่ เงินต้น {principal} {coin} ของคุณใช้ได้ในกระเป๋าเงิน",
+      "notRenewedTermTooLongCopy": "สเตกกิ้งอัตโนมัติไม่พร้อมใช้สำหรับการสเตกกิ้งที่มีระยะเวลายาวกว่า {maxTermDays} วัน เงินต้น {principal} {coin} ของคุณใช้ได้ในกระเป๋าเงิน",
+      "notRenewedCapacityCopy": "{productName} เต็มแล้ว เงินต้น {principal} {coin} ของคุณใช้ได้ในกระเป๋าเงิน",
+      "notRenewedBelowMinCopy": "จำนวนขั้นต่ำสำหรับ {productName} ตอนนี้คือ {minAmount} {coin} เงินต้น {principal} {coin} ของคุณใช้ได้ในกระเป๋าเงิน",
+      "notRenewedAboveMaxCopy": "จำนวนสูงสุดสำหรับ {productName} ตอนนี้คือ {maxAmount} {coin} เงินต้น {principal} {coin} ของคุณใช้ได้ในกระเป๋าเงิน",
+      "notRenewedRateLoweredCopy": "อัตราสำหรับ {productName} เปลี่ยนเป็น {dailyRatePct}%/วัน ซึ่งต่ำกว่า {oldRate}%/วัน ของการสเตกกิ้งของคุณ เราไม่ได้สเตกกิ้งอีกครั้งในเงื่อนไขที่แตกต่าง เงินต้น {principal} {coin} ของคุณใช้ได้ในกระเป๋าเงิน",
+      "notRenewedTermsChangedCopy": "เงื่อนไขของ {productName} เปลี่ยนแปลง เงินต้น {principal} {coin} ของคุณใช้ได้ในกระเป๋าเงิน",
+      "notRenewedSystemErrorCopy": "เราไม่สามารถทำให้การสเตกกิ้งเสร็จสิ้นได้ เงินต้น {principal} {coin} ของคุณใช้ได้ในกระเป๋าเงิน",
+      "error": {
+        "INVALID_REQUEST": "ขอคำขอไม่ถูกต้อง",
+        "POSITION_NOT_FOUND": "ไม่พบการสเตกกิ้ง",
+        "POSITION_NOT_ACTIVE": "การสเตกกิ้งนี้ครบกำหนดแล้ว — ไม่สามารถเปลี่ยนสเตกกิ้งอัตโนมัติได้อีกต่อไป",
+        "AUTO_RENEW_GRANTED_POSITION": "การสเตกกิ้งนี้ได้รับการมอบให้โดย BANA และไม่สามารถตั้งค่าให้สเตกกิ้งอีกครั้งได้ เมื่อครบกำหนด เงินต้นของคุณจะใช้ได้ในกระเป๋าเงิน",
+        "AUTO_RENEW_TERM_TOO_LONG": "สเตกกิ้งอัตโนมัติพร้อมใช้สำหรับการสเตกกิ้งที่มีระยะเวลา {maxTermDays} วันหรือน้อยกว่า ระยะเวลาของการสเตกกิ้งนี้คือ {termDays} วัน"
+      }
+    },
+    "game": {
+      "hud": {
+        "stratum": "ชั้น {n} · {name}",
+        "level": "เลเวล {level}",
+        "xpProgress": "{current}/{next} XP",
+        "operatingDays": "ดำเนินการแล้ว {days} วัน",
+        "wellCount": "บ่อที่ทำงานอยู่ {active} บ่อ"
+      },
+      "state": {
+        "reportingPaused": "การรายงานผลผลิตหยุดชั่วคราว อัปเดตล่าสุด {time} ดอกเบี้ยตามสัญญาจะถูกคำนวณย้อนหลังเมื่อกลับมาทำงาน",
+        "noActiveWell": "ไม่มีบ่อที่กำลังทำงาน",
+        "disabled": "ขณะนี้ไม่สามารถใช้งาน Deep Core ได้",
+        "maintenance": "อยู่ระหว่างปรับปรุงระบบ"
+      },
+      "empty": {
+        "cta": "ดูผลิตภัณฑ์สเตกกิ้ง",
+        "ledgerNone": "ยังไม่มีรายการ"
+      },
+      "nav": {
+        "crew": "ทีมงาน",
+        "depot": "คลังเสบียง",
+        "ledger": "บันทึก"
+      },
+      "crew": {
+        "title": "ทีมงาน",
+        "crew_boss": {
+          "name": "ฮันนา เซอร์เรน",
+          "role": "หัวหน้าแท่นขุด (ผู้ควบคุมหน้างาน)"
+        },
+        "crew_mech": {
+          "name": "ดีแลน อาคาโบ",
+          "role": "ช่างเครื่อง"
+        },
+        "crew_geo": {
+          "name": "เม ลิน",
+          "role": "นักธรณีวิทยา"
+        },
+        "crew_ops": {
+          "name": "โอมาร์ ไรส์",
+          "role": "ฝ่ายปฏิบัติการและโลจิสติกส์"
+        },
+        "unit_k9": {
+          "name": "K-9 \"คอร์-ด็อก\"",
+          "role": "หน่วยโดรนอัตโนมัติ"
+        },
+        "state": {
+          "idle": "พัก",
+          "working": "กำลังทำงาน",
+          "waiting": "รอ (รายงานล่าช้า)",
+          "idle_empty": "ว่าง — ไม่มีบ่อที่ทำงานอยู่",
+          "chapter_up": "เปลี่ยนชั้น"
+        }
+      },
+      "chapter": {
+        "1": {
+          "name": "การขุดพื้นผิว"
+        },
+        "2": {
+          "name": "ฝ่าชั้นทราย"
+        },
+        "3": {
+          "name": "หิ้งหินบะซอลต์"
+        },
+        "4": {
+          "name": "ห้วงความร้อนใต้พิภพ"
+        },
+        "5": {
+          "name": "โพรงคริสตัล"
+        },
+        "6": {
+          "name": "ชั้นแกนกลาง"
+        }
+      },
+      "well": {
+        "badge": "บ่อ #{seq} · ชั้น {chapter}"
+      },
+      "stratum": {
+        "reached": "ถึงชั้น {n}"
+      },
+      "level": {
+        "unlocked": "ปลดล็อกแล้ว: {items}"
+      },
+      "coreLog": {
+        "rank": "บันทึกแกนกลาง อันดับ {rank}",
+        "noYield": "รางวัลบันทึกแกนกลางเป็นเพียงของตกแต่งและไม่มีผลต่อยอดจ่าย"
+      },
+      "ledger": {
+        "title": "บันทึก",
+        "xpTotal": "XP รวม",
+        "svTotal": "Salvage รวม",
+        "sourceLift": "ผลผลิตรายวัน",
+        "sourceCharterOpen": "เปิดใบอนุญาต",
+        "sourceCharterComplete": "ใบอนุญาตครบกำหนด",
+        "sourceStratum": "ถึงชั้นใหม่",
+        "sourceCoreLog": "บันทึกแกนกลาง"
+      },
+      "depot": {
+        "title": "คลังเสบียง",
+        "tabOutfitting": "การตกแต่ง",
+        "balanceSV": "Salvage {n}",
+        "priceTiersTitle": "ระดับราคา",
+        "tier": {
+          "basic": "รูปแบบพื้นฐาน",
+          "standard": "มาตรฐาน",
+          "stratumLimited": "เฉพาะชั้น",
+          "coreLog": "รางวัลบันทึกแกนกลาง"
+        },
+        "slot": {
+          "crew_helmet": "หมวกทีมงาน",
+          "rig_paint": "สีแท่นขุด",
+          "stratum_lighting": "ค่าไฟตามชั้น",
+          "drone_skin": "สกินโดรน",
+          "background_effect": "เอฟเฟกต์พื้นหลัง",
+          "rig_plate": "ป้ายชื่อแท่นขุด"
+        },
+        "purchaseUnavailable": "ยังไม่เปิดใช้งานระบบซื้อ"
+      },
+      "intro": {
+        "title": "ออกใบอนุญาตแล้ว",
+        "body1": "หน้าจอนี้แสดงโพซิชันสเตกกิ้งของคุณในรูปแบบบ่อขุด",
+        "body2": "การชำระบัญชีดำเนินการที่ฝั่งเซิร์ฟเวอร์และดำเนินต่อแม้ปิดหน้าจอนี้",
+        "dismiss": "ปิด"
+      },
+      "pref": {
+        "title": "การแสดงผล Deep Core",
+        "motionReduced": "ลดการเคลื่อนไหว",
+        "hide": "ซ่อน",
+        "hideHelp": "การซ่อนไม่มีผลต่อความคืบหน้าหรือการจ่ายผลตอบแทน",
+        "show": "แสดง"
+      },
+      "error": {
+        "GAME_LOAD_FAILED": "ไม่สามารถโหลดหน้าจอนี้ได้ ฟังก์ชันสเตกกิ้งยังใช้งานได้ตามปกติ"
+      }
+    }
   },
   "deposit": {
     "backAria": "กลับ",
@@ -626,7 +796,19 @@
     "product": "ผลิตภัณฑ์",
     "principal": "เงินต้น",
     "accrued": "ได้รับ",
-    "matures": "ครบกำหนด"
+    "matures": "ครบกำหนด",
+    "autoRenewWarning": {
+      "inlineTitle": "การลดอัตราจะปฏิเสธ {count, plural, one {# การสเตกกิ้งอัตโนมัติที่รอดำเนินการ} other {# การสเตกกิ้งอัตโนมัติที่รอดำเนินการ}}",
+      "inlineBody": "{count, plural, one {# ตำแหน่งที่ใช้งาน} other {# ตำแหน่งที่ใช้งาน}} บน {productName} มีการสเตกกิ้งอัตโนมัติเปิดอยู่ แต่ละตำแหน่งจะได้รับการตรวจสอบเทียบกับอัตราของผลิตภัณฑ์นี้ ณ เวลาครบกำหนด หากอัตราที่บันทึกต่ำกว่าอัตราของตำแหน่ง การสเตกกิ้งอีกครั้งนั้นจะถูกปฏิเสธ และเงินต้นจะถูกคืนให้กับกระเป๋าเงินของผู้ใช้แทนที่จะสเตกกิ้งอีกครั้ง",
+      "inlineRestore": "การเพิ่มอัตราขึ้นก่อนตำแหน่งครบกำหนดจะคืนค่าการสเตกกิ้งอีกครั้งของตำแหน่งนั้น — ใช้เฉพาะค่า ณ เวลาครบกำหนด",
+      "inlineSnapshot": "ตำแหน่งที่สเตกกิ้งแล้วจะเก็บอัตราที่สเตกกิ้งไว้ การเปลี่ยนแปลงนี้ไม่ส่งผลต่อรายได้ของตำแหน่งที่มีอยู่",
+      "confirmTitle": "บันทึกอัตราต่ำกว่าบน {productName} หรือไม่?",
+      "confirmRates": "อัตราประจำวันใหม่ {newRate}% — ปัจจุบัน {oldRate}%",
+      "confirmBody": "{count, plural, one {# ตำแหน่งที่ใช้งาน} other {# ตำแหน่งที่ใช้งาน}} บนผลิตภัณฑ์นี้มีการสเตกกิ้งอัตโนมัติเปิดอยู่ การสเตกกิ้งเหล่านั้นจะถูกปฏิเสธเมื่อครบกำหนด และเงินต้นจะถูกคืนให้กับกระเป๋าเงินของผู้ใช้",
+      "confirmSnapshot": "ตำแหน่งที่มีอยู่เก็บอัตราที่สเตกกิ้งไว้",
+      "confirmYes": "บันทึกอัตราต่ำกว่า",
+      "confirmCancel": "ยกเลิก"
+    }
   },
   "stakedSummary": {
     "title": "สเตกกิ้ง",
@@ -665,5 +847,106 @@
     "withdrawLabel": "ถอน",
     "depositToggleHint": "สลับว่าผู้ใช้สามารถฝากบนเครือข่ายนี้ได้หรือไม่",
     "withdrawToggleHint": "สลับว่าผู้ใช้สามารถถอนบนเครือข่ายนี้ได้หรือไม่"
+  },
+  "oilfield": {
+    "title": "BANA Fields",
+    "subtitle": "Your staking positions, seen as a field.",
+    "statusStrip": "{n} wells on production",
+    "padEmpty": "Pad {n} — available",
+    "rigCaption": "{principal} {coin} · {productName}",
+    "depth": "Day {d} of {total}",
+    "countdown": "Total depth in {countdown}",
+    "tank": "{paid} {coin} credited of {full} {coin} full-term",
+    "accrualGap": "Accrued but not yet credited: {amount} {coin}",
+    "shiftReportTitle": "Shift report",
+    "shiftReportLine": "Well #{seq} · day {dayIndex}/{termDays} · +{amount} {coin}",
+    "shiftReportFooter": "Already credited to your rewards ledger.",
+    "shiftReportTruncation": "Showing the {n} most recent credits. Your full history is in your rewards ledger.",
+    "shiftReportDismiss": "Dismiss",
+    "completionTitle": "Total depth reached",
+    "completionBody": "{wellName} ran its full {termDays}-day term and credited {total} {coin}. Your {principal} {coin} is available again.",
+    "completionCta": "Spud another well",
+    "standby": "No wells on production. Your field is on standby.",
+    "reportingPaused": "Production reporting paused. Accrual continues; credited amounts will post when reporting resumes.",
+    "maintenance": "Operations are temporarily read-only for maintenance.",
+    "fieldLogTitle": "Field log",
+    "fieldLogEmpty": "No activity yet.",
+    "logSpudded": "Spudded {wellName} ({principal} {coin}, {termDays}-day term)",
+    "logCredited": "{wellName} credited +{amount} {coin} (day {d}/{total})",
+    "logCompleted": "{wellName} reached total depth after {termDays} days",
+    "logReportingPaused": "Production reporting paused",
+    "surveyStep1Title": "This is your field.",
+    "surveyStep1Body": "Each well is one staking position.",
+    "surveyStep2Title": "Wells take time.",
+    "surveyStep2Body": "A well produces every day and reaches total depth at the end of its term. It cannot be stopped early.",
+    "surveyStep3Title": "You choose the prospect.",
+    "surveyStep3Body": "Open products are the permits available today.",
+    "surveyNext": "Next",
+    "surveySkip": "Skip",
+    "surveyBack": "Back",
+    "surveyDone": "Go to permits",
+    "remoteWellsTitle": "Remote wells — producing, not shown on the yard.",
+    "totalDepthSettling": "Total depth reached. Settlement in progress.",
+    "menuLog": "Field log",
+    "menuSurvey": "About this field",
+    "motionPrefLabel": "Motion",
+    "motionPrefAuto": "Auto",
+    "motionPrefOn": "Motion on",
+    "motionPrefOff": "Motion off",
+    "back": "Back",
+    "loading": "Loading…",
+    "notEligibleTitle": "No field yet",
+    "notEligibleBody": "Your field appears once you've held a staking position.",
+    "backToStaking": "Back to Staking",
+    "rateSnapshot": "Daily rate",
+    "aprLabel": "APR",
+    "dayCounter": "Day {d} of {total}",
+    "ledgerTitle": "Per-day ledger",
+    "ledgerEmpty": "No credits yet.",
+    "loadEarlier": "Load earlier"
+  },
+  "referral": {
+    "pageTitle": "เชิญเพื่อน",
+    "subtitle": "ลิงก์เชิญ รหัสแนะนำ และสรุปค่าคอมมิชชันของคุณ"
+  },
+  "emails": {
+    "autoRenewReminder": {
+      "subject": "การสเตกกิ้ง {productName} ของคุณครบกำหนดในวันที่ {maturityDate} และตั้งค่าให้สเตกกิ้งอัตโนมัติ",
+      "htmlIntro": "การสเตกกิ้ง {productName} ของคุณครบกำหนดในวันที่ {maturityDate}",
+      "body1": "การสเตกกิ้ง {principal} {coin} ของคุณบน {productName} ครบกำหนดในวันที่ {maturityDate}",
+      "body2": "สเตกกิ้งอัตโนมัติเปิดสำหรับการสเตกกิ้งนี้ เว้นแต่ว่าคุณปิดมันก่อนครบกำหนด จำนวนเดียวกัน — {principal} {coin} — จะถูกสเตกกิ้งบน {productName} อีก {termDays} วัน ในอัตราที่เสนอในเวลานั้น ดอกเบี้ยที่ได้รับแล้วจะไม่รวมอยู่",
+      "lock": "ไม่สามารถถอนเงินสเตกกิ้งได้ก่อนสิ้นสุดระยะเวลาใหม่",
+      "body3": "หากต้องการปิดสเตกกิ้งอัตโนมัติ: เปิด BANA Wallet ไปที่สเตกกิ้ง ค้นหาการสเตกกิ้งนี้ภายใต้การ Stake ของฉัน และปิดสเตกกิ้งอัตโนมัติ เพียงแค่แตะครั้งเดียว ไม่มีขั้นตอนการยืนยัน และคุณสามารถทำได้ตลอดเวลาก่อนวันที่ {maturityDate}",
+      "body4": "หากสเตกกิ้งอัตโนมัติปิดเมื่อการสเตกกิ้งนี้ครบกำหนด เงินต้นของคุณจะใช้ได้ในกระเป๋าเงินของคุณ",
+      "cta": "จัดการการสเตกกิ้งนี้"
+    },
+    "autoRenewOutcome": {
+      "renewedSubject": "การสเตกกิ้ง {productName} ของคุณได้รับการสเตกกิ้งอัตโนมัติอีก {termDays} วัน",
+      "renewedIntro": "การสเตกกิ้งของคุณบน {productName} ครบกำหนดในวันที่ {maturedAt} และถูกสเตกกิ้งอีกครั้ง",
+      "renewedAmountLabel": "จำนวนที่สเตกกิ้งอีกครั้ง",
+      "renewedProductLabel": "ผลิตภัณฑ์",
+      "renewedTermLabel": "ระยะเวลาใหม่",
+      "renewedStartLabel": "ระยะเวลาใหม่เริ่มต้น",
+      "renewedEndLabel": "ระยะเวลาใหม่สิ้นสุด",
+      "renewedInterestNote": "ดอกเบี้ยที่ได้รับในระยะเวลาก่อนหน้าไม่ได้รวมไว้ — เพียงแค่เงินต้นเท่านั้นที่ถูกสเตกกิ้งอีกครั้ง",
+      "lock": "ไม่สามารถถอนเงินสเตกกิ้งได้ก่อนสิ้นสุดระยะเวลาใหม่",
+      "renewedStillOn": "สเตกกิ้งอัตโนมัติยังคงเปิดอยู่สำหรับการสเตกกิ้งใหม่ หากต้องการปิดมัน ให้เปิดสเตกกิ้งใน BANA Wallet และปิดมันในการสเตกกิ้งนี้",
+      "notRenewedSubject": "การสเตกกิ้ง {productName} ของคุณครบกำหนดและไม่ได้สเตกกิ้งอีกครั้ง",
+      "notRenewedIntro": "การสเตกกิ้งของคุณบน {productName} ครบกำหนดในวันที่ {maturedAt} และไม่ได้สเตกกิ้งอีกครั้ง",
+      "notRenewedPrincipalAvailable": "เงินต้น {principal} {coin} ของคุณใช้ได้ในกระเป๋าเงิน",
+      "notRenewedCta": "หากคุณต้องการสเตกกิ้งอีกครั้ง ให้เปิดสเตกกิ้งใน BANA Wallet",
+      "cta": "ดูการสเตกกิ้งนี้",
+      "reason": {
+        "FAILED_PRODUCT_CLOSED": "{productName} ปิดสำหรับการสเตกกิ้งใหม่",
+        "FAILED_TERM_TOO_LONG": "สเตกกิ้งอัตโนมัติไม่พร้อมใช้สำหรับการสเตกกิ้งที่มีระยะเวลายาวกว่า {maxTermDays} วัน",
+        "FAILED_CAPACITY": "{productName} เต็มแล้ว",
+        "FAILED_BELOW_MIN": "จำนวนขั้นต่ำสำหรับ {productName} ตอนนี้คือ {minAmount} {coin}",
+        "FAILED_ABOVE_MAX": "จำนวนสูงสุดสำหรับ {productName} ตอนนี้คือ {maxAmount} {coin}",
+        "FAILED_RATE_LOWERED": "อัตราสำหรับ {productName} ตอนนี้ต่ำกว่าอัตราของการสเตกกิ้งของคุณ เราไม่ได้สเตกกิ้งอีกครั้งในเงื่อนไขที่แตกต่าง",
+        "FAILED_TERMS_CHANGED": "เงื่อนไขของ {productName} เปลี่ยนแปลง",
+        "FAILED_SYSTEM": "เราไม่สามารถทำให้การสเตกกิ้งเสร็จสิ้นได้",
+        "FAILED_GRANTED_POSITION": "เราไม่สามารถทำให้การสเตกกิ้งเสร็จสิ้นได้"
+      }
+    }
   }
 }

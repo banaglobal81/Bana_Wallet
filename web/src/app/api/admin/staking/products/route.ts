@@ -30,13 +30,16 @@ export async function GET(): Promise<NextResponse> {
   const products = await prisma.stakingProduct.findMany({ orderBy: { createdAt: 'desc' } });
   const active = await prisma.stakePosition.findMany({
     where: { status: 'ACTIVE' },
-    select: { productId: true, principal: true },
+    select: { productId: true, principal: true, autoRenew: true },
   });
-  const totals = new Map<string, { staked: Decimal; count: number }>();
+  const totals = new Map<string, { staked: Decimal; count: number; autoRenewCount: number }>();
   for (const p of active) {
-    const t = totals.get(p.productId) ?? { staked: new Decimal(0), count: 0 };
+    const t = totals.get(p.productId) ?? { staked: new Decimal(0), count: 0, autoRenewCount: 0 };
     t.staked = t.staked.plus(new Decimal(p.principal));
     t.count += 1;
+    // D-1 (staking-auto-renew-ruling.md R-1): count of ACTIVE positions with autoRenew = true,
+    // surfaced so the admin edit UI can warn before a rate-lowering refuses their renewals.
+    if (p.autoRenew) t.autoRenewCount += 1;
     totals.set(p.productId, t);
   }
 
@@ -48,6 +51,7 @@ export async function GET(): Promise<NextResponse> {
       minAmount: p.minAmount, maxAmount: p.maxAmount, capacity: p.capacity,
       status: p.status, createdAt: p.createdAt.toISOString(),
       totalStaked: (t?.staked ?? new Decimal(0)).toFixed(), positionCount: t?.count ?? 0,
+      autoRenewActiveCount: t?.autoRenewCount ?? 0,
     };
   });
   return NextResponse.json({ ok: true, data });

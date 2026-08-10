@@ -6,8 +6,18 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { requireUser } from '@/lib/auth/session';
 import { settleMaturedPositions, serializePosition } from '@/lib/staking';
+import { getDeepCoreState } from '@/lib/deepCoreProgress';
 
 // GET /api/staking/positions — the signed-in user's stake positions.
+//
+// Also returns a `game` block (DEEP CORE Phase 0 — docs/specs/deep-core-05-screen-flow-frd.md
+// G-7: the game surface must not add its own polling / API round trips, so its
+// derived state rides along on the request the page already makes on every
+// `load()`). `game` derivation is best-effort: any failure there must never
+// break the real (money-adjacent) positions read, so it's wrapped and
+// degrades to `null` — the client-side game surface then falls back to its
+// own "could not load" state (R-5 / GAME_LOAD_FAILED) while the rest of the
+// page works normally.
 export async function GET(): Promise<NextResponse> {
   let dbUserId: string;
   try {
@@ -29,5 +39,13 @@ export async function GET(): Promise<NextResponse> {
   });
 
   const data = rows.map((p) => ({ ...serializePosition(p), productName: p.product?.name ?? '' }));
-  return NextResponse.json({ ok: true, data });
+
+  let game = null;
+  try {
+    game = await getDeepCoreState(dbUserId);
+  } catch (e) {
+    console.error('[deep-core] state derivation failed for user', dbUserId, e);
+  }
+
+  return NextResponse.json({ ok: true, data, game });
 }

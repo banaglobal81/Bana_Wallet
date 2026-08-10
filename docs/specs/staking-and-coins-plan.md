@@ -1,7 +1,7 @@
 # Plan — Staking & Coin Management
 
-> Status: **DRAFT for review** (senior + team). No code written yet.
-> Source: senior's requirements (translated). Scope: BANA Wallet (Next.js 15 + Prisma 7 + Nia-Hub).
+> Status: **STALE — Historical design doc.** Staking shipped via migrations (20260630070919, 20260630093903, 20260702094423). The as-built implementation differs from this plan — see ground-truth details in `docs/specs/oil-drilling-staking-game-frd.md` §2 ("Ground truth — the real system, as built"), which cites exact schema/code locations. Key differences: interest is credited **daily** to a real `StakingPayout` ledger (not only at maturity), and "staking day" length is configurable via `STAKING_DAY_MS`/`NEXT_PUBLIC_STAKING_DAY_MS`. This document preserved for historical context only; refer to the FRD §2, schema (`web/prisma/schema.prisma`), and implementation (`web/src/utils/stakingApi.ts`, `web/src/components/Staking.tsx`, `web/src/lib/stakingMath.ts`) for production-accurate behavior.
+> Original source: senior's requirements (translated). Original scope: BANA Wallet (Next.js 15 + Prisma 7 + Nia-Hub).
 
 ---
 

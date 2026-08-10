@@ -22,7 +22,7 @@ enum Role {
 
 enum WithdrawalStatus {
   PENDING
-  PROCESSING   // atomically claimed for forwarding — prevents a double-forward
+  PROCESSING // atomically claimed for forwarding — prevents a double-forward
   APPROVED
   REJECTED
   FAILED
@@ -39,32 +39,56 @@ enum StakePositionStatus {
   PAID
 }
 
+// Outcome of the maturity-time auto-renewal decision (see
+// docs/specs/staking-auto-renew-prd.md §3 and the 2026-08-09 ruling §2.4/§2.5).
+// NONE = not applicable (autoRenew was off at maturity) — default.
+enum StakeRenewalStatus {
+  NONE
+  RENEWED
+  FAILED_PRODUCT_CLOSED
+  // R-2 cap tripped inside the transaction (E2a). Policy refusal (term > 90
+  // days), distinct from FAILED_SYSTEM (infrastructure fault) even though the
+  // user-facing copy differs from FAILED_SYSTEM's — see PRD §3 / §8.2.
+  FAILED_TERM_TOO_LONG
+  FAILED_CAPACITY
+  FAILED_BELOW_MIN
+  FAILED_ABOVE_MAX
+  FAILED_RATE_LOWERED
+  FAILED_TERMS_CHANGED
+  // R-5 grant exclusion tripped inside the transaction (E9) — defensive.
+  // Policy refusal (grantedByAdminId non-null), distinct from FAILED_SYSTEM
+  // even though it renders the same user-facing copy — see PRD §3 / §8.2.
+  FAILED_GRANTED_POSITION
+  FAILED_ACCOUNT_INACTIVE
+  FAILED_SYSTEM
+}
+
 // Platform-wide policy, a single row (id = "singleton"). Admin-configurable.
 model PlatformSetting {
-  id                    String   @id @default("singleton")
+  id                           String   @id @default("singleton")
   // Only allow withdrawals to addresses saved in the user's address book.
-  whitelistOnly         Boolean  @default(false)
+  whitelistOnly                Boolean  @default(false)
   // Withdrawals valued under this USD amount auto-approve (skip the queue).
   // null/empty = every withdrawal requires manual approval.
-  autoApproveUnderUsd   String?
+  autoApproveUnderUsd          String?
   // Pause all withdrawals (incident / hub outage). Users see a banner.
-  maintenanceMode       Boolean  @default(false)
+  maintenanceMode              Boolean  @default(false)
   // Max total a single user can withdraw per rolling 24h (USD, stablecoins).
-  dailyWithdrawalLimitUsd String?
+  dailyWithdrawalLimitUsd      String?
   // Allow new user registration.
-  signupsEnabled        Boolean  @default(true)
+  signupsEnabled               Boolean  @default(true)
   // Platform identity shown to users.
-  supportEmail          String?
-  displayName           String?
+  supportEmail                 String?
+  displayName                  String?
   // Turns the persistent staking settlement worker on/off entirely.
-  stakingWorkerEnabled         Boolean @default(true)
+  stakingWorkerEnabled         Boolean  @default(true)
   // "INTERVAL" | "DAILY"
-  stakingWorkerMode            String  @default("INTERVAL")
+  stakingWorkerMode            String   @default("INTERVAL")
   // How often the worker runs when mode = INTERVAL.
-  stakingWorkerIntervalMinutes Int     @default(5)
+  stakingWorkerIntervalMinutes Int      @default(5)
   // "HH:mm", UTC — used when mode = DAILY
-  stakingWorkerDailyTime       String  @default("00:00")
-  updatedAt             DateTime @updatedAt
+  stakingWorkerDailyTime       String   @default("00:00")
+  updatedAt                    DateTime @updatedAt
 }
 
 // A user's saved/trusted withdrawal address (address book + whitelist).
@@ -82,12 +106,12 @@ model WithdrawalAddress {
 // Immutable record of an admin action, for accountability / compliance.
 model AuditLog {
   id         String   @id @default(cuid())
-  adminId    String?  // admin who performed the action
-  adminEmail String   // denormalized for display even if the admin is later removed
-  action     String   // e.g. WITHDRAWAL_APPROVE, USER_ROLE_CHANGE, USER_DISABLE
-  targetType String?  // e.g. user, withdrawal
+  adminId    String? // admin who performed the action
+  adminEmail String // denormalized for display even if the admin is later removed
+  action     String // e.g. WITHDRAWAL_APPROVE, USER_ROLE_CHANGE, USER_DISABLE
+  targetType String? // e.g. user, withdrawal
   targetId   String?
-  detail     String?  // short human-readable summary
+  detail     String? // short human-readable summary
   createdAt  DateTime @default(now())
 
   @@index([createdAt])
@@ -97,19 +121,19 @@ model AuditLog {
 // Funds only leave once an admin APPROVES (which forwards it to the hub).
 model WithdrawalRequest {
   id              String           @id @default(cuid())
-  userId          String           // BANA DB user id
-  niaUserId       String           // Nia-Hub end-user id (used when forwarding)
-  email           String           // denormalized for the admin queue
+  userId          String // BANA DB user id
+  niaUserId       String // Nia-Hub end-user id (used when forwarding)
+  email           String // denormalized for the admin queue
   currency        String
   network         String
-  amount          String           // canonical decimal string (never a float)
+  amount          String // canonical decimal string (never a float)
   toAddress       String
   idempotencyKey  String?
   status          WithdrawalStatus @default(PENDING)
-  reviewedById    String?          // admin who approved/rejected
+  reviewedById    String? // admin who approved/rejected
   reviewedAt      DateTime?
   rejectionReason String?
-  hubTxId         String?          // hub reference once forwarded
+  hubTxId         String? // hub reference once forwarded
   lastError       String?
   createdAt       DateTime         @default(now())
 
@@ -118,28 +142,28 @@ model WithdrawalRequest {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String?
-  role         Role     @default(USER)
-  niaUserId    String?  @unique
-  createdAt    DateTime @default(now())
+  id                        String         @id @default(cuid())
+  email                     String         @unique
+  passwordHash              String?
+  role                      Role           @default(USER)
+  niaUserId                 String?        @unique
+  createdAt                 DateTime       @default(now())
   // Password-reset (forgot password) — only a HASH of the token is stored, never
   // the token itself, with a short expiry. Cleared on use.
-  resetTokenHash   String?
-  resetTokenExpiry DateTime?
+  resetTokenHash            String?
+  resetTokenExpiry          DateTime?
   // Admin can disable an account — blocks login (compromised/abusive accounts).
-  disabled     Boolean  @default(false)
+  disabled                  Boolean        @default(false)
   // TOTP 2FA (Google Authenticator). The secret is AES-256-GCM encrypted at rest
   // (see src/lib/crypto.ts). totpEnabledAt is set only after a code is verified;
   // a null secret / null enabledAt means 2FA is off. Backup codes are stored as
   // SHA-256 hashes and removed as they are consumed.
-  totpSecret       String?
-  totpEnabledAt    DateTime?
-  totpBackupCodes  String[]  @default([])
+  totpSecret                String?
+  totpEnabledAt             DateTime?
+  totpBackupCodes           String[]       @default([])
   // WebAuthn (biometric passkeys). Transient challenge held during registration,
   // cleared once the response is verified. Credentials live in the Passkey table.
-  webauthnChallenge String?
+  webauthnChallenge         String?
   // Email change (verified). A pending change holds the new address + a hashed
   // 6-digit code until verified. On change we stamp emailChangedAt (24h
   // withdrawal hold) and block the previous address from re-registering for 30d.
@@ -149,17 +173,23 @@ model User {
   emailChangedAt            DateTime?
   previousEmail             String?
   previousEmailBlockedUntil DateTime?
-  passkeys         Passkey[]
-  loginSessions    LoginSession[]
+  passkeys                  Passkey[]
+  loginSessions             LoginSession[]
   // Referral tree (Phase A foundation for the referral/rewards program).
   //  - referralCode: this user's own shareable code (unique).
   //  - referredById: who invited this user → self-relation forms the multi-level tree.
   // NOTE: no commission/bonus math here yet — that is gated on the senior's approved
   // spec + legal review. This only records the "who invited whom" relationships.
-  referralCode  String?  @unique
-  referredById  String?
-  referredBy    User?    @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
-  referrals     User[]   @relation("UserReferrals")
+  referralCode              String?        @unique
+  referredById              String?
+  referredBy                User?          @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals                 User[]         @relation("UserReferrals")
+  // Locale preference for transactional email (staking auto-renew reminder /
+  // outcome, per docs/specs/staking-auto-renew-ruling.md R-8). Populated at
+  // signup and refreshed on each successful login from the active next-intl
+  // locale. null = fall back to "en" at read time — existing rows are left
+  // null on migration, never backfilled with a guessed default.
+  locale                    String?
 
   @@index([referredById])
 }
@@ -169,14 +199,14 @@ model User {
 // requireUser() reject that session (checked fail-open, so DB hiccups never lock
 // anyone out). "Last login" = createdAt.
 model LoginSession {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userAgent  String?
-  ip         String?
-  city       String?
-  country    String?
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  ip        String?
+  city      String?
+  country   String?
+  createdAt DateTime @default(now())
 
   @@index([userId])
 }
@@ -187,11 +217,11 @@ model Passkey {
   id           String    @id @default(cuid())
   userId       String
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  credentialId String    @unique          // base64url credential ID
-  publicKey    String                      // base64url COSE public key
+  credentialId String    @unique // base64url credential ID
+  publicKey    String // base64url COSE public key
   counter      Int       @default(0)
   transports   String[]  @default([])
-  deviceName   String?                     // user-supplied label, e.g. "iPhone"
+  deviceName   String? // user-supplied label, e.g. "iPhone"
   createdAt    DateTime  @default(now())
   lastUsedAt   DateTime?
 
@@ -202,17 +232,17 @@ model Passkey {
 // Platform-run, fixed-term savings (NOT on-chain yield) — the platform owes the
 // interest. CLOSED = no new stakes; existing positions keep running to maturity.
 model StakingProduct {
-  id           String   @id @default(cuid())
-  coin         String                                // e.g. "USDT"
-  name         String                                // admin label, e.g. "USDT 30-Day"
-  termDays     Int                                   // lock duration in days
-  dailyRatePct String                                // daily interest %, decimal string (e.g. "0.05")
-  minAmount    String?                               // optional per-stake minimum
-  maxAmount    String?                               // optional per-stake maximum
-  capacity     String?                               // optional total principal cap across all positions
+  id           String               @id @default(cuid())
+  coin         String // e.g. "USDT"
+  name         String // admin label, e.g. "USDT 30-Day"
+  termDays     Int // lock duration in days
+  dailyRatePct String // daily interest %, decimal string (e.g. "0.05")
+  minAmount    String? // optional per-stake minimum
+  maxAmount    String? // optional per-stake maximum
+  capacity     String? // optional total principal cap across all positions
   status       StakingProductStatus @default(OPEN)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
   positions    StakePosition[]
 
   @@index([status])
@@ -222,32 +252,81 @@ model StakingProduct {
 // Nia wallet but is non-withdrawable) until maturity; interest accrues daily and
 // is computed on read. PAID = principal+interest settled back to the wallet.
 model StakePosition {
-  id           String   @id @default(cuid())
-  userId       String                                // BANA DB user id (session-derived)
-  niaUserId    String                                // Nia-Hub end-user id (for payout)
-  email        String                                // denormalized for the admin view
-  productId    String
-  coin         String
-  principal    String                                // canonical decimal string
-  dailyRatePct String                                // snapshot at stake time (later rate changes don't apply)
-  termDays     Int                                   // snapshot
-  startAt      DateTime @default(now())
-  maturityAt   DateTime
-  status       StakePositionStatus @default(ACTIVE)
+  id              String              @id @default(cuid())
+  userId          String // BANA DB user id (session-derived)
+  niaUserId       String // Nia-Hub end-user id (for payout)
+  email           String // denormalized for the admin view
+  productId       String
+  coin            String
+  principal       String // canonical decimal string
+  dailyRatePct    String // snapshot at stake time (later rate changes don't apply)
+  termDays        Int // snapshot
+  startAt         DateTime            @default(now())
+  maturityAt      DateTime
+  status          StakePositionStatus @default(ACTIVE)
   // Interest accrued so far, maintained by the daily worker (also computed live on read).
-  accruedInterest String @default("0")
+  accruedInterest String              @default("0")
   lastAccrualAt   DateTime?
   // Real daily payout: total interest credited to the rewards ledger, and how
   // many days have been paid (idempotency key for the worker).
-  paidInterest String @default("0")
-  daysPaid     Int    @default(0)
-  paidAt       DateTime?
-  createdAt    DateTime @default(now())
-  product      StakingProduct @relation(fields: [productId], references: [id])
-  payouts      StakingPayout[]
+  paidInterest    String              @default("0")
+  daysPaid        Int                 @default(0)
+  paidAt          DateTime?
+  createdAt       DateTime            @default(now())
+  product         StakingProduct      @relation(fields: [productId], references: [id])
+  payouts         StakingPayout[]
+
+  // --- Auto-renewal (docs/specs/staking-auto-renew-prd.md §3,
+  // docs/specs/staking-auto-renew-ruling.md §2.3-2.5, R-2/R-5/R-8) ---
+  // The user's standing instruction, mutable only while status = ACTIVE.
+  // Default false is load-bearing: explicitly opt-in, never pre-checked.
+  autoRenew              Boolean            @default(false)
+  // Outcome of the maturity-time renewal decision. Written exactly once,
+  // inside the maturity transaction (matureOrRenewPosition).
+  renewalStatus          StakeRenewalStatus @default(NONE)
+  // Link predecessor -> successor. @unique is the double-renewal guard: two
+  // renewals from one maturity become a DB-level constraint violation.
+  // This is the FK side of the self-relation (see `renewedTo` / `renewedFrom`
+  // below) — it is unique, so both relation directions are naturally 1:1.
+  renewedIntoPositionId  String?            @unique
+  // Link successor -> predecessor. Deliberately a *plain* denormalized scalar
+  // (no @relation of its own) rather than a second FK-backed relation: the
+  // renewal transaction writes this column and renewedIntoPositionId together
+  // as two directions of one logical edge, and this is the column the
+  // M1-manual / M1-auto split queries against directly (renewedFromPositionId
+  // IS NULL vs IS NOT NULL — PRD §10.2, AC-26), so it needs to be a fast,
+  // independently-indexable predicate rather than a relation traversal.
+  renewedFromPositionId  String?
+  // When the renewal decision (success or failure) was made — distinct from
+  // paidAt and maturityAt.
+  renewalProcessedAt     DateTime?
+  // Transient-failure counter. At >= 3, force plain maturity with
+  // FAILED_SYSTEM so the principal is never stranded behind a retry loop.
+  renewalAttempts        Int                @default(0)
+  // Idempotency stamp for the renewal-outcome email.
+  renewalNotifiedAt      DateTime?
+  // Idempotency stamp for the pre-maturity reminder email (PRD §7.1).
+  maturityReminderSentAt DateTime?
+  // Set only by the admin grant route. A non-null value makes a position
+  // ineligible for auto-renew at every layer (ruling R-5/R-6/R-9, E9).
+  grantedByAdminId       String?
+
+  // Self-relation: predecessor (renewedTo) <-> successor (renewedFrom),
+  // keyed by renewedIntoPositionId, which is @unique — so both relation
+  // fields below are naturally one-to-one (Prisma infers this from the
+  // unique FK), matching the "at most one predecessor, at most one
+  // successor" invariant structurally, not just by convention.
+  renewedTo   StakePosition? @relation("StakePositionRenewal", fields: [renewedIntoPositionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  renewedFrom StakePosition? @relation("StakePositionRenewal")
 
   @@index([userId, status])
   @@index([status])
+  @@index([renewedFromPositionId])
+  // Supports the pre-maturity reminder scan (PRD §7.1):
+  // status = ACTIVE AND autoRenew = true AND maturityAt BETWEEN … — the
+  // existing [userId,status] / [status] indexes don't cover autoRenew or
+  // maturityAt, so this composite index is added to serve that query shape.
+  @@index([status, autoRenew, maturityAt])
 }
 
 // One row per daily interest payout — the real, auditable rewards ledger. The
@@ -259,26 +338,27 @@ model StakingPayout {
   position   StakePosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
   userId     String
   coin       String
-  amount     String                                // interest paid for this day (decimal string)
-  dayIndex   Int                                   // 1-based day number within the term
+  amount     String // interest paid for this day (decimal string)
+  dayIndex   Int // 1-based day number within the term
   paidAt     DateTime      @default(now())
 
   @@unique([positionId, dayIndex])
   @@index([userId])
+  @@index([userId, paidAt])
 }
 
 // MLM referral commission paid to an upline for one settlement "day" (Phase B).
 // One row per (user, dayKey) makes the daily payout idempotent. layer1 = 대·소실적
 // 매칭, layer2 = 유니레벨 부스트. Written only when REFERRAL_BONUS_ENABLED is on.
 model ReferralBonusPayout {
-  id        String   @id @default(cuid())
-  userId    String
-  dayKey    String                                 // floor(now / stakingDayMs) — advances one per settlement day
-  coin      String   @default("BANA")
-  layer1    String   @default("0")                 // 대·소실적 매칭 (decimal string)
-  layer2    String   @default("0")                 // 유니레벨 부스트 (decimal string)
-  total     String   @default("0")
-  paidAt    DateTime @default(now())
+  id     String   @id @default(cuid())
+  userId String
+  dayKey String // floor(now / stakingDayMs) — advances one per settlement day
+  coin   String   @default("BANA")
+  layer1 String   @default("0") // 대·소실적 매칭 (decimal string)
+  layer2 String   @default("0") // 유니레벨 부스트 (decimal string)
+  total  String   @default("0")
+  paidAt DateTime @default(now())
 
   @@unique([userId, dayKey])
   @@index([userId])
@@ -289,12 +369,12 @@ model ReferralBonusPayout {
 // the Nia hub also supports (custom tokens are display-only until then).
 model ManagedCoin {
   id        String   @id @default(cuid())
-  symbol    String   @unique                 // e.g. "USDT"
-  name      String                            // e.g. "Tether"
+  symbol    String   @unique // e.g. "USDT"
+  name      String // e.g. "Tether"
   // networks: [{ code, contractAddress, decimals }] (decimals as a number; contractAddress is the EVM 0x… token id)
   networks  Json
-  logoKey   String?                           // /coins/<key>.svg override, else fallback to the symbol/initial
-  visible   Boolean  @default(true)           // show in the user coin list
+  logoKey   String? // /coins/<key>.svg override, else fallback to the symbol/initial
+  visible   Boolean  @default(true) // show in the user coin list
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

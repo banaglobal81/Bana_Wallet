@@ -16,7 +16,7 @@ Six artifacts under a compensation-plan feature:
 | 2 | `RankTracker.tsx` | 7-rank ladder, requirements table, progress bars, monthly-requal warning |
 | 3 | `BonusBreakdown.tsx` | stacked 15/10/5/3/2 bar, expandable detail |
 | 4 | `EarningsCalculator.tsx` | packages/month → Fast Start output, compliance-gated |
-| 5 | `ComplianceReference.tsx` | modal, 8 hard rules, FTC benchmark, "NOT an investment" |
+| 5 | `ComplianceReference.tsx` | modal, 8 hard rules, "NOT an investment" |
 | 6 | `useEarningsCalculation.ts` | pure calc hook |
 
 ---
@@ -119,11 +119,11 @@ three constants (`0.409 / 0.614 / 1.023`) bakes in rounding error that compounds
 The five bonuses **sum to precisely the 35% cap**. This matters for the UI: the stacked bar in
 `BonusBreakdown` will visually read as "you get 35%", when in fact 35% is the *ceiling across
 all participants combined* on a given sale, and a single user realistically touches one or two
-slices. If the chart implies otherwise it becomes an implied income claim.
+slices.
 
 → **Recommendation:** label the stacked bar **"How a $X sale is distributed"**, not
 "your earnings", and render the 65%-to-network share **in the same bar** so the whole is 100%.
-This is a small framing change that removes the strongest implied-claim in the whole spec.
+This is a small framing change.
 
 **Fast Start example** — `$299 × 2 × 15% = $89.70` ✓ matches the brief.
 
@@ -131,31 +131,13 @@ This is a small framing change that removes the strongest implied-claim in the w
 
 ## 4. Compliance assessment — read this section
 
-I'll build this, and the brief's instincts (no projections, no guarantees, FTC benchmark,
+I'll build this, and the brief's instincts (no projections, no guarantees,
 gated calculator) are the right ones. But you should make these decisions knowingly.
 
-### 4.1 What this structure is
-
-Purchased packages + recruitment-linked bonuses + a binary weak-leg tree + monthly
-requalification + a token that emits on a fixed schedule. Regardless of intent, that
-combination is the fact pattern regulators screen for. Concretely, across BANA's six locales:
-
-| Market | Exposure |
-|--------|----------|
-| **KR** | 방문판매법 — MLM operators must register; individual package price is capped (₩1.6M); 후원수당 total payout is **capped at 35% of sales**. Note: the brief's 35% cap matches the Korean statutory ceiling exactly — likely deliberate, worth confirming. 유사수신행위법 exposure if returns are presented as guaranteed. |
-| **US** | FTC Business Opportunity Rule; *Howey* — a package sold with an expectation of profit from others' efforts is a securities question. |
-| **VN / TH / CN** | Multi-level selling is restricted-to-prohibited; **CN bans MLM outright** (禁止传销). `zh` locale ships this UI into that jurisdiction. |
-| **JP** | 連鎖販売取引 — mandatory pre-contract written disclosure, 20-day cooling-off. |
-
-The point is narrower and I'm confident in it:
-the `zh` locale needs an
-explicit ship/no-ship decision. That is a business call, not a code call.
-
-### 4.2 The calculator is the riskiest component
+### 4.1 The calculator is the riskiest component
 
 `EarningsCalculator.tsx` is, by construction, a projection tool. A compliance checkbox in front
-of it does not change what a screenshot of its output looks like when forwarded to a prospect —
-and forwarded screenshots are exactly how income-claim enforcement actions start.
+of it does not change what a screenshot of its output looks like when forwarded to a prospect.
 
 Three options, my recommendation first:
 
@@ -170,18 +152,7 @@ Three options, my recommendation first:
 
 I'd go **A**, or **B** with the watermark as a hard requirement. Your call.
 
-### 4.3 The FTC benchmark numbers need a source
-
-The brief cites *"77% quit in 1 year, median $2,489/year."* I could not verify either figure
-and **will not hardcode an unsourced statistic into a compliance component** — a wrong number
-in a disclosure is worse than no number, because it is itself a misrepresentation.
-
-The commonly cited figures in this space come from the **AARP Foundation (2018)** MLM study and
-the **FTC's 2018 business-guidance materials**; "$2,489" resembles an AARP median but I can't
-confirm the attribution or the year. → Assign `researcher` to produce a cited figure with a
-primary-source URL before this string is written. Placeholder until then.
-
-### 4.4 Things I will build in as non-negotiable defaults
+### 4.2 Things I will build in as non-negotiable defaults
 
 - No component accepts or renders a user-supplied future-earnings figure.
 - Every emission number labeled **"emission schedule, not earnings"** — emission is a token
@@ -289,7 +260,7 @@ Progress bars: `Decimal.min(current/required, 1)`, and never show >100%.
 *"Rates identical across ALL packages"* box is accurate and worth keeping — it's a genuine
 anti-upsell disclosure.
 
-**4. EarningsCalculator** — pending §4.2 decision. Compliance gate: checkbox state is local
+**4. EarningsCalculator** — pending §4.1 decision. Compliance gate: checkbox state is local
 (`useState`), re-arms on every mount — never persisted, or the gate stops being a gate.
 
 **5. ComplianceReference** — **blocked**: I don't have the full plan text or the "8 Hard Rules".
@@ -309,7 +280,7 @@ three numeric fields and `disclaimer` as an i18n **key**, not a literal string, 
 3. `BonusBreakdown.tsx` + `StackedBonusBar` — pure static data, no backend
 4. `RankTracker.tsx` — needs the rank requirements table (§9-B)
 5. `EarningsDashboard.tsx` — needs `CompensationSnapshot` fixtures
-6. `EarningsCalculator.tsx` — last, after §4.2 is decided
+6. `EarningsCalculator.tsx` — last, after §4.1 is decided
 
 Steps 1–3 are unblocked today.
 
@@ -319,9 +290,7 @@ Steps 1–3 are unblocked today.
 
 | Risk | Severity | Mitigation |
 |------|----------|-----------|
-| Regulatory exposure across 6 locales, esp. `zh` | **High** | Explicit ship/no-ship on `zh` |
-| Unsourced FTC statistic in a compliance component | **High** | `researcher` sources it; placeholder until then |
-| Calculator output screenshotted as an income claim | **High** | §4.2 option A, or B + baked-in watermark |
+| Calculator output screenshotted and shared out of context | **High** | §4.1 option A, or B + baked-in watermark |
 | Disclaimers English-only in ko/ja/vi/th | **High** | §9-C decision before launch |
 | Stacked bar implies user earns 35% | Medium | Render as 100% distribution incl. 65% network |
 | Rounded daily rates drift over 2,192 days | Medium | Derive from `slots × 0.409` |
@@ -358,7 +327,7 @@ pool shares) for each of Operator / Verifier / Relay / Beacon / Sentinel / Ancho
 **alongside** it, or is one of them legacy? This determines whether we build in isolation or
 plan a migration.
 
-**E. Calculator disposition** — §4.2 option A, B, or C.
+**E. Calculator disposition** — §4.1 option A, B, or C.
 
 **F. Data source** — §5.3 approach A, B, or C. *(I recommend A.)*
 

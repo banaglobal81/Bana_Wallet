@@ -1,0 +1,26 @@
+-- No-op migration: documents the R-7 backfill decision for
+-- StakePosition.grantedByAdminId, introduced by migration
+-- 20260809044114_staking_auto_renew.
+--
+-- Ruling: docs/specs/staking-auto-renew-ruling.md §2.4, R-7.
+--
+-- `grantedByAdminId` for existing admin-granted StakePosition rows is NOT
+-- backfilled. It is in principle derivable from AuditLog (action =
+-- 'STAKING_POSITION_GRANT', targetId = position id, adminId present), but
+-- the ruling itself calls that backfill "best-effort, not authoritative"
+-- because recordAudit() swallows its own write failures (audit.ts:16-29) —
+-- a grant whose audit write failed leaves no trace, so a backfill script
+-- driven off AuditLog would silently UNDER-count real grants with no way to
+-- detect the gap afterward. The ruling weighs the two failure modes
+-- explicitly: "an unmarked legacy grant that later gets auto-renewed is a
+-- bounded, small, and detectable error, while a wrong backfill is not."
+--
+-- Decision: leave `grantedByAdminId` NULL on every pre-existing
+-- StakePosition row. Only the admin grant route (going forward) sets this
+-- column (R-6: it must never accept a client-supplied value). If a
+-- verified reconciliation against AuditLog is ever wanted for historical
+-- rows, it should be a separate, explicitly-audited one-off data script
+-- (using decimal.js for any amount comparison, per CLAUDE.md rule 2),
+-- reviewed on its own — not silently folded into schema DDL.
+--
+-- No schema changes in this migration.

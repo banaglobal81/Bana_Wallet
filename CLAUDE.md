@@ -21,7 +21,7 @@
    - Scope: new/modified code must comply immediately. Existing violations are flagged by `code-compliance-checker` and replaced incrementally.
 3. **No direct Nia-Hub calls from the browser.** The frontend must only call `web/src/utils/niaApi.ts` → `/api/nia/*` (Next.js route handlers). No direct fetch to `api.niawallet.com`.
 4. **The HMAC secret (`NIA_API_SECRET`) lives only in `web/src/lib/nia/*` (server-only).** Never leak the secret into the client bundle, logs, or error responses. The two signing schemes (implemented in `web/src/lib/nia/client.ts` + `web/server/core/nia-signing.js`) are **owned by `web-shared-expert`**.
-5. **Git commits are `deploy-manager` only.** No history rewrites (`git rebase` / `reset --hard`).
+5. **Git commits are `deploy-manager` only.** No history rewrites (`git rebase` / `reset --hard`). Commits require `qa-lead`'s sign-off — hook-enforced via a single-use `.claude/.qa-passed` marker (missing marker forces a live confirmation instead of a hard block). Details: `docs/architecture/harness.md`.
 6. **`git push` to `main` is `deploy-manager`-only.** No other agent may push. `deploy-manager` pushes autonomously after commit (no per-push user confirmation required). No force-push, ever.
    - **Railway control is also `deploy-manager`-only, scoped to redeploy/restart triggers and log/status queries.** Status/log queries run autonomously; a redeploy or restart requires explicit user confirmation first (it can affect live traffic). Env var/secret changes and creating/deleting Railway services stay human-only — `deploy-manager` may not perform them regardless of confirmation. Details: `docs/architecture/deploy.md`.
 7. **`prisma db push` is absolutely forbidden** (all agents). The DB + Prisma is now live — all schema changes go through migrations only (`prisma migrate dev` / `prisma migrate deploy`). Never run `prisma migrate reset` or drop tables on a shared/production DB.
@@ -37,7 +37,7 @@
 | T2   | sonnet | code read/edit across wallet/admin/shared/DB layers, custody security review, QA scenario design, growth/retention analysis |
 | T3   | opus   | product planning & spec design only — PRDs, FRDs, feature/screen design (incl. game feature design) |
 
-## Agent Team (17)
+## Agent Team (19)
 
 | # | Agent | model | Scope | Status |
 |---|-------|-------|-------|--------|
@@ -58,6 +58,8 @@
 | 15 | doc-keeper | haiku | doc sync | active |
 | 16 | researcher | sonnet | external web research → `docs/research/` | active |
 | 17 | game-planner | opus | game feature design — mechanics, flow, FRDs for the wallet's game surface | active |
+| 18 | game-designer | sonnet | game surface visual/art direction + asset production (make-image pipeline) | active |
+| 19 | game-developer | sonnet | game surface implementation (Phaser/game-engine code) | active |
 
 ## Agent Self-Update Protocol
 

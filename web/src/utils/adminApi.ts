@@ -210,6 +210,9 @@ export interface AdminStakingProduct {
   createdAt: string;
   totalStaked: string;
   positionCount: number;
+  // Count of ACTIVE positions on this product with autoRenew = true — drives the
+  // rate-lowering warning (staking-auto-renew-ruling.md R-1). Read-only, informational.
+  autoRenewActiveCount: number;
 }
 
 export interface AdminStakePosition {

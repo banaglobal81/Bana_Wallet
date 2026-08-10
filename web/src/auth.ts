@@ -11,6 +11,7 @@ import { clientIp, geoLookup } from '@/lib/session-device';
 import { rpFromHeaders } from '@/lib/webauthn';
 import { verifyTotp, matchBackupCode } from '@/lib/totp';
 import { decryptSecret } from '@/lib/crypto';
+import { LOCALE_COOKIE, parseLocaleCookie } from '@/i18n/localeCookie';
 
 // A valid bcrypt hash used only to equalize response time when no user exists,
 // so login timing can't be used to enumerate which emails have accounts.
@@ -241,6 +242,27 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           token.sid = ls.id;
         } catch (e) {
           console.error('[session-tracking] failed to record login session:', e);
+        }
+
+        // Locale capture/refresh on every successful login
+        // (docs/specs/staking-auto-renew-ruling.md R-8), from the short-lived
+        // cookie the [locale] login/signup pages write right before calling
+        // signIn() (src/i18n/localeCookie.ts) — this jwt() callback is the
+        // one choke point common to credentials, passkey, AND Google sign-in,
+        // and /api/auth/* routes aren't under [locale] so there's no other
+        // request-locale signal available here. Fail-open: never block sign-in.
+        try {
+          const jar = await cookies();
+          const raw = jar.get(LOCALE_COOKIE)?.value;
+          const locale = parseLocaleCookie(raw);
+          if (locale) {
+            await prisma.user.update({ where: { id: token.id as string }, data: { locale } });
+          }
+          if (raw) {
+            try { jar.delete(LOCALE_COOKIE); } catch { /* best-effort single-use */ }
+          }
+        } catch (e) {
+          console.error('[locale-capture] failed to refresh User.locale on login:', e);
         }
       }
       // On subsequent requests neither block runs; token is returned as-is

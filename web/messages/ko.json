@@ -17,7 +17,8 @@
     "dashboard": "대시보드",
     "adminConsole": "관리자 콘솔",
     "coins": "코인",
-    "coinManagement": "코인 관리"
+    "coinManagement": "코인 관리",
+    "invite": "초대"
   },
   "login": {
     "title": "로그인",
@@ -241,7 +242,176 @@
     "statusACTIVE": "진행 중",
     "statusMATURED": "만기",
     "statusPAID": "지급됨",
-    "maturedNote": "만기가 되면 원금이 지갑으로 반환되고 이자가 지급됩니다."
+    "maturedNote": "만기가 되면 원금은 지갑에서 사용 가능한 상태가 됩니다. 획득한 이자는 위에 표시된 이자 내역에 적립되며, 지갑 잔액으로의 지급은 아직 지원되지 않습니다.",
+    "autoRenew": {
+      "optInLabel": "만기에 자동 갱신",
+      "optInHelp": "이 기간이 끝나면 동일한 금액을 이 상품에서 다시 {termDays}일간 스테이킹합니다. 이미 획득한 이자는 포함되지 않습니다. 만기 전까지 언제든지 끌 수 있습니다.",
+      "stateOff": "자동 갱신: 해제",
+      "stateOn": "자동 갱신: 활성화 · {date}에 갱신 예정",
+      "stateOnClosed": "자동 갱신: 활성화 · 이 상품은 신규 스테이킹을 받지 않아서 갱신이 불가능할 수 있습니다.",
+      "stateOnOverCap": "자동 갱신: 활성화 · 이 스테이킹의 기간이 {maxTermDays}일을 초과하여 갱신되지 않습니다. 원금은 {date}에 만기될 때 사용 가능합니다.",
+      "stateOnGranted": "자동 갱신: 활성화 · 이 스테이킹은 BANA에서 지급되었으므로 갱신되지 않습니다. 원금은 {date}에 만기될 때 사용 가능합니다.",
+      "offToast": "자동 갱신이 해제되었습니다. 원금은 이 스테이킹이 {date}에 만기될 때 사용 가능합니다.",
+      "confirmTitle": "자동 갱신을 활성화하시겠습니까?",
+      "confirmBody1": "{maturityDate}에 {principal} {coin}이 이 상품에서 다시 {termDays}일간 스테이킹되며, 그 시점에 제시된 금리가 적용됩니다.",
+      "confirmLock": "스테이킹된 자금은 새로운 기간이 종료되기 전까지 인출할 수 없습니다.",
+      "confirmBody2": "이미 획득한 이자는 재스테이킹되지 않습니다.",
+      "confirmBody3": "{maturityDate} 전까지 언제든지 이를 해제할 수 있습니다.",
+      "confirmYes": "활성화",
+      "confirmCancel": "취소",
+      "renewedHeading": "자동 갱신됨",
+      "renewedCopy": "{principal} {coin}이 이 상품에서 다시 {termDays}일간 스테이킹되었습니다(일 이율 {dailyRatePct}%). 새로운 기간은 {startAt}부터 시작되었습니다. 이전 기간에 획득한 이자는 포함되지 않았습니다.",
+      "notRenewedHeading": "갱신되지 않음",
+      "notRenewedClosedCopy": "{productName}은(는) 신규 스테이킹을 받지 않습니다. 원금 {principal} {coin}은(는) 지갑에서 사용 가능합니다.",
+      "notRenewedTermTooLongCopy": "자동 갱신은 기간이 {maxTermDays}일을 초과하는 스테이킹에서는 사용할 수 없습니다. 원금 {principal} {coin}은(는) 지갑에서 사용 가능합니다.",
+      "notRenewedCapacityCopy": "{productName}이(가) 가득 찼습니다. 원금 {principal} {coin}은(는) 지갑에서 사용 가능합니다.",
+      "notRenewedBelowMinCopy": "{productName}의 최소 금액이 이제 {minAmount} {coin}입니다. 원금 {principal} {coin}은(는) 지갑에서 사용 가능합니다.",
+      "notRenewedAboveMaxCopy": "{productName}의 최대 금액이 이제 {maxAmount} {coin}입니다. 원금 {principal} {coin}은(는) 지갑에서 사용 가능합니다.",
+      "notRenewedRateLoweredCopy": "{productName}의 금리가 일 이율 {dailyRatePct}%(으)로 변경되었으며, 이는 스테이킹의 일 이율 {oldRate}%보다 낮습니다. 다른 조건으로 갱신하지 않았습니다. 원금 {principal} {coin}은(는) 지갑에서 사용 가능합니다.",
+      "notRenewedTermsChangedCopy": "{productName}의 조건이 변경되었습니다. 원금 {principal} {coin}은(는) 지갑에서 사용 가능합니다.",
+      "notRenewedSystemErrorCopy": "갱신을 완료할 수 없습니다. 원금 {principal} {coin}은(는) 지갑에서 사용 가능합니다.",
+      "error": {
+        "INVALID_REQUEST": "잘못된 요청입니다.",
+        "POSITION_NOT_FOUND": "스테이킹을 찾을 수 없습니다.",
+        "POSITION_NOT_ACTIVE": "이 스테이킹은 이미 만기되었으므로 자동 갱신을 변경할 수 없습니다.",
+        "AUTO_RENEW_GRANTED_POSITION": "이 스테이킹은 BANA에서 지급되었으므로 갱신으로 설정할 수 없습니다. 만기될 때 원금은 지갑에서 사용 가능합니다.",
+        "AUTO_RENEW_TERM_TOO_LONG": "자동 갱신은 기간이 {maxTermDays}일 이하인 스테이킹에서 사용 가능합니다. 이 스테이킹의 기간은 {termDays}일입니다."
+      }
+    },
+    "game": {
+      "hud": {
+        "stratum": "지층 {n} · {name}",
+        "level": "LV {level}",
+        "xpProgress": "{current}/{next} XP",
+        "operatingDays": "총 가동일 {days}일",
+        "wellCount": "시추정 {active}기 가동 중"
+      },
+      "state": {
+        "reportingPaused": "산출 보고가 일시 중지되었습니다. 마지막 갱신 {time}. 계약 이자는 재개 시 소급하여 정산됩니다.",
+        "noActiveWell": "가동 중인 시추정이 없습니다.",
+        "disabled": "현재 딥 코어를 이용할 수 없습니다.",
+        "maintenance": "점검 중입니다."
+      },
+      "empty": {
+        "cta": "스테이킹 상품 보기",
+        "ledgerNone": "아직 기록이 없습니다."
+      },
+      "nav": {
+        "crew": "크루",
+        "depot": "보급창",
+        "ledger": "기록"
+      },
+      "crew": {
+        "title": "크루",
+        "crew_boss": {
+          "name": "한나 소렌",
+          "role": "리그 보스(현장 총괄)"
+        },
+        "crew_mech": {
+          "name": "딜런 아카보",
+          "role": "정비공"
+        },
+        "crew_geo": {
+          "name": "메이 린",
+          "role": "지질학자"
+        },
+        "crew_ops": {
+          "name": "오마르 리스",
+          "role": "운용·물류"
+        },
+        "unit_k9": {
+          "name": "K-9 \"코어독\"",
+          "role": "자동화 드론 유닛"
+        },
+        "state": {
+          "idle": "대기",
+          "working": "가동 중",
+          "waiting": "대기 중(보고 지연)",
+          "idle_empty": "유휴 — 가동 중인 시추정 없음",
+          "chapter_up": "지층 전환"
+        }
+      },
+      "chapter": {
+        "1": {
+          "name": "지표 굴착"
+        },
+        "2": {
+          "name": "사층 돌파"
+        },
+        "3": {
+          "name": "현무암 붕"
+        },
+        "4": {
+          "name": "지열 심연"
+        },
+        "5": {
+          "name": "결정 공동"
+        },
+        "6": {
+          "name": "코어 층"
+        }
+      },
+      "well": {
+        "badge": "시추정 #{seq} · 지층 {chapter}"
+      },
+      "stratum": {
+        "reached": "지층 {n} 도달"
+      },
+      "level": {
+        "unlocked": "해제됨: {items}"
+      },
+      "coreLog": {
+        "rank": "심층 기록 {rank}단",
+        "noYield": "심층 기록 보상은 외형 전용이며 지급액에 영향을 주지 않습니다."
+      },
+      "ledger": {
+        "title": "기록",
+        "xpTotal": "XP 합계",
+        "svTotal": "샐비지 합계",
+        "sourceLift": "일일 인양",
+        "sourceCharterOpen": "인가 개시",
+        "sourceCharterComplete": "인가 완주",
+        "sourceStratum": "지층 도달",
+        "sourceCoreLog": "심층 기록"
+      },
+      "depot": {
+        "title": "보급창",
+        "tabOutfitting": "외장",
+        "balanceSV": "샐비지 {n}",
+        "priceTiersTitle": "가격대",
+        "tier": {
+          "basic": "기본 변형",
+          "standard": "표준",
+          "stratumLimited": "지층 한정",
+          "coreLog": "심층 기록 보상"
+        },
+        "slot": {
+          "crew_helmet": "크루 헬멧",
+          "rig_paint": "리그 도장",
+          "stratum_lighting": "지층 조명 프리셋",
+          "drone_skin": "드론 스킨",
+          "background_effect": "배경 이펙트",
+          "rig_plate": "리그 명판"
+        },
+        "purchaseUnavailable": "구매 처리가 현재 연결되지 않았습니다."
+      },
+      "intro": {
+        "title": "인가서가 발급되었습니다.",
+        "body1": "이 화면은 당신의 스테이킹 포지션을 시추정으로 보여줍니다.",
+        "body2": "정산은 서버가 처리하며, 화면을 닫아도 계속됩니다.",
+        "dismiss": "닫기"
+      },
+      "pref": {
+        "title": "딥 코어 표시",
+        "motionReduced": "애니메이션 최소화",
+        "hide": "숨기기",
+        "hideHelp": "숨겨도 진행도와 지급에는 영향이 없습니다.",
+        "show": "표시"
+      },
+      "error": {
+        "GAME_LOAD_FAILED": "화면을 불러오지 못했습니다. 스테이킹 기능은 정상적으로 이용할 수 있습니다."
+      }
+    }
   },
   "deposit": {
     "backAria": "뒤로",
@@ -626,7 +796,19 @@
     "product": "상품",
     "principal": "원금",
     "accrued": "획득",
-    "matures": "만기"
+    "matures": "만기",
+    "autoRenewWarning": {
+      "inlineTitle": "금리를 인하하면 {count, plural, one {# 건의 대기 중인 자동 갱신} other {# 건의 대기 중인 자동 갱신}}이 거부됩니다.",
+      "inlineBody": "{productName}의 {count, plural, one {# 개의 활성화된 포지션} other {# 개의 활성화된 포지션}}에 자동 갱신이 활성화되어 있습니다. 각각은 만기 시점의 이 상품의 금리로 확인됩니다. 저장된 금리가 포지션의 금리보다 낮으면 그 갱신은 거부되고 원금은 다시 스테이킹되지 않고 사용자의 지갑에 반환됩니다.",
+      "inlineRestore": "포지션이 만기되기 전에 금리를 다시 인상하면 해당 포지션의 갱신이 복구됩니다 — 만기 시점의 금리만 사용됩니다.",
+      "inlineSnapshot": "이미 스테이킹된 포지션은 스테이킹된 당시의 금리를 유지합니다. 이 변경 사항은 기존 포지션의 수익에 영향을 주지 않습니다.",
+      "confirmTitle": "{productName}에서 더 낮은 금리를 저장하시겠습니까?",
+      "confirmRates": "새로운 일 이율 {newRate}% — 현재 {oldRate}%",
+      "confirmBody": "이 상품의 {count, plural, one {# 개의 활성화된 포지션} other {# 개의 활성화된 포지션}}에 자동 갱신이 활성화되어 있습니다. 이 갱신들은 만기 시 거부되고 원금은 사용자의 지갑에 반환됩니다.",
+      "confirmSnapshot": "기존 포지션은 스테이킹된 당시의 금리를 유지합니다.",
+      "confirmYes": "더 낮은 금리 저장",
+      "confirmCancel": "취소"
+    }
   },
   "stakedSummary": {
     "title": "스테이킹",
@@ -665,5 +847,106 @@
     "withdrawLabel": "출금",
     "depositToggleHint": "이 네트워크에서 사용자의 입금 허용 여부를 전환합니다",
     "withdrawToggleHint": "이 네트워크에서 사용자의 출금 허용 여부를 전환합니다"
+  },
+  "oilfield": {
+    "title": "BANA Fields",
+    "subtitle": "Your staking positions, seen as a field.",
+    "statusStrip": "{n} wells on production",
+    "padEmpty": "Pad {n} — available",
+    "rigCaption": "{principal} {coin} · {productName}",
+    "depth": "Day {d} of {total}",
+    "countdown": "Total depth in {countdown}",
+    "tank": "{paid} {coin} credited of {full} {coin} full-term",
+    "accrualGap": "Accrued but not yet credited: {amount} {coin}",
+    "shiftReportTitle": "Shift report",
+    "shiftReportLine": "Well #{seq} · day {dayIndex}/{termDays} · +{amount} {coin}",
+    "shiftReportFooter": "Already credited to your rewards ledger.",
+    "shiftReportTruncation": "Showing the {n} most recent credits. Your full history is in your rewards ledger.",
+    "shiftReportDismiss": "Dismiss",
+    "completionTitle": "Total depth reached",
+    "completionBody": "{wellName} ran its full {termDays}-day term and credited {total} {coin}. Your {principal} {coin} is available again.",
+    "completionCta": "Spud another well",
+    "standby": "No wells on production. Your field is on standby.",
+    "reportingPaused": "Production reporting paused. Accrual continues; credited amounts will post when reporting resumes.",
+    "maintenance": "Operations are temporarily read-only for maintenance.",
+    "fieldLogTitle": "Field log",
+    "fieldLogEmpty": "No activity yet.",
+    "logSpudded": "Spudded {wellName} ({principal} {coin}, {termDays}-day term)",
+    "logCredited": "{wellName} credited +{amount} {coin} (day {d}/{total})",
+    "logCompleted": "{wellName} reached total depth after {termDays} days",
+    "logReportingPaused": "Production reporting paused",
+    "surveyStep1Title": "This is your field.",
+    "surveyStep1Body": "Each well is one staking position.",
+    "surveyStep2Title": "Wells take time.",
+    "surveyStep2Body": "A well produces every day and reaches total depth at the end of its term. It cannot be stopped early.",
+    "surveyStep3Title": "You choose the prospect.",
+    "surveyStep3Body": "Open products are the permits available today.",
+    "surveyNext": "Next",
+    "surveySkip": "Skip",
+    "surveyBack": "Back",
+    "surveyDone": "Go to permits",
+    "remoteWellsTitle": "Remote wells — producing, not shown on the yard.",
+    "totalDepthSettling": "Total depth reached. Settlement in progress.",
+    "menuLog": "Field log",
+    "menuSurvey": "About this field",
+    "motionPrefLabel": "Motion",
+    "motionPrefAuto": "Auto",
+    "motionPrefOn": "Motion on",
+    "motionPrefOff": "Motion off",
+    "back": "Back",
+    "loading": "Loading…",
+    "notEligibleTitle": "No field yet",
+    "notEligibleBody": "Your field appears once you've held a staking position.",
+    "backToStaking": "Back to Staking",
+    "rateSnapshot": "Daily rate",
+    "aprLabel": "APR",
+    "dayCounter": "Day {d} of {total}",
+    "ledgerTitle": "Per-day ledger",
+    "ledgerEmpty": "No credits yet.",
+    "loadEarlier": "Load earlier"
+  },
+  "referral": {
+    "pageTitle": "초대",
+    "subtitle": "내 초대 링크, 추천 코드, 커미션 요약입니다."
+  },
+  "emails": {
+    "autoRenewReminder": {
+      "subject": "{productName} 스테이킹이 {maturityDate}에 만기되며 자동 갱신이 설정되어 있습니다",
+      "htmlIntro": "{productName} 스테이킹이 {maturityDate}에 만기됩니다",
+      "body1": "{productName}에서 {principal} {coin}의 스테이킹이 {maturityDate}에 만기됩니다.",
+      "body2": "이 스테이킹의 자동 갱신이 활성화되어 있습니다. 만기 전에 이를 해제하지 않으면, 동일한 금액 — {principal} {coin} —이 {productName}에서 다시 {termDays}일 동안 스테이킹되며, 그 시점에 제시된 금리가 적용됩니다. 이미 획득한 이자는 포함되지 않습니다.",
+      "lock": "스테이킹된 자금은 새로운 기간이 종료되기 전까지 인출할 수 없습니다.",
+      "body3": "자동 갱신을 해제하려면: BANA Wallet을 열고, 스테이킹으로 이동한 다음, 내 스테이킹 아래에서 이 스테이킹을 찾아 자동 갱신을 끕니다. 한 번의 탭이면 되며, 확인 단계가 없고, {maturityDate} 전까지 언제든지 할 수 있습니다.",
+      "body4": "이 스테이킹이 만기될 때 자동 갱신이 해제되면, 원금은 단순히 지갑에서 사용 가능하게 됩니다.",
+      "cta": "이 스테이킹 관리"
+    },
+    "autoRenewOutcome": {
+      "renewedSubject": "{productName} 스테이킹이 다시 {termDays}일 동안 갱신되었습니다",
+      "renewedIntro": "{productName}의 스테이킹이 {maturedAt}에 만기되었으며 다시 스테이킹되었습니다.",
+      "renewedAmountLabel": "다시 스테이킹된 금액",
+      "renewedProductLabel": "상품",
+      "renewedTermLabel": "새로운 기간",
+      "renewedStartLabel": "새로운 기간 시작",
+      "renewedEndLabel": "새로운 기간 종료",
+      "renewedInterestNote": "이전 기간에 획득한 이자는 포함되지 않았습니다 — 원금만 다시 스테이킹되었습니다.",
+      "lock": "스테이킹된 자금은 새로운 기간이 종료되기 전까지 인출할 수 없습니다.",
+      "renewedStillOn": "새로운 스테이킹의 자동 갱신이 여전히 활성화되어 있습니다. 이를 해제하려면 BANA Wallet에서 스테이킹을 열고 이 스테이킹에서 자동 갱신을 끕니다.",
+      "notRenewedSubject": "{productName} 스테이킹이 만기되었으며 갱신되지 않았습니다",
+      "notRenewedIntro": "{productName}의 스테이킹이 {maturedAt}에 만기되었으며 다시 스테이킹되지 않았습니다.",
+      "notRenewedPrincipalAvailable": "원금 {principal} {coin}은 지갑에서 사용 가능합니다.",
+      "notRenewedCta": "다시 스테이킹하려면 BANA Wallet에서 스테이킹을 여세요.",
+      "cta": "이 스테이킹 보기",
+      "reason": {
+        "FAILED_PRODUCT_CLOSED": "{productName}은 신규 스테이킹을 받지 않습니다.",
+        "FAILED_TERM_TOO_LONG": "자동 갱신은 기간이 {maxTermDays}일을 초과하는 스테이킹에서는 사용할 수 없습니다.",
+        "FAILED_CAPACITY": "{productName}이 가득 찼습니다.",
+        "FAILED_BELOW_MIN": "{productName}의 최소 금액이 이제 {minAmount} {coin}입니다.",
+        "FAILED_ABOVE_MAX": "{productName}의 최대 금액이 이제 {maxAmount} {coin}입니다.",
+        "FAILED_RATE_LOWERED": "{productName}의 금리가 스테이킹의 금리보다 낮아졌으므로 다른 조건으로 갱신하지 않았습니다.",
+        "FAILED_TERMS_CHANGED": "{productName}의 조건이 변경되었습니다.",
+        "FAILED_SYSTEM": "갱신을 완료할 수 없습니다.",
+        "FAILED_GRANTED_POSITION": "갱신을 완료할 수 없습니다."
+      }
+    }
   }
 }

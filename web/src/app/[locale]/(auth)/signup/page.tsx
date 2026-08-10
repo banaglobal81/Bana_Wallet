@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { signIn } from 'next-auth/react';
 import { Mail, Lock, UserPlus, AlertCircle, Loader2 } from 'lucide-react';
+import { writeLocaleCookie } from '@/i18n/localeCookie';
 
 export default function SignupPage() {
   const t = useTranslations('signup');
+  const locale = useLocale();
   const router = useRouter();
   // Referral attribution: capture ?ref=CODE from the invite link (if present).
   const ref = useSearchParams().get('ref')?.trim() || undefined;
@@ -33,7 +35,9 @@ export default function SignupPage() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, ref }),
+        // `locale` populates User.locale at signup (ruling R-8) — read from
+        // the active next-intl locale, not client-guessable/injectable auth data.
+        body: JSON.stringify({ email, password, ref, locale }),
       });
 
       // Guard against a non-JSON body (e.g. a 503 HTML error page) so signup
@@ -50,6 +54,7 @@ export default function SignupPage() {
       }
 
       // Auto sign-in after successful registration
+      writeLocaleCookie(locale); // refreshed server-side in auth.ts jwt() too — ruling R-8
       await signIn('credentials', { email, password, redirect: false });
       router.push('/');
       router.refresh();

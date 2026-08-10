@@ -3,13 +3,15 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { signIn } from 'next-auth/react';
 import { Mail, Lock, LogIn, AlertCircle, Loader2, CheckCircle2, Fingerprint, ShieldCheck } from 'lucide-react';
 import { getPasskeyAssertion, passkeysSupported } from '@/utils/passkeysApi';
+import { writeLocaleCookie } from '@/i18n/localeCookie';
 
 export default function LoginPage() {
   const t = useTranslations('login');
+  const locale = useLocale();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,6 +39,7 @@ export default function LoginPage() {
   const handleGoogle = async () => {
     setNotice('');
     try {
+      writeLocaleCookie(locale); // captured/refreshed server-side in auth.ts jwt() — ruling R-8
       await signIn('google', { callbackUrl: '/' });
     } catch {
       setNotice(t('googleError'));
@@ -48,6 +51,7 @@ export default function LoginPage() {
     setError(''); setNotice(''); setPasskeyBusy(true);
     try {
       const response = await getPasskeyAssertion();
+      writeLocaleCookie(locale); // captured/refreshed server-side in auth.ts jwt() — ruling R-8
       const res = await signIn('passkey', { response, redirect: false });
       if (res?.error) {
         setError('Passkey sign-in failed — register a passkey first, or use your password.');
@@ -64,6 +68,7 @@ export default function LoginPage() {
   };
 
   const finishLogin = async (extra: Record<string, string> = {}) => {
+    writeLocaleCookie(locale); // captured/refreshed server-side in auth.ts jwt() — ruling R-8
     const res = await signIn('credentials', { email, password, redirect: false, ...extra });
     if (res?.error) return false;
     router.push('/');

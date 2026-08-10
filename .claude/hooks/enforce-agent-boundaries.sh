@@ -13,21 +13,40 @@
 # 3) CLAUDE.md rule 6 (Railway control): any `railway` CLI invocation is deploy-manager-only.
 #    Read-only verbs (status/logs/whoami/help) auto-allow; anything else (redeploy/restart/up/
 #    down/variables/service/...) forces a live "ask" permission prompt — see rule 3b below.
+# 4) CLAUDE.md rule 5 (QA gate): deploy-manager's `git commit` requires a fresh
+#    .claude/.qa-passed marker (written by qa-lead after a passing run); missing it
+#    forces an "ask" rather than a hard deny. Single-use — consumed on every commit.
 #
-# Known limitation (documented, not silently assumed away): detection below is
-# substring/regex matching, not a real shell parser. It closes the "wrapper" bypass
-# class (eval '...', bash -c '...', xargs, newline-separated commands, quoted outer
-# commands) by matching the git/railway token anywhere in the string rather than only
-# at the start of a `;`/`&`/`|` segment. It does NOT and cannot catch bypasses that
-# break up the literal "git commit"/"git push"/"git add" substring itself — `"git"
-# commit` (quote breaks the \s+ adjacency), `g\it commit`, a renamed/symlinked git
-# binary, or a command built up via string concatenation/variable expansion at
-# runtime. (`\git commit` is NOT such a bypass — the backslash is a no-op to the
-# shell and the literal substring "git commit" is still there, so this hook still
-# catches it; verified in the test suite below.) Closing the remaining gap
-# requires actual shell tokenization, not a regex — out of scope here. See
-# .claude/hooks/test-enforce-agent-boundaries.sh for the regression suite covering
-# both what this hook catches and what it knowingly still lets through.
+# Detection strategy (documented, not a real shell parser — substring/regex only):
+# a command is flagged if the restricted token is EITHER (a) anchored — the actual
+# leading word of the whole command (optionally after leading whitespace), of a
+# segment after `;`/`&`/`|`, inside a subshell/command-substitution opener
+# (backtick or `$(`), or right after a `then`/`do`/`else`/`elif` keyword (grep's `^`
+# also anchors per-line, so newline-joined commands are covered for free) — OR (b) a
+# known wrapper keyword (`eval`, `xargs`, `env`, `exec`, `nohup`, `sudo`, `timeout`,
+# `sh -c`, `bash -c`, `zsh -c`) is anchored in the same command AND the token appears
+# anywhere in it. (b) exists specifically to catch `eval "git commit -m x"` / `sh -c
+# "git push"` / `xargs git commit` — bypasses that (a) alone misses because the token
+# isn't the command's literal first word there.
+#
+# This two-tier design replaced a first attempt that just matched the token ANYWHERE,
+# unconditionally — that broke ordinary, frequent operations for multiple agents:
+# `grep -rn "git commit" docs/` (routine for doc-keeper/code-compliance-checker, whose
+# job is searching this repo's docs — CLAUDE.md itself contains the phrases "git
+# commit" and "railway" repeatedly) and `git commit -m "chore: install dep, mv
+# config"` (an ordinary deploy-manager commit message — "install"/"mv" as English
+# words, not commands) were both false-denied. Gating the unanchored match behind a
+# real wrapper-keyword invocation keeps the wrapper-bypass coverage while excluding
+# plain search/argument text.
+#
+# Trade-off accepted knowingly: this reopens a narrower gap than the false-positive it
+# fixes — `\git commit -m x` (backslash is a shell no-op, git still runs) is neither
+# anchored nor wrapper-invoked, so it's allowed. Closing it without reintroducing the
+# grep/commit-message false positives needs actual shell tokenization, not regex — out
+# of scope here; the false positives were the worse failure mode (constant, on routine
+# ops) versus this one (rare, requires deliberately atypical syntax). See
+# .claude/hooks/test-enforce-agent-boundaries.sh for both the bypasses this catches
+# and the residual gaps it knowingly still lets through.
 set -uo pipefail
 
 input="$(cat)"
@@ -44,23 +63,64 @@ ask() {
   exit 0
 }
 
-# Rule 5/6 — matched anywhere in the command (not anchored to start/operator) so
-# `eval "git commit -m x"`, `sh -c 'git push'`, `xargs git add`, and newline-joined
-# commands are all caught, not just `git ...` as the literal first token.
-if echo "$cmd" | grep -qE '\bgit\s+(commit|push|add)\b' && [ "$agent" != "deploy-manager" ]; then
+# Command-position anchor: start of string (leading whitespace tolerated), after a
+# `;`/`&`/`|` segment separator, inside a subshell/substitution opener (backtick or
+# `$(`), or right after a `then`/`do`/`else`/`elif` keyword.
+ANCHOR='(^[[:space:]]*|[;&|][[:space:]]*|`|\$\(|\b(then|do|else|elif)[[:space:]]+)'
+
+WRAPPER_ANCHORED="${ANCHOR}(eval|xargs|env|exec|nohup|sudo|timeout)\\b|${ANCHOR}(sh|bash|zsh)\\s+-c\\b"
+has_wrapper() { echo "$cmd" | grep -qE "$WRAPPER_ANCHORED"; }
+
+# anchored(token_anchored_regex, token_bare_regex) -> 0 if flagged
+flagged() {
+  echo "$cmd" | grep -qE "$1" && return 0
+  has_wrapper && echo "$cmd" | grep -qE "$2" && return 0
+  return 1
+}
+
+# Rule 5/6
+if flagged "${ANCHOR}git\\s+(commit|push|add)\\b" '\bgit\s+(commit|push|add)\b' \
+   && [ "$agent" != "deploy-manager" ]; then
   deny "CLAUDE.md rule 5/6: git commit/add/push is deploy-manager-only (caller: $agent)."
 fi
 
+# Rule 5 (QA sign-off gate): qa-lead.md says "only on pass, call deploy-manager" and
+# deploy-manager.md's Forbidden list already says "committing when tests have not
+# passed" — this makes that convention machine-checked instead of relying purely on
+# agents reading their own instructions. Same reasoning as the Railway ask-gate below:
+# the hook can't see conversation state, so it can't confirm qa-lead actually ran this
+# session. Instead of a hard deny (which would brick doc-only/config commits with no
+# way to self-certify), it looks for evidence — a marker file qa-lead writes after a
+# passing run — and falls back to a live "ask" when that evidence is missing, so a
+# human sees it before an unverified commit lands either way.
+if flagged "${ANCHOR}git\\s+commit\\b" '\bgit\s+commit\b' && [ "$agent" = "deploy-manager" ]; then
+  qa_root="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")"
+  qa_marker="$qa_root/.claude/.qa-passed"
+  if [ -f "$qa_marker" ]; then
+    # Single-use: consumed the moment it clears a commit through, so the next commit
+    # needs a fresh qa-lead pass rather than reusing stale sign-off.
+    rm -f "$qa_marker"
+  else
+    ask "CLAUDE.md rule 5 (QA gate): no qa-lead sign-off found (.claude/.qa-passed missing) for this commit — confirm you want to proceed without a fresh QA pass, or have qa-lead run tests and sign off first."
+  fi
+fi
+
 # Rule 6 (Railway control)
-if echo "$cmd" | grep -qE '\brailway\b'; then
+if flagged "${ANCHOR}railway\\b" '\brailway\b'; then
+  # 3a) Env var/secret changes and service create/delete are human-only — deny
+  # unconditionally, even for deploy-manager, even with confirmation. Checked before
+  # the caller check below so the reason surfaced is the more specific one.
+  if echo "$cmd" | grep -qE '\brailway\s+(variables|environment|env)\s+(set|delete|remove|unset|add)\b|\brailway\s+service\s+(create|delete|remove|new)\b|\brailway\s+(add|remove)\b'; then
+    deny "CLAUDE.md rule 6: env var/secret changes and creating/deleting Railway services are human-only — no agent, including deploy-manager, may perform them regardless of confirmation (caller: $agent)."
+  fi
   if [ "$agent" != "deploy-manager" ]; then
     deny "CLAUDE.md rule 6: Railway control (status/logs/redeploy/restart) is deploy-manager-only (caller: $agent)."
   fi
   # 3b) Even for deploy-manager: read-only verbs auto-allow, everything else (redeploy/
-  # restart/up/down/variables/service/link/run/...) forces a live confirmation prompt.
-  # This makes CLAUDE.md rule 6's "redeploy/restart needs explicit user confirmation
-  # first" technically enforced instead of resting purely on deploy-manager.md convention
-  # — the hook cannot see conversation state to check whether confirmation already
+  # restart/up/down/link/run/...) forces a live confirmation prompt. This makes
+  # CLAUDE.md rule 6's "redeploy/restart needs explicit user confirmation first"
+  # technically enforced instead of resting purely on deploy-manager.md convention —
+  # the hook cannot see conversation state to check whether confirmation already
   # happened, so it asks every time a non-read-only verb is invoked, by design.
   if ! echo "$cmd" | grep -qE '\brailway\s+(status|logs|whoami|list|help|--help|-h)\b'; then
     ask "CLAUDE.md rule 6: this Railway command is not on the read-only allowlist (status/logs/whoami/list/help) — confirm before deploy-manager runs it, since it may affect live traffic."
@@ -68,19 +128,20 @@ if echo "$cmd" | grep -qE '\brailway\b'; then
 fi
 
 # Review/detect-only agents: Bash is for read-only inspection, never for writing files.
-# This is a text-pattern heuristic, not a shell-aware parser (documented in
-# docs/architecture/harness.md) — it covers the obvious write vectors: direct
-# redirects/file-editing commands, general-purpose script interpreters (none of
-# these agents' documented tasks need one — grep/read/tsc/npm test cover it all),
-# and network-download-to-file. Matched anywhere in the command for the same reason
-# as the git/railway checks above (wrapper-command bypass resistance).
+# Same two-tier (anchored, or wrapper-gated) strategy as above — anchored alone would
+# miss `bash -c "sed -i ... "`; unconditionally unanchored would false-trigger on
+# deploy-manager's own commit-message text (see header comment).
 case "$agent" in
   wallet-security-expert|code-compliance-checker|routine-tasks|deploy-manager)
-    write_pattern='\b(sed\s+-i|mv|cp|rm|mkdir|touch|tee|dd|install|truncate|xargs)\b'
-    write_pattern+='|(^|[^0-9])>{1,2}\|?(\s|$)'
-    write_pattern+='|\b(python3?|node|ruby|perl|osascript|php)\b'
-    write_pattern+='|\b(curl|wget)\b[^;&|]*(-o\b|--output\b|-O\b)'
-    if echo "$cmd" | grep -qE "$write_pattern"; then
+    write_anchored="${ANCHOR}(sed\\s+-i|mv|cp|rm|mkdir|touch|tee|dd|install|truncate|xargs)\\b"
+    write_anchored+='|(^|[^0-9])>{1,2}\|?(\s|$)'
+    write_anchored+="|${ANCHOR}(python3?|node|ruby|perl|osascript|php)\\b"
+    write_anchored+="|${ANCHOR}(curl|wget)\\b[^;&|]*(-o\\b|--output\\b|-O\\b)"
+    write_bare='\b(sed\s+-i|mv|cp|rm|mkdir|touch|tee|dd|install|truncate|xargs)\b'
+    write_bare+='|>{1,2}'
+    write_bare+='|\b(python3?|node|ruby|perl|osascript|php)\b'
+    write_bare+='|\b(curl|wget)\b.*(-o\b|--output\b|-O\b)'
+    if flagged "$write_anchored" "$write_bare"; then
       deny "$agent is review/detect-only — Bash may not write, move, or delete files, run a general-purpose script interpreter, or download to a file (CLAUDE.md § Forbidden)."
     fi
     ;;

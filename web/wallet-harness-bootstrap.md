@@ -2,6 +2,14 @@
 
 > **How to use**: From the wallet project root, run `claude` and paste the entire prompt below.
 > After generation, replace the Railway project name/account and brand name with the real values.
+>
+> **Frozen historical template — not live documentation.** This is the one-shot prompt
+> used to generate an earlier revision of this project's harness (a smaller,
+> Prisma/Flutter-less predecessor stack). It is intentionally NOT kept in sync with the
+> current agent roster, model tiers, or tech stack, and `sync-harness-docs.sh` does not
+> scan it. For the current source of truth, see `CLAUDE.md` (project root) and
+> `.claude/agents/*.md`. Only update this file if you're deliberately re-cutting the
+> bootstrap prompt itself — not to reflect day-to-day roster drift.
 
 ---
 
@@ -125,7 +133,7 @@ Scope: detect CLAUDE.md rule violations (non-decimal.js math, db push traces, di
 Scope: auto-sync docs after code changes — detect & fix drift in case counts, ports, paths, agent declarations
 
 ### 16. researcher (sonnet)
-Scope: external web research — competitor wallets, chain/token landscape, per-market KYC & regulation, pricing benchmarks
+Scope: external web research — competitor wallets, chain/token landscape, per-market KYC, pricing benchmarks
 Tools: Read, Write, Grep, Glob, WebSearch, WebFetch (the only agent with network egress)
 Output: cited reports at `docs/research/<YYYY-MM-DD>-<topic>.md`. Supplies findings; `pm` owns the decision.
 

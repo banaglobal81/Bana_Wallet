@@ -6,7 +6,8 @@ export type Screen =
   | 'STAKING_INTERFACE'
   | 'WALLET_INTERFACE'
   | 'DEPOSIT_INTERFACE'
-  | 'WITHDRAW_INTERFACE';
+  | 'WITHDRAW_INTERFACE'
+  | 'REFERRAL_INTERFACE';
 
 export interface Asset {
   id: string;

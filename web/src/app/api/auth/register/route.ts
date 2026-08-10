@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db';
 import { newNiaUserId } from '@/lib/nia/identity';
 import { getPlatformSettings } from '@/lib/platformSettings';
 import { uniqueReferralCode, resolveReferrer } from '@/lib/referral';
+import { parseLocaleCookie } from '@/i18n/localeCookie';
 
 export async function POST(req: Request) {
   // Respect the platform "new signups" toggle.
@@ -43,10 +44,15 @@ export async function POST(req: Request) {
     // this user. Also mint this user's own shareable code. (Phase A — tree only.)
     const referredById = await resolveReferrer(body.ref);
     const referralCode = await uniqueReferralCode();
+    // Locale capture at signup (docs/specs/staking-auto-renew-ruling.md R-8) —
+    // read from the active next-intl locale on the signup page. null/invalid
+    // stays null (never a guessed default) and is left for the first login to
+    // populate.
+    const locale = parseLocaleCookie(typeof body.locale === 'string' ? body.locale : null);
     // Mint a dedicated Nia-Hub end-user id so this account maps to its own
     // Nia sub-account rather than sharing NIA_DEFAULT_USER_ID.
     await prisma.user.create({
-      data: { email, passwordHash, role: 'USER', niaUserId: newNiaUserId(), referralCode, referredById },
+      data: { email, passwordHash, role: 'USER', niaUserId: newNiaUserId(), referralCode, referredById, locale },
     });
     return NextResponse.json({ ok: true });
   } catch (e) {

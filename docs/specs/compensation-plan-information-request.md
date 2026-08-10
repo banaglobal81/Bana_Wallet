@@ -27,8 +27,7 @@ I'm writing:
 - **Hard cap:** 35% max payout per package sale, 65% to network
 
 I have verified the arithmetic above and it is internally consistent. Note that the five
-bonus rates sum to **exactly** the 35% hard cap, and that 35% is also the statutory
-후원수당 ceiling under Korea's 방문판매법 — I assume that is deliberate; please confirm.
+bonus rates sum to **exactly** the 35% hard cap.
 
 Answer the sections below **in order**, using the exact headings. Where you do not know an
 answer, write `UNKNOWN — needs decision by <who>` rather than inventing a value. **Do not
@@ -94,42 +93,17 @@ Short answers are fine, but each of these changes what the screen shows.
     and do slots and emission stack or replace?
 11. **Transaction fee income.** How is it calculated and distributed when it is not $0? I have
     a banner saying it may be $0 during ramp-up, but I need to know what it becomes.
-12. **Refunds and cooling-off.** What is the refund window, and what happens to bonuses
+12. **Refunds.** What is the refund window, and what happens to bonuses
     already paid on a refunded package?
 
 ---
 
 ## SECTION 3 — COMPLIANCE (answer carefully)
 
-### 3.1 Source the FTC statistic
-The brief I was given cites *"77% quit in 1 year, median $2,489/year."* I could not verify
-either figure and will not hardcode an unsourced statistic into a compliance component.
-
-Provide, for each number: the **primary source**, the **publishing organization**, the
-**year**, and a **direct URL**. If these come from the AARP Foundation 2018 MLM study rather
-than the FTC, say so — the attribution shown on screen must be correct. If you cannot source
-them, say `UNSOURCED` and I will use a placeholder.
-
-### 3.2 Jurisdiction
-This structure — purchased packages, recruitment-linked bonuses, a binary weak-leg tree,
-monthly requalification, and a token on a fixed emission schedule — is the fact pattern
-regulators screen for. My six locales include markets with materially different rules
-(KR 방문판매법 registration + price caps; JP 連鎖販売取引 disclosure + 20-day cooling-off;
-US FTC Business Opportunity Rule and *Howey*; VN/TH restrictions; **CN prohibits MLM
-outright**).
-
-State:
-- Which markets this plan is cleared to operate in, and by whom.
-- Whether the **`zh` locale should ship at all**. I need an explicit yes/no.
-
 ### 3.3 Prohibited language
 Confirm the terms that must never appear in the UI. My default deny-list is: *investment,
 return, ROI, passive income, guaranteed, profit, yield*. Add anything else, and tell me the
 approved substitutes.
-
-### 3.4 Required disclosures
-List any disclosure that must be present by regulation (income disclosure statement, earnings
-claim disclaimer, cooling-off notice, risk warning) and where it must appear.
 
 ---
 

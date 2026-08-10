@@ -18,6 +18,28 @@ import { settleMaturedPositions, lockedPrincipalByCoin } from '@/lib/staking';
 // asset can't be valued safely here, so it always requires manual approval.
 const STABLECOINS = new Set(['USDT', 'USDC', 'USD1', 'FDUSD', 'RLUSD', 'DAI', 'USD']);
 
+// G2 guardrail (C2): anonymous, aggregate-only occurrence tripwire for withdrawal
+// rejections caused specifically by the staking soft-lock (not other rejection
+// reasons — invalid address, insufficient total balance, etc. do not call this).
+// Mandated by docs/specs/oil-drilling-staking-game-exposure-instrumentation-ruling.md
+// §3 (C2) and standing rules #7/#8. This is a structured log emission, not a DB
+// write — the ruling explicitly forbids any new table/column/Prisma model for it
+// ("Not persisted to the database" — §3 constraint 4). Aggregation into a daily/coin
+// rate happens downstream, on the log stream, by whoever analyzes it — never by a
+// query against application data, and never surfaced to any UI.
+//
+// Emits exactly three fields, no more: event key, UTC day bucket (not a per-request
+// timestamp), and coin. No userId, niaUserId, email, session id, IP, request id, or
+// any hash/derivative of them may ever be added to this payload — doing so would
+// re-enter the review this ruling closed (§3 constraint 1-2, standing rule #8).
+function logStakingLockBlockEvent(coin: string): void {
+  console.log(JSON.stringify({
+    event: 'staking_lock_withdrawal_blocked',
+    day: new Date().toISOString().slice(0, 10), // UTC yyyy-mm-dd bucket only
+    coin,
+  }));
+}
+
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const sp = req.nextUrl.searchParams;
   try {
@@ -208,6 +230,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
     const available = niaBal.minus(locked);
     if (decAmount.gt(available)) {
+      // -- G2 guardrail tripwire (C2) --
+      // Anonymous, aggregate-only occurrence counter for "withdrawal blocked because
+      // principal is locked in staking." Required by the binding ruling in
+      // docs/specs/oil-drilling-staking-game-exposure-instrumentation-ruling.md §3.
+      // BINDING CONSTRAINTS (do not add fields without re-reading that doc):
+      //   - No userId / niaUserId / email / session id / IP / hash-of-any-of-those.
+      //   - No correlation/request/trace id.
+      //   - No dedup, no unique-user counting — a raw occurrence emission only.
+      //   - NOT persisted to the database. No table, no column, no Prisma model.
+      //   - Fields limited to: day bucket, event key, coin. Nothing else.
+      //   - Never read back into any UI (not user-facing, not admin-facing).
+      logStakingLockBlockEvent(curUpper);
       return NextResponse.json(
         { ok: false, error: `${locked.toFixed()} ${curUpper} is locked in staking. You have ${Decimal.max(0, available).toFixed()} ${curUpper} available to withdraw.` },
         { status: 400 },

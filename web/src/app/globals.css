@@ -367,51 +367,17 @@ html:not(.light) svg.lucide.text-slate-600 { color: #7c8798; }
 .light .text-\[\#afc6ff\] { color: #39435a; }
 
 /* --------------------------------------------------------------------------
-   Custom hover cursor
-   The classic pointing hand — 20x23 pixel grid, 1px black outline, white fill,
-   no shadow — so the hover cursor reads the same on macOS, Windows and Linux
-   instead of each OS drawing its own.
-   SVG is served first (Chrome/Firefox/Edge); Safari ignores SVG cursors and
-   falls through to the PNG. `pointer` is the final fallback if both fail.
-   The 2x PNG is a nearest-neighbour double, so the pixel edges stay hard on
-   retina rather than being smoothed into the blur the art is avoiding.
-   Hotspot 7 0 = the index fingertip.
+   Button hover cursor
+   Scoped to actual buttons only (not links, labels, selects, or clickable
+   cards/rows) — the standard OS pointer cursor, no custom art.
    Gated on a real hovering pointer so touch devices are untouched.
-
-   The `?v=N` on each URL is a cache-buster and MUST be bumped whenever the
-   cursor art is redrawn. Files under public/ are served with a stable filename
-   and `cache-control: max-age=14400`, and Cloudflare caches them at the edge —
-   so without a new URL, browsers keep the old art for hours after a deploy even
-   though the CSS bundle (content-hashed) updates immediately.
    -------------------------------------------------------------------------- */
 @media (hover: hover) and (pointer: fine) {
-  a[href],
   button,
-  summary,
-  label[for],
-  select,
   [role="button"],
-  [role="link"],
-  [role="tab"],
-  [role="menuitem"],
-  [role="option"],
-  [role="switch"],
-  input[type="checkbox"],
-  input[type="radio"],
   input[type="submit"],
-  input[type="button"],
-  input[type="file"],
-  input[type="range"],
-  input[type="color"],
-  .cursor-pointer {
-    cursor:
-      url("/cursors/bana-pointer.svg?v=3") 7 0,
-      image-set(
-        url("/cursors/bana-pointer.png?v=3") 1x,
-        url("/cursors/bana-pointer@2x.png?v=3") 2x
-      ) 7 0,
-      url("/cursors/bana-pointer.png?v=3") 7 0,
-      pointer;
+  input[type="button"] {
+    cursor: pointer;
   }
 
   /* Disabled controls keep their native affordance — the hand would read as

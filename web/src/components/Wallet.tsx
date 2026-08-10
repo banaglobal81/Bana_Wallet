@@ -113,7 +113,8 @@ export default function Wallet({ onNavigate }: WalletProps) {
         ...(Array.isArray(data?.tradingBalances) ? data.tradingBalances : []),
         ...(Array.isArray(data) ? data : []),
         ...stakedRows(positions),
-      ];
+        // INSURANCE is an internal Nia-Hub wallet, never shown to users.
+      ].filter((r) => (r.walletType ?? '').toUpperCase() !== 'INSURANCE');
       setRows(held);
       // Kept separate from `rows` so the toggle never re-fetches: the catalogue
       // is only *displayed* on demand, not loaded on demand.

@@ -1,0 +1,304 @@
+{
+  "$schema_note": "DEEP CORE Phase 0 hero asset pack -- see docs/specs/deep-core-08-asset-manifest-phase0-batch1.md",
+  "generatedBy": "game-designer",
+  "count": 33,
+  "assets": [
+    {
+      "id": "dc_bg_ch1_fore",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch1_fore.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
+      "chapter": 1,
+      "purpose": "Chapter 1 parallax foreground/ground layer"
+    },
+    {
+      "id": "dc_bg_ch1_mid",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch1_mid.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
+      "chapter": 1,
+      "purpose": "Chapter 1 parallax midground layer"
+    },
+    {
+      "id": "dc_bg_ch1_sky",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch1_sky.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
+      "chapter": 1,
+      "purpose": "Chapter 1 parallax sky layer"
+    },
+    {
+      "id": "dc_bg_ch2_fore",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch2_fore.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
+      "chapter": 2,
+      "purpose": "Chapter 2 parallax foreground/ground layer"
+    },
+    {
+      "id": "dc_bg_ch2_mid",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch2_mid.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
+      "chapter": 2,
+      "purpose": "Chapter 2 parallax midground layer"
+    },
+    {
+      "id": "dc_bg_ch2_sky",
+      "publicPath": "/game/deep-core/backgrounds/dc_bg_ch2_sky.png",
+      "width": 1344,
+      "height": 768,
+      "transparent": false,
+      "chapter": 2,
+      "purpose": "Chapter 2 parallax sky layer"
+    },
+    {
+      "id": "dc_badge_corelog_tier1",
+      "publicPath": "/game/deep-core/badges/dc_badge_corelog_tier1.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": null,
+      "purpose": "Core Log tier badge (post-L60 cosmetic track, tier 1)"
+    },
+    {
+      "id": "dc_badge_level_milestone",
+      "publicPath": "/game/deep-core/badges/dc_badge_level_milestone.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": null,
+      "purpose": "Level milestone badge (generic sample)"
+    },
+    {
+      "id": "dc_badge_stratum_1",
+      "publicPath": "/game/deep-core/badges/dc_badge_stratum_1.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Chapter badge: Stratum 1"
+    },
+    {
+      "id": "dc_crew_boss_portrait_ch1",
+      "publicPath": "/game/deep-core/characters/portraits/dc_crew_boss_portrait_ch1.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Crew portrait: Hanna Sorren (boss)"
+    },
+    {
+      "id": "dc_crew_geo_portrait_ch2",
+      "publicPath": "/game/deep-core/characters/portraits/dc_crew_geo_portrait_ch2.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 2,
+      "purpose": "Crew portrait: Mei Lin (geologist)"
+    },
+    {
+      "id": "dc_crew_mech_portrait_ch1",
+      "publicPath": "/game/deep-core/characters/portraits/dc_crew_mech_portrait_ch1.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Crew portrait: Dylan Akabo (mechanic)"
+    },
+    {
+      "id": "dc_crew_ops_portrait_ch2",
+      "publicPath": "/game/deep-core/characters/portraits/dc_crew_ops_portrait_ch2.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 2,
+      "purpose": "Crew portrait: Omar Reiss (ops)"
+    },
+    {
+      "id": "dc_npc_auditor_ch1",
+      "publicPath": "/game/deep-core/characters/portraits/dc_npc_auditor_ch1.png",
+      "width": 864,
+      "height": 1184,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "NPC: Charter Auditor (faceless)"
+    },
+    {
+      "id": "dc_unit_k9_portrait_ch3",
+      "publicPath": "/game/deep-core/characters/portraits/dc_unit_k9_portrait_ch3.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 3,
+      "purpose": "Drone unit portrait: Core-Dog"
+    },
+    {
+      "id": "dc_crew_boss_idle_ch1",
+      "publicPath": "/game/deep-core/characters/sprites/dc_crew_boss_idle_ch1.png",
+      "width": 864,
+      "height": 1184,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Crew full-body idle pose sample: Hanna Sorren"
+    },
+    {
+      "id": "dc_crew_mech_idle_ch1",
+      "publicPath": "/game/deep-core/characters/sprites/dc_crew_mech_idle_ch1.png",
+      "width": 864,
+      "height": 1184,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Crew full-body idle pose sample: Dylan Akabo"
+    },
+    {
+      "id": "dc_cosmetic_helmet_01",
+      "publicPath": "/game/deep-core/cosmetics/dc_cosmetic_helmet_01.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": null,
+      "purpose": "Cosmetic: crew helmet skin sample (SV shop)"
+    },
+    {
+      "id": "dc_cosmetic_rig_paint_01",
+      "publicPath": "/game/deep-core/cosmetics/dc_cosmetic_rig_paint_01.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": null,
+      "purpose": "Cosmetic: rig paint scheme sample (SV shop)"
+    },
+    {
+      "id": "dc_fx_lift_burst_ch1",
+      "publicPath": "/game/deep-core/fx/dc_fx_lift_burst_ch1.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Daily lift effect: restrained radial burst"
+    },
+    {
+      "id": "dc_fx_particle_atlas_base",
+      "publicPath": "/game/deep-core/fx/dc_fx_particle_atlas_base.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": null,
+      "purpose": "Particle atlas: dust/steam/spark/glow sprites"
+    },
+    {
+      "id": "dc_icon_operating_days",
+      "publicPath": "/game/deep-core/icons/dc_icon_operating_days.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": null,
+      "purpose": "HUD icon: Total Operating Days"
+    },
+    {
+      "id": "dc_icon_sv_currency",
+      "publicPath": "/game/deep-core/icons/dc_icon_sv_currency.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": null,
+      "purpose": "HUD icon: Salvage (SV) currency"
+    },
+    {
+      "id": "dc_icon_xp",
+      "publicPath": "/game/deep-core/icons/dc_icon_xp.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": null,
+      "purpose": "HUD icon: XP"
+    },
+    {
+      "id": "dc_tab_icon_corelog",
+      "publicPath": "/game/deep-core/icons/tabs/dc_tab_icon_corelog.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": null,
+      "purpose": "Control bar tab icon: Core Log / Ledger"
+    },
+    {
+      "id": "dc_tab_icon_crew",
+      "publicPath": "/game/deep-core/icons/tabs/dc_tab_icon_crew.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": null,
+      "purpose": "Control bar tab icon: Crew"
+    },
+    {
+      "id": "dc_tab_icon_depot",
+      "publicPath": "/game/deep-core/icons/tabs/dc_tab_icon_depot.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": null,
+      "purpose": "Control bar tab icon: Depot (SV/cosmetic shop only in Phase 0)"
+    },
+    {
+      "id": "dc_tab_icon_rig",
+      "publicPath": "/game/deep-core/icons/tabs/dc_tab_icon_rig.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": null,
+      "purpose": "Control bar tab icon: Rig"
+    },
+    {
+      "id": "dc_prop_pipe_stack_ch1",
+      "publicPath": "/game/deep-core/props/dc_prop_pipe_stack_ch1.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Field prop: pipe stack"
+    },
+    {
+      "id": "dc_prop_storage_tank_ch1",
+      "publicPath": "/game/deep-core/props/dc_prop_storage_tank_ch1.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Field prop: storage tank"
+    },
+    {
+      "id": "dc_rig_base_ch1",
+      "publicPath": "/game/deep-core/rig/dc_rig_base_ch1.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Rig Grade I base silhouette (level/chapter-driven, B2)"
+    },
+    {
+      "id": "dc_well_large_ch1_active",
+      "publicPath": "/game/deep-core/wells/dc_well_large_ch1_active.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Large well object, long termDays, active state"
+    },
+    {
+      "id": "dc_well_small_ch1_active",
+      "publicPath": "/game/deep-core/wells/dc_well_small_ch1_active.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "chapter": 1,
+      "purpose": "Small well object, short termDays, active state"
+    }
+  ]
+}

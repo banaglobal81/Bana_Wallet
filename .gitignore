@@ -22,3 +22,7 @@ CREDENTIALS.local*
 # Test run artifacts (generated, never referenced by the harness)
 test-results/
 playwright-report/
+
+# QA sign-off marker (qa-lead writes it after a passing run; enforce-agent-boundaries.sh
+# consumes it on the next deploy-manager commit — see docs/architecture/harness.md)
+.claude/.qa-passed

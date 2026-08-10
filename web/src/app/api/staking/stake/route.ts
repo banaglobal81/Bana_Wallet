@@ -10,6 +10,7 @@ import { niaWalletRequest } from '@/lib/nia/client';
 import { resolveSessionUserId } from '@/lib/nia/resolve';
 import { settleMaturedPositions } from '@/lib/staking';
 import { DAY_MS } from '@/lib/stakingMath';
+import { AUTO_RENEW_MAX_TERM_DAYS } from '@/lib/stakingRenew';
 
 function err(e: unknown) {
   const x = e as Error & { status?: number };
@@ -58,6 +59,13 @@ export async function POST(req: Request): Promise<NextResponse> {
   if (product.status !== 'OPEN') {
     return NextResponse.json({ ok: false, error: 'This staking product is closed.' }, { status: 409 });
   }
+
+  // Auto-renew rider (PRD §4 S1) — optional, defaults false. Never rejects the
+  // stake itself over this field: any non-boolean coerces to false, and
+  // requesting it on a product over the cap ALSO coerces to false rather than
+  // failing the stake (R-2 defensive re-check — the UI never offers this
+  // combination since S1 hides the control on those products).
+  const autoRenew = body.autoRenew === true && product.termDays <= AUTO_RENEW_MAX_TERM_DAYS;
 
   // Per-stake min / max.
   if (product.minAmount && amount.lt(new Decimal(product.minAmount))) {
@@ -118,7 +126,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         data: {
           userId: dbUserId, niaUserId, email, productId: product.id, coin: product.coin,
           principal: amount.toFixed(), dailyRatePct: product.dailyRatePct, termDays: product.termDays,
-          startAt, maturityAt,
+          startAt, maturityAt, autoRenew,
         },
         select: { id: true },
       });

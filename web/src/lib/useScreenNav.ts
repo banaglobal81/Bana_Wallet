@@ -13,6 +13,7 @@ export const SCREEN_TO_PATH: Partial<Record<Screen, string>> = {
   WITHDRAW_INTERFACE: '/withdraw',
   SETTINGS_INTERFACE: '/settings',
   ACTIVITY_HISTORY: '/activity',
+  REFERRAL_INTERFACE: '/referral',
 };
 
 /**

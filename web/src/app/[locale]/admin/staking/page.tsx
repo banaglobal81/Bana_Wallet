@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { Sprout, Plus, Loader2, Check, X, Power, Trash2, Users, Lock, Coins, Pencil, Play } from 'lucide-react';
+import Decimal from 'decimal.js';
+import { Sprout, Plus, Loader2, Check, X, Power, Trash2, Users, Lock, Coins, Pencil, Play, TriangleAlert } from 'lucide-react';
 import {
   listStakingProducts, createStakingProduct, updateStakingProduct, deleteStakingProduct, listStakingPositions, getStakingStats,
   runStakingSettlement, getStakingRunStatus, getReferralOverview, grantStakePosition,
@@ -13,6 +14,22 @@ const EMPTY: StakingProductInput = { coin: 'BANA', name: '', termDays: 30, daily
 
 // Fields an existing product can be edited to (coin + term are fixed after creation).
 type EditForm = { name: string; dailyRatePct: string; minAmount: string; maxAmount: string; capacity: string };
+
+// D-1 (staking-auto-renew-ruling.md R-1 / staking-auto-renew-copy-spec.md §3.1): true iff the
+// typed rate is a lower value than the product's currently saved rate. decimal.js only — '0.050'
+// and '0.05' must compare equal (show nothing), never Number()/parseFloat().
+function isRateLowering(newRate: string, oldRate: string): boolean {
+  if (newRate.trim() === '') return false;
+  try {
+    return new Decimal(newRate).lt(new Decimal(oldRate));
+  } catch {
+    return false;
+  }
+}
+
+// Pending confirmation for a rate-lowering save (copy-spec §3.4) — set on Save, cleared on
+// Cancel or once the save completes. Purely a disclosure step: does not alter PATCH's decision logic.
+type ConfirmLower = { id: string; productName: string; newRate: string; oldRate: string; count: number };
 
 export default function AdminStakingPage() {
   const t = useTranslations('adminStaking');
@@ -34,6 +51,9 @@ export default function AdminStakingPage() {
   // Inline product edit.
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<EditForm>({ name: '', dailyRatePct: '', minAmount: '', maxAmount: '', capacity: '' });
+  // D-1 rate-lowering confirmation interstitial (copy-spec §3.4) — non-null while awaiting
+  // explicit admin acknowledgment of the auto-renew refusal count.
+  const [confirmLower, setConfirmLower] = useState<ConfirmLower | null>(null);
 
   // Grant a staking position to a user (bonus/promotion).
   const [grantEmail, setGrantEmail] = useState('');
@@ -87,12 +107,13 @@ export default function AdminStakingPage() {
   const startEdit = (p: AdminStakingProduct) => {
     setError(null);
     setEditId(p.id);
+    setConfirmLower(null);
     setEditForm({
       name: p.name, dailyRatePct: p.dailyRatePct,
       minAmount: p.minAmount ?? '', maxAmount: p.maxAmount ?? '', capacity: p.capacity ?? '',
     });
   };
-  const cancelEdit = () => { setEditId(null); };
+  const cancelEdit = () => { setEditId(null); setConfirmLower(null); };
   const saveEdit = async (id: string) => {
     setBusy(true); setError(null);
     try {
@@ -103,9 +124,26 @@ export default function AdminStakingPage() {
         maxAmount: editForm.maxAmount || null,
         capacity: editForm.capacity || null,
       });
-      setEditId(null); await load();
+      setEditId(null); setConfirmLower(null); await load();
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
+  };
+  // D-1: Save is intercepted only when the typed rate is lower than the saved rate AND at least
+  // one ACTIVE position on the product has auto-renew on (copy-spec §3.1). Otherwise Save proceeds
+  // in one click exactly as before — this must not add friction to the common path (§3.5).
+  const handleSaveClick = (p: AdminStakingProduct) => {
+    if (isRateLowering(editForm.dailyRatePct, p.dailyRatePct) && p.autoRenewActiveCount > 0) {
+      setConfirmLower({
+        id: p.id, productName: p.name,
+        newRate: editForm.dailyRatePct, oldRate: p.dailyRatePct, count: p.autoRenewActiveCount,
+      });
+      return;
+    }
+    saveEdit(p.id);
+  };
+  const confirmSaveLower = () => {
+    if (!confirmLower) return;
+    saveEdit(confirmLower.id);
   };
 
   const create = async () => {
@@ -295,10 +333,35 @@ export default function AdminStakingPage() {
                     <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('maxOpt')}</span><input className={field} value={editForm.maxAmount} onChange={(e) => setEditForm({ ...editForm, maxAmount: e.target.value })} placeholder="—" /></label>
                     <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('capacityOpt')}</span><input className={field} value={editForm.capacity} onChange={(e) => setEditForm({ ...editForm, capacity: e.target.value })} placeholder="—" /></label>
                   </div>
-                  <div className="flex gap-2">
-                    <button data-testid="edit-save" disabled={busy} onClick={() => saveEdit(p.id)} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-bold cursor-pointer">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save</button>
-                    <button disabled={busy} onClick={cancelEdit} className="px-4 py-2.5 rounded-xl bg-[#020d24]/60 hover:bg-[#112643] text-[#8c90a0] hover:text-white text-sm font-bold border border-[#1E3559]/80 cursor-pointer">{t('cancel')}</button>
-                  </div>
+
+                  {/* D-1 inline warning — live as the admin types a lower rate (copy-spec §3.3) */}
+                  {isRateLowering(editForm.dailyRatePct, p.dailyRatePct) && p.autoRenewActiveCount > 0 && (
+                    <div data-testid="rate-lower-inline-warning" className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-100 text-xs leading-relaxed flex flex-col gap-2">
+                      <p className="font-bold text-amber-300 flex items-center gap-1.5"><TriangleAlert className="h-3.5 w-3.5 shrink-0" /> {t('autoRenewWarning.inlineTitle', { count: p.autoRenewActiveCount })}</p>
+                      <p>{t('autoRenewWarning.inlineBody', { count: p.autoRenewActiveCount, productName: p.name })}</p>
+                      <p>{t('autoRenewWarning.inlineRestore')}</p>
+                      <p className="text-amber-200/80">{t('autoRenewWarning.inlineSnapshot')}</p>
+                    </div>
+                  )}
+
+                  {/* D-1 confirmation interstitial — interposed on Save only under the same condition (copy-spec §3.4) */}
+                  {confirmLower && confirmLower.id === p.id ? (
+                    <div data-testid="rate-lower-confirm" className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col gap-3">
+                      <p className="font-bold text-white text-sm">{t('autoRenewWarning.confirmTitle', { productName: confirmLower.productName })}</p>
+                      <p className="text-xs font-mono text-[#d8e2ff]">{t('autoRenewWarning.confirmRates', { newRate: confirmLower.newRate, oldRate: confirmLower.oldRate })}</p>
+                      <p className="text-xs text-amber-100">{t('autoRenewWarning.confirmBody', { count: confirmLower.count })}</p>
+                      <p className="text-xs text-amber-200/80">{t('autoRenewWarning.confirmSnapshot')}</p>
+                      <div className="flex gap-2">
+                        <button data-testid="confirm-lower-save" disabled={busy} onClick={confirmSaveLower} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-[#06132a] text-sm font-bold cursor-pointer">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} {t('autoRenewWarning.confirmYes')}</button>
+                        <button data-testid="confirm-lower-cancel" disabled={busy} onClick={() => setConfirmLower(null)} className="px-4 py-2.5 rounded-xl bg-[#020d24]/60 hover:bg-[#112643] text-[#8c90a0] hover:text-white text-sm font-bold border border-[#1E3559]/80 cursor-pointer">{t('autoRenewWarning.confirmCancel')}</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button data-testid="edit-save" disabled={busy} onClick={() => handleSaveClick(p)} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-bold cursor-pointer">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save</button>
+                      <button disabled={busy} onClick={cancelEdit} className="px-4 py-2.5 rounded-xl bg-[#020d24]/60 hover:bg-[#112643] text-[#8c90a0] hover:text-white text-sm font-bold border border-[#1E3559]/80 cursor-pointer">{t('cancel')}</button>
+                    </div>
+                  )}
                 </div>
               );
             })()}
