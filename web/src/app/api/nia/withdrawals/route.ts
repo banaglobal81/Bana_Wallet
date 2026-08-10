@@ -198,38 +198,42 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
   }
 
-  // -- 3c. Staking lock: principal locked in active stakes is non-withdrawable --
+  // -- 3c. Available-balance check: request amount must not exceed the user's
+  // hub balance minus any principal locked in active stakes. This runs
+  // UNCONDITIONALLY — even when locked == 0 — because niaBal itself is the
+  // hub's balance of record; skipping this check whenever there's no staking
+  // lock would let any amount through with no balance verification at all (W-1).
   // Reading the local stake state is best-effort (treat a transient local-DB
-  // error as "no lock"). But once we know there IS locked principal, verifying it
-  // is NOT optional: the hub has no knowledge of the soft-lock, so if we can't
-  // fetch the balance to check it we must FAIL CLOSED rather than risk letting
-  // staked funds be withdrawn.
+  // error as "no lock"). But verifying against the hub balance is NOT optional:
+  // if we can't fetch it we must FAIL CLOSED rather than risk an unverified
+  // withdrawal being queued.
   let locked = new Decimal(0);
   try {
     await settleMaturedPositions(dbUserId);
     locked = (await lockedPrincipalByCoin(dbUserId)).get(curUpper) ?? new Decimal(0);
   } catch { /* local stake lookup best-effort */ }
-  if (locked.gt(0)) {
-    let niaBal: Decimal;
-    try {
-      const raw = await niaWalletRequest('GET', '/api/v1/wallets', { query: { userId: niaUserId, currency: String(currency ?? '') } });
-      const rows: unknown[] = Array.isArray(raw)
-        ? raw
-        : raw && typeof raw === 'object'
-          ? Object.values(raw as Record<string, unknown>).flatMap((v) => (Array.isArray(v) ? v : []))
-          : [];
-      niaBal = new Decimal(0);
-      for (const r of rows as Array<{ currency?: string; balance?: string }>) {
-        if ((r?.currency ?? '').toUpperCase() === curUpper) niaBal = niaBal.plus(new Decimal(r.balance ?? '0'));
-      }
-    } catch {
-      return NextResponse.json(
-        { ok: false, error: 'Could not verify your available balance against staking locks right now. Please try again shortly.' },
-        { status: 503 },
-      );
+
+  let niaBal: Decimal;
+  try {
+    const raw = await niaWalletRequest('GET', '/api/v1/wallets', { query: { userId: niaUserId, currency: String(currency ?? '') } });
+    const rows: unknown[] = Array.isArray(raw)
+      ? raw
+      : raw && typeof raw === 'object'
+        ? Object.values(raw as Record<string, unknown>).flatMap((v) => (Array.isArray(v) ? v : []))
+        : [];
+    niaBal = new Decimal(0);
+    for (const r of rows as Array<{ currency?: string; balance?: string }>) {
+      if ((r?.currency ?? '').toUpperCase() === curUpper) niaBal = niaBal.plus(new Decimal(r.balance ?? '0'));
     }
-    const available = niaBal.minus(locked);
-    if (decAmount.gt(available)) {
+  } catch {
+    return NextResponse.json(
+      { ok: false, error: 'Could not verify your available balance right now. Please try again shortly.' },
+      { status: 503 },
+    );
+  }
+  const available = niaBal.minus(locked);
+  if (decAmount.gt(available)) {
+    if (locked.gt(0)) {
       // -- G2 guardrail tripwire (C2) --
       // Anonymous, aggregate-only occurrence counter for "withdrawal blocked because
       // principal is locked in staking." Required by the binding ruling in
@@ -247,6 +251,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         { status: 400 },
       );
     }
+    return NextResponse.json(
+      { ok: false, error: `Insufficient balance. You have ${Decimal.max(0, available).toFixed()} ${curUpper} available to withdraw.` },
+      { status: 400 },
+    );
   }
 
   // -- 4. In-flight dedup guard (prevents concurrent duplicate submissions) --
