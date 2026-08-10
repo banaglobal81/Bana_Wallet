@@ -255,17 +255,45 @@ export async function setPlatformPolicy(input: Partial<PlatformPolicy>): Promise
   return r.data;
 }
 
-// ---- Staking ----
+// ---- Staking (V2) ----
+//
+// docs/specs/staking-yield-system-v2-prd-rev05-creation-path-cutover.md §5.1 CUT-2 /
+// T-5: these types/functions target StakingProductV2 / StakePositionV2 (via
+// /api/admin/staking/products, .../products/[id], .../positions GET-only,
+// .../stats). Field renames vs the old v1 shapes: `dailyRatePct` →
+// `baseDailyRatePct`, `paidInterest` → `ledgeredYield`, `accruedInterest` is
+// REMOVED (banned V2 concept, rev05 §5.2 ①), `'PAID'` is REMOVED from the status
+// union (StakePositionV2Status has no PAID member). `grantStakePosition` /
+// POST /api/admin/staking/positions no longer exist (permanently removed, CUT-2 —
+// rev04 §1.8 G-E: "V2-CORE에서 그랜트 기능은 제공하지 않는다").
 
 export type StakingProductStatus = 'OPEN' | 'CLOSED';
+
+// rev05 §4.2 — the only valid StakingProductV2.termDays values. Mirrors
+// web/src/lib/stakingProductAdmin.ts's STAKING_TERM_LADDER_DAYS (kept as a
+// separate client-side constant rather than importing the server-only lib file
+// into client bundles).
+export const STAKING_TERM_LADDER_DAYS = [10, 30, 90, 180, 360] as const;
+
+// rev05 §4.5 CP-7′ — the terms actually allowed a nonzero capacity/rate today
+// (10/30/90). 180/360 stay on STAKING_TERM_LADDER_DAYS above (the ladder itself
+// is unchanged — an admin still has to be able to create the CP-5′ 180/360
+// placeholder rows, just always at capacity/rate "0"), but the ROUTE is the
+// real gate (products/route.ts POST, products/[id]/route.ts PATCH — qa-lead
+// FAIL → route-enforced, not just a form convention). Mirrors
+// web/src/lib/stakingProductAdmin.ts's STAKING_FIRST_TRANCHE_TERM_DAYS.
+export const STAKING_FIRST_TRANCHE_TERM_DAYS = [10, 30, 90] as const;
 
 export interface AdminStakingProduct {
   id: string;
   coin: string;
   name: string;
   termDays: number;
-  dailyRatePct: string;
+  baseDailyRatePct: string;
   aprPct: string;
+  // Always "0" in V2-CORE — V2-BAND is out of scope (AC-C12). Surfaced for
+  // completeness/debugging, never rendered as an editable field.
+  maxBonusPctOfBase: string;
   minAmount: string | null;
   maxAmount: string | null;
   capacity: string | null;
@@ -288,14 +316,15 @@ export interface AdminStakePosition {
   termDays: number;
   startAt: string;
   maturityAt: string;
-  status: 'ACTIVE' | 'MATURED' | 'PAID';
-  accruedInterest: string;
-  paidInterest: string;
+  status: 'ACTIVE' | 'MATURED';
+  ledgeredYield: string;
   daysPaid: number;
   // admin-staking-debt-visibility-frd.md §4.4 P-5 — derived server-side from
-  // grantedByAdminId on the admin positions route only. Deliberately absent
-  // from serializePosition / the user-facing /api/staking/positions response
-  // (A6 — admin identity stays out of the user API surface).
+  // fundingSource on the admin positions route only. Deliberately absent from
+  // the user-facing /api/staking/positions response (A6 — admin identity stays
+  // out of the user API surface). Structurally unreachable as `true` today (no
+  // live route creates a PLATFORM_GRANT position), kept for historical rows /
+  // forward-compat.
   isGrant: boolean;
 }
 
@@ -309,20 +338,21 @@ export interface AdminStakingStat {
   grantedActivePrincipal: string;   // subset of activePrincipal — WHERE grantedByAdminId IS NOT NULL. Never sum with activePrincipal.
 
   // Sec 2: liability. Interest that exists only in this ledger.
-  ledgeredInterest: string;         // SUM(paidInterest) — all statuses (A10: includes renewed-then-MATURED predecessors)
+  ledgeredInterest: string;         // SUM(ledgeredYield) — all statuses (A10: includes renewed-then-MATURED predecessors)
   hubSettled: string;               // structural constant "0" — see stats/route.ts DS-1
   unpaidInterest: string;           // ledgeredInterest − hubSettled, computed server-side
   hubSettledStatus: 'NO_RAIL';      // discriminator the UI keys copy off of, not the raw "0"
 
   // Sec 3: rate of increase.
-  dailyAccrualRate: string;         // SUM(principal × dailyRatePct / 100) WHERE status='ACTIVE'
+  dailyAccrualRate: string;         // SUM(principal × baseDailyRatePct / 100) WHERE status='ACTIVE'
 
   activeCount: number;
   maturedCount: number;
   totalCount: number;
 
-  // INV-1 watchdog — expected 0. Non-zero means "Actually sent to wallets = 0"
-  // is no longer trustworthy; the UI must show an incident banner (§3.4/§5.5).
+  // INV-1 watchdog — structurally always 0 in V2 (StakePositionV2Status has no
+  // PAID member at all). Kept as a field (not dropped) so the existing
+  // StakingIncidentBanner / detectLiabilityIncidents keep working unchanged.
   settledStatusCount: number;
 }
 
@@ -330,10 +360,14 @@ export interface StakingProductInput {
   coin: string;
   name: string;
   termDays: number;
-  dailyRatePct: string;
-  minAmount?: string | null;
-  maxAmount?: string | null;
-  capacity?: string | null;
+  baseDailyRatePct: string;
+  // CP-5′ — all three are REQUIRED at creation for a V2 product (unlike the v1
+  // shape, where they were optional). Typed as nullable here only because the
+  // create-form UI clears an input to "" before parsing it; the server 400s if
+  // any of the three is actually missing on submit.
+  minAmount: string | null;
+  maxAmount: string | null;
+  capacity: string | null;
 }
 
 export async function listStakingProducts(): Promise<AdminStakingProduct[]> {
@@ -359,23 +393,6 @@ export async function deleteStakingProduct(id: string): Promise<void> {
   const res = await fetch(`/api/admin/staking/products/${id}`, { method: 'DELETE', headers: { Accept: 'application/json' } });
   const body = await res.json().catch(() => ({}));
   if (!res.ok || body?.ok === false) throw new Error(body?.error || `Request failed (${res.status})`);
-}
-
-/**
- * ADMIN: grant a staking position to a user by email (bonus/promotion).
- * No hub balance required — BANA is the platform's own token. Audit-logged.
- */
-export async function grantStakePosition(input: {
-  email: string; productId: string; amount: string;
-}): Promise<{ id: string }> {
-  const res = await fetch('/api/admin/staking/positions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(input),
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok || body?.ok === false) throw new Error(body?.error || `Request failed (${res.status})`);
-  return body.data;
 }
 
 export async function listStakingPositions(): Promise<AdminStakePosition[]> {

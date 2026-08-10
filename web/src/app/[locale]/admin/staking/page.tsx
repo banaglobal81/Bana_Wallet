@@ -6,17 +6,24 @@ import Decimal from 'decimal.js';
 import { Sprout, Plus, Loader2, Check, X, Power, Trash2, Users, Pencil, Play, TriangleAlert } from 'lucide-react';
 import {
   listStakingProducts, createStakingProduct, updateStakingProduct, deleteStakingProduct, listStakingPositions, getStakingStats,
-  runStakingSettlement, getStakingRunStatus, getReferralOverview,
+  runStakingSettlement, getStakingRunStatus, getReferralOverview, STAKING_TERM_LADDER_DAYS, STAKING_FIRST_TRANCHE_TERM_DAYS,
   type AdminStakingProduct, type AdminStakePosition, type StakingProductInput, type AdminStakingStat, type StakingRunStatus, type ReferralOverview,
 } from '@/utils/adminApi';
 import { formatLedgerAmount } from '@/utils/adminLedgerFormat';
 import { StakingLiabilitySection } from '@/components/admin/StakingLiabilitySection';
 import { StakingIncidentBanner } from '@/components/admin/StakingIncidentBanner';
 
-const EMPTY: StakingProductInput = { coin: 'BANA', name: '', termDays: 30, dailyRatePct: '', minAmount: '', maxAmount: '', capacity: '' };
+// docs/specs/staking-yield-system-v2-prd-rev05-creation-path-cutover.md §5.1 CUT-2 /
+// T-5 — this screen now drives StakingProductV2/StakePositionV2 (products.route.ts /
+// products/[id]/route.ts / positions GET-only / stats). CP-5′ requires baseDailyRatePct
+// + minAmount + maxAmount + capacity all be non-null at creation, and the server always
+// forces a new product to CLOSED regardless of what this form sends — this UI never
+// exposes a "create as OPEN" option (opening is the separate Power-button PATCH below,
+// gated server-side by CP-6/CP-10).
+const EMPTY: StakingProductInput = { coin: 'BANA', name: '', termDays: 30, baseDailyRatePct: '', minAmount: '', maxAmount: '', capacity: '' };
 
 // Fields an existing product can be edited to (coin + term are fixed after creation).
-type EditForm = { name: string; dailyRatePct: string; minAmount: string; maxAmount: string; capacity: string };
+type EditForm = { name: string; baseDailyRatePct: string; minAmount: string; maxAmount: string; capacity: string };
 
 // D-1 (staking-auto-renew-ruling.md R-1 / staking-auto-renew-copy-spec.md §3.1): true iff the
 // typed rate is a lower value than the product's currently saved rate. decimal.js only — '0.050'
@@ -58,7 +65,7 @@ export default function AdminStakingPage() {
 
   // Inline product edit.
   const [editId, setEditId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<EditForm>({ name: '', dailyRatePct: '', minAmount: '', maxAmount: '', capacity: '' });
+  const [editForm, setEditForm] = useState<EditForm>({ name: '', baseDailyRatePct: '', minAmount: '', maxAmount: '', capacity: '' });
   // D-1 rate-lowering confirmation interstitial (copy-spec §3.4) — non-null while awaiting
   // explicit admin acknowledgment of the auto-renew refusal count.
   const [confirmLower, setConfirmLower] = useState<ConfirmLower | null>(null);
@@ -111,7 +118,7 @@ export default function AdminStakingPage() {
     setEditId(p.id);
     setConfirmLower(null);
     setEditForm({
-      name: p.name, dailyRatePct: p.dailyRatePct,
+      name: p.name, baseDailyRatePct: p.baseDailyRatePct,
       minAmount: p.minAmount ?? '', maxAmount: p.maxAmount ?? '', capacity: p.capacity ?? '',
     });
   };
@@ -121,7 +128,10 @@ export default function AdminStakingPage() {
     try {
       await updateStakingProduct(id, {
         name: editForm.name.trim(),
-        dailyRatePct: editForm.dailyRatePct,
+        baseDailyRatePct: editForm.baseDailyRatePct,
+        // CP-5′ — these three are required non-null server-side now. An admin
+        // clearing one to blank here is a validation error (400), not "no limit"
+        // (that v1 meaning no longer exists) — surfaced via the catch below.
         minAmount: editForm.minAmount || null,
         maxAmount: editForm.maxAmount || null,
         capacity: editForm.capacity || null,
@@ -134,10 +144,10 @@ export default function AdminStakingPage() {
   // one ACTIVE position on the product has auto-renew on (copy-spec §3.1). Otherwise Save proceeds
   // in one click exactly as before — this must not add friction to the common path (§3.5).
   const handleSaveClick = (p: AdminStakingProduct) => {
-    if (isRateLowering(editForm.dailyRatePct, p.dailyRatePct) && p.autoRenewActiveCount > 0) {
+    if (isRateLowering(editForm.baseDailyRatePct, p.baseDailyRatePct) && p.autoRenewActiveCount > 0) {
       setConfirmLower({
         id: p.id, productName: p.name,
-        newRate: editForm.dailyRatePct, oldRate: p.dailyRatePct, count: p.autoRenewActiveCount,
+        newRate: editForm.baseDailyRatePct, oldRate: p.baseDailyRatePct, count: p.autoRenewActiveCount,
       });
       return;
     }
@@ -148,7 +158,29 @@ export default function AdminStakingPage() {
     saveEdit(confirmLower.id);
   };
 
+  // CP-7′ (rev05 §4.5) — 180/360-day terms are on the ladder but not part of the
+  // first tranche; the route is the real gate (products/route.ts 400s
+  // STAKE_PRODUCT_TERM_NOT_FIRST_TRANCHE for a nonzero rate/capacity on these
+  // terms), this just locks + zeroes the two fields client-side so an admin can't
+  // even type a value the server would reject.
+  const isFirstTrancheTerm = (STAKING_FIRST_TRANCHE_TERM_DAYS as readonly number[]).includes(form.termDays);
+  const onTermChange = (nextTerm: number) => {
+    const nextIsFirstTranche = (STAKING_FIRST_TRANCHE_TERM_DAYS as readonly number[]).includes(nextTerm);
+    setForm({
+      ...form, termDays: nextTerm,
+      baseDailyRatePct: nextIsFirstTranche ? form.baseDailyRatePct : '0',
+      capacity: nextIsFirstTranche ? form.capacity : '0',
+    });
+  };
+
+  // CP-5′ — client-side convenience guard only; the server is the actual authority
+  // (products/route.ts 400s with the same fields if any of these is blank). Catches
+  // the common slip before a round-trip, never trusted as the real validation.
+  const missingRequiredCreateFields = !form.name.trim() || !form.baseDailyRatePct.trim()
+    || !(form.minAmount ?? '').trim() || !(form.maxAmount ?? '').trim() || !(form.capacity ?? '').trim();
+
   const create = async () => {
+    if (missingRequiredCreateFields) { setError(t('createMissingFields')); return; }
     setBusy(true); setError(null);
     try {
       await createStakingProduct({
@@ -175,12 +207,12 @@ export default function AdminStakingPage() {
   };
 
   const field = 'p-2.5 rounded-xl bg-[#020d24]/60 border border-[#1E3559] text-sm text-[#d8e2ff] placeholder-[#8c90a0] focus:outline-none focus:border-amber-500/60 transition-colors';
+  // StakePositionV2Status has exactly ACTIVE|MATURED (schema.prisma) — no PAID
+  // member exists in V2 at all (rev05 §5.2 ①: "상태값 집합에서 'PAID' 제거"), so
+  // unlike v1 there is no unreachable-but-defended third key here.
   const POS_STYLE: Record<string, string> = {
     ACTIVE: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/25',
     MATURED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25',
-    // P-6: this state is unreachable under current code (INV-1). If it ever
-    // renders, StakingIncidentBanner fires alongside it — kept for that case.
-    PAID: 'bg-slate-500/10 text-slate-300 border-slate-500/25',
   };
 
   return (
@@ -239,13 +271,32 @@ export default function AdminStakingPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('coin')}</span><input className={`${field} opacity-70 cursor-not-allowed`} value="BANA" readOnly title="Only BANA is stakeable" /></label>
                 <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('name')}</span><input data-testid="np-name" className={field} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t('namePlaceholder')} /></label>
-                <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('termDays')}</span><input data-testid="np-term" className={field} type="number" min={1} value={form.termDays} onChange={(e) => setForm({ ...form, termDays: Number(e.target.value) })} /></label>
-                <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('dailyRate')}</span><input data-testid="np-rate" className={field} value={form.dailyRatePct} onChange={(e) => setForm({ ...form, dailyRatePct: e.target.value })} placeholder="0.05" /></label>
-                <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('minOpt')}</span><input className={field} value={form.minAmount ?? ''} onChange={(e) => setForm({ ...form, minAmount: e.target.value })} placeholder="—" /></label>
-                <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('maxOpt')}</span><input className={field} value={form.maxAmount ?? ''} onChange={(e) => setForm({ ...form, maxAmount: e.target.value })} placeholder="—" /></label>
-                <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('capacityOpt')}</span><input className={field} value={form.capacity ?? ''} onChange={(e) => setForm({ ...form, capacity: e.target.value })} placeholder="—" /></label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-[11px] font-mono text-[#8c90a0]">{t('termDays')}</span>
+                  <select data-testid="np-term" className={field} value={form.termDays} onChange={(e) => onTermChange(Number(e.target.value))}>
+                    {STAKING_TERM_LADDER_DAYS.map((d) => (
+                      <option key={d} value={d}>
+                        {t('daysN', { n: d })}{(STAKING_FIRST_TRANCHE_TERM_DAYS as readonly number[]).includes(d) ? '' : ` — ${t('termNotFirstTrancheOption')}`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-[11px] font-mono text-[#8c90a0]">{t('dailyRate')}</span>
+                  <input data-testid="np-rate" className={`${field} ${isFirstTrancheTerm ? '' : 'opacity-60 cursor-not-allowed'}`} disabled={!isFirstTrancheTerm} value={form.baseDailyRatePct} onChange={(e) => setForm({ ...form, baseDailyRatePct: e.target.value })} placeholder="0.05" />
+                </label>
+                <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('minAmount')}</span><input data-testid="np-min" className={field} value={form.minAmount ?? ''} onChange={(e) => setForm({ ...form, minAmount: e.target.value })} placeholder="100" /></label>
+                <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('maxAmount')}</span><input data-testid="np-max" className={field} value={form.maxAmount ?? ''} onChange={(e) => setForm({ ...form, maxAmount: e.target.value })} placeholder="3000" /></label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-[11px] font-mono text-[#8c90a0]">{t('capacityField')}</span>
+                  <input data-testid="np-capacity" className={`${field} ${isFirstTrancheTerm ? '' : 'opacity-60 cursor-not-allowed'}`} disabled={!isFirstTrancheTerm} value={form.capacity ?? ''} onChange={(e) => setForm({ ...form, capacity: e.target.value })} placeholder="30000" />
+                </label>
               </div>
               <p className="text-[11px] font-mono text-[#8c90a0]">{t('rateHint')}</p>
+              {!isFirstTrancheTerm && (
+                <p data-testid="term-not-first-tranche-hint" className="text-[11px] font-mono text-amber-300/80">{t('termNotFirstTrancheHint', { n: form.termDays })}</p>
+              )}
+              <p className="text-[11px] font-mono text-amber-300/80">{t('createClosedHint')}</p>
               <div className="flex gap-2">
                 <button data-testid="np-submit" disabled={busy} onClick={create} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-bold cursor-pointer">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} {t('create')}</button>
                 <button disabled={busy} onClick={() => { setShowForm(false); setForm(EMPTY); }} className="px-4 py-2.5 rounded-xl bg-[#020d24]/60 hover:bg-[#112643] text-[#8c90a0] hover:text-white text-sm font-bold border border-[#1E3559]/80 cursor-pointer">{t('cancel')}</button>
@@ -266,14 +317,14 @@ export default function AdminStakingPage() {
                   <h3 className="font-bold text-white text-sm">Edit {p.coin} {t('daysN', { n: p.termDays })}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('name')}</span><input className={field} value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} /></label>
-                    <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('dailyRate')}</span><input data-testid="edit-rate" className={field} value={editForm.dailyRatePct} onChange={(e) => setEditForm({ ...editForm, dailyRatePct: e.target.value })} placeholder="0.05" /></label>
-                    <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('minOpt')}</span><input className={field} value={editForm.minAmount} onChange={(e) => setEditForm({ ...editForm, minAmount: e.target.value })} placeholder="—" /></label>
-                    <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('maxOpt')}</span><input className={field} value={editForm.maxAmount} onChange={(e) => setEditForm({ ...editForm, maxAmount: e.target.value })} placeholder="—" /></label>
-                    <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('capacityOpt')}</span><input className={field} value={editForm.capacity} onChange={(e) => setEditForm({ ...editForm, capacity: e.target.value })} placeholder="—" /></label>
+                    <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('dailyRate')}</span><input data-testid="edit-rate" className={field} value={editForm.baseDailyRatePct} onChange={(e) => setEditForm({ ...editForm, baseDailyRatePct: e.target.value })} placeholder="0.05" /></label>
+                    <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('minAmount')}</span><input className={field} value={editForm.minAmount} onChange={(e) => setEditForm({ ...editForm, minAmount: e.target.value })} placeholder="100" /></label>
+                    <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('maxAmount')}</span><input className={field} value={editForm.maxAmount} onChange={(e) => setEditForm({ ...editForm, maxAmount: e.target.value })} placeholder="3000" /></label>
+                    <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('capacityField')}</span><input data-testid="edit-capacity" className={field} value={editForm.capacity} onChange={(e) => setEditForm({ ...editForm, capacity: e.target.value })} placeholder="30000" /></label>
                   </div>
 
                   {/* D-1 inline warning — live as the admin types a lower rate (copy-spec §3.3) */}
-                  {isRateLowering(editForm.dailyRatePct, p.dailyRatePct) && p.autoRenewActiveCount > 0 && (
+                  {isRateLowering(editForm.baseDailyRatePct, p.baseDailyRatePct) && p.autoRenewActiveCount > 0 && (
                     <div data-testid="rate-lower-inline-warning" className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-100 text-xs leading-relaxed flex flex-col gap-2">
                       <p className="font-bold text-amber-300 flex items-center gap-1.5"><TriangleAlert className="h-3.5 w-3.5 shrink-0" /> {t('autoRenewWarning.inlineTitle', { count: p.autoRenewActiveCount })}</p>
                       <p>{t('autoRenewWarning.inlineBody', { count: p.autoRenewActiveCount, productName: p.name })}</p>
@@ -327,7 +378,7 @@ export default function AdminStakingPage() {
                         <td className="px-4 py-3 font-bold text-white">{p.name}</td>
                         <td className="px-4 py-3 font-mono text-[#afc6ff]">{p.coin}</td>
                         <td className="px-4 py-3 text-right font-mono">{t('daysN', { n: p.termDays })}</td>
-                        <td className="px-4 py-3 text-right font-mono">{p.dailyRatePct}%</td>
+                        <td className="px-4 py-3 text-right font-mono">{p.baseDailyRatePct}%</td>
                         <td className="px-4 py-3 text-right font-mono text-emerald-400 font-bold">{p.aprPct}%</td>
                         <td className="px-4 py-3 text-right font-mono">{p.totalStaked} <span className="text-[10px] text-[#8c90a0]">({p.positionCount})</span></td>
                         <td className="px-4 py-3 text-center">
@@ -413,7 +464,10 @@ export default function AdminStakingPage() {
               <div className="p-6 rounded-2xl bg-[#112643]/70 border border-[#1E3559] text-center text-sm text-[#8c90a0]">{t('noPositions')}</div>
             ) : (
               <div className="flex flex-col gap-2">
-                {/* P-4: group caption over the two ledger columns. */}
+                {/* P-4: caption over the ledger column. rev05 §5.2 ① removed the
+                    "Accrued (live)" column entirely — V2 forbids the accruedInterest
+                    concept (no such column even exists on StakePositionV2); only the
+                    ledgered (persisted-by-settlement) amount is ever shown now. */}
                 <p className="text-[11px] text-[#8c90a0] font-mono px-1">{t('ledgerColsNote')}</p>
                 <div className="overflow-x-auto rounded-2xl border border-[#1E3559]">
                   <table className="w-full text-sm">
@@ -422,7 +476,6 @@ export default function AdminStakingPage() {
                         <th className="text-left px-4 py-3">{t('user')}</th>
                         <th className="text-left px-4 py-3">{t('product')}</th>
                         <th className="text-right px-4 py-3">{t('principal')}</th>
-                        <th className="text-right px-4 py-3">{t('accrued')}</th>
                         <th className="text-right px-4 py-3">{t('unpaidCol')}</th>
                         <th className="text-left px-4 py-3">{t('matures')}</th>
                         <th className="text-center px-4 py-3">{t('status')}</th>
@@ -430,12 +483,15 @@ export default function AdminStakingPage() {
                     </thead>
                     <tbody className="divide-y divide-[#1E3559]/50">
                       {positions.map((p) => {
-                        const unpaid = formatLedgerAmount(p.paidInterest);
+                        const unpaid = formatLedgerAmount(p.ledgeredYield);
                         return (
                           <tr key={p.id} className="hover:bg-[#112643]/40">
                             <td className="px-4 py-3 font-mono text-[#afc6ff] truncate max-w-[180px]">
                               {p.email}
-                              {/* P-5: grant marker — derived server-side from grantedByAdminId (admin route only). */}
+                              {/* P-5: grant marker — derived server-side from fundingSource
+                                  (admin route only). Structurally unreachable today (no live
+                                  route creates a PLATFORM_GRANT position); kept for any
+                                  pre-cutover historical row and forward-compat. */}
                               {p.isGrant && (
                                 <span data-testid="grant-badge" className="ml-1.5 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/25 align-middle">
                                   {t('grantBadge')}
@@ -444,11 +500,10 @@ export default function AdminStakingPage() {
                             </td>
                             <td className="px-4 py-3">{p.productName}</td>
                             <td className="px-4 py-3 text-right font-mono text-white">{p.principal} {p.coin}</td>
-                            <td className="px-4 py-3 text-right font-mono text-[#8c90a0]">{p.accruedInterest}</td>
                             {/* P-2: no emerald, no "+" prefix — this is unpaid ledger interest, not a credit. */}
                             <td
                               className="px-4 py-3 text-right font-mono text-amber-300 font-bold"
-                              title={unpaid.truncated ? p.paidInterest : undefined}
+                              title={unpaid.truncated ? p.ledgeredYield : undefined}
                             >
                               {unpaid.display} {p.coin}
                             </td>
