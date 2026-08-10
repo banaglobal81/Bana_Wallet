@@ -12,9 +12,18 @@ import { settleMaturedPositions } from '@/lib/staking';
 import { DAY_MS } from '@/lib/stakingMath';
 import { AUTO_RENEW_MAX_TERM_DAYS } from '@/lib/stakingRenew';
 
+// docs/specs/staking-page-v2-screen-flow-frd.md §7.1 R-D5 / §7.2 — every
+// staking route must return a stable `code` so the client can render a
+// localized `staking.error.<code>` string instead of this raw English
+// message (which stays in the body for logging/debugging only — S-STAKE
+// never shows it directly, per T-7/AC-19). `params` carries the few
+// dynamic values (min/max/available + coin) some codes need.
 function err(e: unknown) {
-  const x = e as Error & { status?: number };
-  return NextResponse.json({ ok: false, error: x.message }, { status: x.status ?? 500 });
+  const x = e as Error & { status?: number; code?: string; params?: Record<string, string> };
+  return NextResponse.json(
+    { ok: false, error: x.message, code: x.code ?? 'GENERIC', ...(x.params ? { params: x.params } : {}) },
+    { status: x.status ?? 500 },
+  );
 }
 
 // Sum the available (free) balance for a coin from a Nia /wallets response.
@@ -40,7 +49,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     const u = (await auth())?.user as { id?: string; email?: string } | undefined;
     if (!u?.id) throw Object.assign(new Error('Unauthorized'), { status: 401 });
     dbUserId = u.id; email = u.email ?? '';
-  } catch (e) { return err(e); }
+  } catch (e) { return err(Object.assign(e as Error, { code: (e as { code?: string }).code ?? 'UNAUTHENTICATED' })); }
 
   let body: Record<string, unknown> = {};
   try { body = await req.json(); } catch {}
@@ -51,13 +60,13 @@ export async function POST(req: Request): Promise<NextResponse> {
     amount = new Decimal(String(body.amount ?? ''));
     if (!amount.isFinite() || amount.lte(0)) throw new Error('bad');
   } catch {
-    return NextResponse.json({ ok: false, error: 'Enter a valid amount greater than 0' }, { status: 400 });
+    return NextResponse.json({ ok: false, error: 'Enter a valid amount greater than 0', code: 'STAKE_INVALID_AMOUNT' }, { status: 400 });
   }
 
   const product = await prisma.stakingProduct.findUnique({ where: { id: productId } });
-  if (!product) return NextResponse.json({ ok: false, error: 'Staking product not found' }, { status: 404 });
+  if (!product) return NextResponse.json({ ok: false, error: 'Staking product not found', code: 'STAKE_PRODUCT_NOT_FOUND' }, { status: 404 });
   if (product.status !== 'OPEN') {
-    return NextResponse.json({ ok: false, error: 'This staking product is closed.' }, { status: 409 });
+    return NextResponse.json({ ok: false, error: 'This staking product is closed.', code: 'STAKE_PRODUCT_CLOSED' }, { status: 409 });
   }
 
   // Auto-renew rider (PRD §4 S1) — optional, defaults false. Never rejects the
@@ -69,10 +78,16 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   // Per-stake min / max.
   if (product.minAmount && amount.lt(new Decimal(product.minAmount))) {
-    return NextResponse.json({ ok: false, error: `Minimum stake is ${product.minAmount} ${product.coin}.` }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: `Minimum stake is ${product.minAmount} ${product.coin}.`, code: 'STAKE_BELOW_MIN', params: { min: product.minAmount, coin: product.coin } },
+      { status: 400 },
+    );
   }
   if (product.maxAmount && amount.gt(new Decimal(product.maxAmount))) {
-    return NextResponse.json({ ok: false, error: `Maximum stake is ${product.maxAmount} ${product.coin}.` }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: `Maximum stake is ${product.maxAmount} ${product.coin}.`, code: 'STAKE_ABOVE_MAX', params: { max: product.maxAmount, coin: product.coin } },
+      { status: 400 },
+    );
   }
 
   // Fetch the user's free balance from Nia (external I/O — kept OUTSIDE the DB
@@ -109,7 +124,10 @@ export async function POST(req: Request): Promise<NextResponse> {
         const used = active.reduce((s, p) => s.plus(new Decimal(p.principal)), new Decimal(0));
         if (used.plus(amount).gt(new Decimal(product.capacity))) {
           const left = Decimal.max(0, new Decimal(product.capacity).minus(used));
-          throw Object.assign(new Error(`Not enough capacity left in this product (only ${left.toFixed()} ${product.coin} available).`), { status: 409 });
+          throw Object.assign(
+            new Error(`Not enough capacity left in this product (only ${left.toFixed()} ${product.coin} available).`),
+            { status: 409, code: 'STAKE_PRODUCT_FULL', params: { left: left.toFixed(), coin: product.coin } },
+          );
         }
       }
 
@@ -119,7 +137,10 @@ export async function POST(req: Request): Promise<NextResponse> {
       const locked = lockedRows.reduce((s, p) => s.plus(new Decimal(p.principal)), new Decimal(0));
       const available = niaBal.minus(locked);
       if (amount.gt(available)) {
-        throw Object.assign(new Error(`Not enough available ${product.coin}. You have ${Decimal.max(0, available).toFixed()} free to stake.`), { status: 400 });
+        throw Object.assign(
+          new Error(`Not enough available ${product.coin}. You have ${Decimal.max(0, available).toFixed()} free to stake.`),
+          { status: 400, code: 'STAKE_INSUFFICIENT_AVAILABLE', params: { available: Decimal.max(0, available).toFixed(), coin: product.coin } },
+        );
       }
 
       return tx.stakePosition.create({

@@ -3,11 +3,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { LayoutDashboard, Users, ArrowUpRight, Check, ShieldCheck, RefreshCw, Download, ChevronRight, Sprout, Lock } from 'lucide-react';
+import { LayoutDashboard, Users, ArrowUpRight, Check, ShieldCheck, RefreshCw, Download, ChevronRight } from 'lucide-react';
 import {
   getAdminStats, listWithdrawals, getRecentDeposits, getStakingStats,
   type AdminStats, type WithdrawalRequest, type WithdrawalStatus, type DepositFeedItem, type AdminStakingStat,
 } from '@/utils/adminApi';
+import { StakingLiabilityDashboardStrip } from '@/components/admin/StakingLiabilityDashboardStrip';
+import { StakingIncidentBanner } from '@/components/admin/StakingIncidentBanner';
 
 const STATUS_STYLE: Record<WithdrawalStatus, string> = {
   PENDING: 'bg-amber-500/10 text-amber-400 border-amber-500/25',
@@ -23,21 +25,37 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
   const [deposits, setDeposits] = useState<DepositFeedItem[]>([]);
-  const [staking, setStaking] = useState<AdminStakingStat[]>([]);
+  // A8 fix (admin-staking-debt-visibility-frd.md §5.4 E-1): a failed staking-stats
+  // fetch is kept as `null` + a distinct error string, never collapsed into an
+  // empty array — an empty array must only ever mean "loaded, zero liability".
+  const [staking, setStaking] = useState<AdminStakingStat[] | null>(null);
+  const [stakingError, setStakingError] = useState<string | null>(null);
+  const [stakingLoading, setStakingLoading] = useState(true);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [s, w, d, st] = await Promise.all([getAdminStats(), listWithdrawals(), getRecentDeposits(), getStakingStats().catch(() => [])]);
+      const [s, w, d] = await Promise.all([getAdminStats(), listWithdrawals(), getRecentDeposits()]);
       setStats(s);
       setWithdrawals(w.items.slice(0, 12));
       setDeposits(d);
-      setStaking(st);
     } catch {
       // surfaced as empty state
     } finally {
       setLoading(false);
+    }
+
+    setStakingLoading(true);
+    try {
+      const st = await getStakingStats();
+      setStaking(st);
+      setStakingError(null);
+    } catch (e) {
+      setStaking(null);
+      setStakingError((e as Error).message);
+    } finally {
+      setStakingLoading(false);
     }
   }, []);
 
@@ -69,6 +87,9 @@ export default function AdminDashboardPage() {
         </button>
       </header>
 
+      {/* D-6: incident banner — INV-1/2/3 violation. First screen an admin sees, so it belongs here too. */}
+      <StakingIncidentBanner stats={staking} />
+
       {/* KPI cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map(({ key, icon: Icon, value, sub, color, href }) => (
@@ -86,26 +107,8 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
-      {/* Staking liability (per coin: locked principal + interest paid) */}
-      {staking.length > 0 && (
-        <Link href="/admin/staking" className="rounded-2xl bg-[#112643]/70 border border-[#1E3559] hover:border-emerald-500/40 transition-colors p-5 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-[#8c90a0] font-bold flex items-center gap-1.5">
-              <Sprout className="h-3.5 w-3.5 text-emerald-400" /> Staking liability
-            </span>
-            <ChevronRight className="h-3.5 w-3.5 text-[#8c90a0]" />
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {staking.map((s) => (
-              <div key={s.coin} className="flex flex-col gap-0.5">
-                <span className="text-[11px] font-mono text-[#8c90a0] flex items-center gap-1"><Lock className="h-3 w-3" /> {s.coin} locked</span>
-                <span className="text-xl font-bold text-white font-mono truncate">{s.activePrincipal}</span>
-                <span className="text-[11px] font-mono text-emerald-400 truncate">+{s.totalPaid} paid · {s.activeCount} active</span>
-              </div>
-            ))}
-          </div>
-        </Link>
-      )}
+      {/* D-1..D-5: staking liability summary (unpaid interest headline + locked principal) */}
+      <StakingLiabilityDashboardStrip stats={staking} error={stakingError} loading={stakingLoading} />
 
       {/* Transactions: recent withdrawals (real) + recent deposits (best-effort) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

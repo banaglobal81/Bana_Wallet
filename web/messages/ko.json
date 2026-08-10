@@ -411,6 +411,57 @@
       "error": {
         "GAME_LOAD_FAILED": "화면을 불러오지 못했습니다. 스테이킹 기능은 정상적으로 이용할 수 있습니다."
       }
+    },
+    "yield": {
+      "recordedLabel": "기록된 수익",
+      "recordedHelp": "스테이킹 원장에 기록된 금액입니다. 지갑 잔고에는 포함되지 않습니다.",
+      "claimedLabel": "지갑 수령 완료",
+      "claimedHelp": "지갑 잔고로 옮겨진 금액입니다.",
+      "lockedLabel": "잠긴 원금",
+      "lockedHelp": "원금은 지갑에 그대로 있으며, 약정이 끝날 때까지 출금할 수 없습니다.",
+      "empty": "아직 기록된 수익이 없습니다."
+    },
+    "claim": {
+      "unavailable": "지갑으로의 지급은 아직 제공되지 않습니다."
+    },
+    "nav": {
+      "stake": "예치",
+      "positions": "내 포지션",
+      "yieldLog": "수익 내역"
+    },
+    "sheet": {
+      "stakeTitle": "예치",
+      "amountTitle": "금액",
+      "confirmTitle": "확인",
+      "positionsTitle": "내 포지션",
+      "step": "{current}/{total}단계",
+      "back": "뒤로"
+    },
+    "stakeSheet": {
+      "contractTerms": "{days}일 기준 이자: {baseTotal} {coin}",
+      "notEstimate": "이 수치는 계약 이율에서 계산된 값이며 예측치가 아닙니다.",
+      "lockNote": "예치한 자금은 약정이 끝나기 전에는 출금할 수 없습니다."
+    },
+    "position": {
+      "recordedLabel": "기록됨",
+      "settledDays": "정산 {d}/{total}일",
+      "maturedNote": "약정이 끝나면 원금의 잠금이 해제되어 지갑에서 사용할 수 있습니다. 기록된 수익은 자동으로 옮겨지지 않습니다."
+    },
+    "yieldLog": {
+      "title": "수익 내역",
+      "empty": "아직 내역이 없습니다.",
+      "loadMore": "더 보기"
+    },
+    "error": {
+      "STAKE_INVALID_AMOUNT": "0보다 큰 금액을 입력하십시오.",
+      "STAKE_PRODUCT_NOT_FOUND": "이 상품은 더 이상 제공되지 않습니다.",
+      "STAKE_PRODUCT_CLOSED": "이 상품은 신규 체결이 마감되었습니다.",
+      "STAKE_PRODUCT_FULL": "이 상품의 정원이 찼습니다.",
+      "STAKE_BELOW_MIN": "이 상품의 최소 금액은 {min} {coin}입니다.",
+      "STAKE_ABOVE_MAX": "이 상품의 최대 금액은 {max} {coin}입니다.",
+      "STAKE_INSUFFICIENT_AVAILABLE": "사용 가능한 잔고는 {available} {coin}입니다.",
+      "UNAUTHENTICATED": "세션이 만료되었습니다. 다시 로그인하십시오.",
+      "GENERIC": "요청이 완료되지 않았습니다."
     }
   },
   "deposit": {
@@ -711,7 +762,13 @@
     "recentDeposits": "최근 입금",
     "noWithdrawals": "아직 출금이 없습니다.",
     "noDeposits": "최근 입금이 없습니다. 허브에 입금 웹훅이 설정되면 여기에 표시됩니다.",
-    "viewAll": "전체 보기"
+    "viewAll": "전체 보기",
+    "stakingLiability": {
+      "title": "스테이킹 부채 (미지급)",
+      "unpaid": "{coin} 미지급 이자",
+      "principalSub": "잠긴 원금 {amount} · 활성 {n}",
+      "error": "부채 수치를 불러오지 못했습니다 — 0으로 해석하지 마십시오."
+    }
   },
   "adminSettings": {
     "pageTitle": "플랫폼 설정",
@@ -795,8 +852,62 @@
     "user": "사용자",
     "product": "상품",
     "principal": "원금",
-    "accrued": "획득",
+    "accrued": "발생 이자(실시간 계산)",
+    "unpaidCol": "미지급 이자(장부)",
+    "ledgerColsNote": "두 컬럼 모두 원장 기록이며 지갑 잔고가 아닙니다.",
+    "grantBadge": "그랜트",
     "matures": "만기",
+    "liability": {
+      "sectionTitle": "스테이킹 부채",
+      "sectionNote": "아래는 장부 수치입니다. 여기에 기록된 이자는 사용자 지갑에 반영된 적이 없습니다.",
+      "unpaid": {
+        "label": "미지급 이자 — 장부에만 존재",
+        "note": "사용자 지갑 잔고에 반영되지 않은 금액입니다.",
+        "rate": "정산일 1일당 +{amount} {coin} 증가 중"
+      },
+      "settled": {
+        "label": "실제 지갑 지급 완료",
+        "noRail": "지급 레일 없음",
+        "noRailTooltip": "스테이킹 이자를 Nia-Hub 잔고로 입금하는 코드 경로가 존재하지 않습니다. 이 값은 측정치가 아니라 구조적으로 0입니다."
+      },
+      "principal": {
+        "label": "잠긴 원금 (활성)",
+        "note": "사용자 자금입니다. 잠겨 있을 뿐 플랫폼 부채가 아닙니다."
+      },
+      "grant": {
+        "label": "그중 플랫폼 그랜트 원금",
+        "note": "이 금액이 플랫폼 부채인지는 미확인 운영 질문(B-4)에 달려 있습니다: 그랜트 원금이 사용자 허브 지갑에 실제로 입금됩니까?"
+      },
+      "counts": "활성 {active} · 만기 {matured} · 전체 {total}",
+      "badge": {
+        "noRail": "지급 레일 없음"
+      },
+      "state": {
+        "loading": "부채 수치를 불러오는 중…",
+        "error": {
+          "title": "부채 수치를 불러오지 못했습니다",
+          "body": "이 공백을 \"부채 0\"으로 해석하지 마십시오. 다시 시도하고, 계속 실패하면 수치를 미상으로 취급하십시오.",
+          "retry": "다시 시도"
+        },
+        "empty": "스테이킹 포지션이 없습니다 — 현재 부채 0."
+      },
+      "incident": {
+        "paidStatus": "데이터 정합성 경고 — `PAID` 상태 포지션 {n}건이 감지되었습니다. 현재 코드는 이 상태를 할당하지 않으므로 \"실제 지갑 지급 완료 = 0\" 표시를 더 이상 신뢰할 수 없습니다. 지급 관련 작업 전에 원인을 규명하십시오.",
+        "negative": "데이터 정합성 경고 — 미지급 이자가 음수로 계산되었습니다. 원장이 정합하지 않습니다.",
+        "grantExceeds": "데이터 정합성 경고 — 그랜트 원금이 전체 활성 원금을 초과합니다."
+      }
+    },
+    "settlement": {
+      "title": "일일 이자 적립",
+      "lastAccrual": "마지막 적립: {when}",
+      "never": "없음",
+      "accruedToday": "오늘 적립: {amount} ({count})",
+      "activeN": "활성 {n}",
+      "runNow": "지금 적립 실행",
+      "runNowTitle": "오늘 이자를 장부에 기록합니다(멱등). 사용자 지갑으로는 아무것도 전송되지 않습니다.",
+      "runResult": "장부에 {days}일치 {amount} {coin}을(를) 기록했습니다. {matured}건 만기. 사용자 지갑으로는 아무것도 전송되지 않았습니다.",
+      "runResultNoop": "최신 상태입니다 — 새로 기록할 항목 없음 (활성 {n})."
+    },
     "autoRenewWarning": {
       "inlineTitle": "금리를 인하하면 {count, plural, one {# 건의 대기 중인 자동 갱신} other {# 건의 대기 중인 자동 갱신}}이 거부됩니다.",
       "inlineBody": "{productName}의 {count, plural, one {# 개의 활성화된 포지션} other {# 개의 활성화된 포지션}}에 자동 갱신이 활성화되어 있습니다. 각각은 만기 시점의 이 상품의 금리로 확인됩니다. 저장된 금리가 포지션의 금리보다 낮으면 그 갱신은 거부되고 원금은 다시 스테이킹되지 않고 사용자의 지갑에 반환됩니다.",

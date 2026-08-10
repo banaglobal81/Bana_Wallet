@@ -3,12 +3,15 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import Decimal from 'decimal.js';
-import { Sprout, Plus, Loader2, Check, X, Power, Trash2, Users, Lock, Coins, Pencil, Play, TriangleAlert } from 'lucide-react';
+import { Sprout, Plus, Loader2, Check, X, Power, Trash2, Users, Pencil, Play, TriangleAlert } from 'lucide-react';
 import {
   listStakingProducts, createStakingProduct, updateStakingProduct, deleteStakingProduct, listStakingPositions, getStakingStats,
   runStakingSettlement, getStakingRunStatus, getReferralOverview, grantStakePosition,
   type AdminStakingProduct, type AdminStakePosition, type StakingProductInput, type AdminStakingStat, type StakingRunStatus, type ReferralOverview,
 } from '@/utils/adminApi';
+import { formatLedgerAmount } from '@/utils/adminLedgerFormat';
+import { StakingLiabilitySection } from '@/components/admin/StakingLiabilitySection';
+import { StakingIncidentBanner } from '@/components/admin/StakingIncidentBanner';
 
 const EMPTY: StakingProductInput = { coin: 'BANA', name: '', termDays: 30, dailyRatePct: '', minAmount: '', maxAmount: '', capacity: '' };
 
@@ -35,7 +38,12 @@ export default function AdminStakingPage() {
   const t = useTranslations('adminStaking');
   const [products, setProducts] = useState<AdminStakingProduct[]>([]);
   const [positions, setPositions] = useState<AdminStakePosition[]>([]);
-  const [stats, setStats] = useState<AdminStakingStat[]>([]);
+  // A8 fix (admin-staking-debt-visibility-frd.md §5.4 E-1): `stats === null` +
+  // `statsError` set is a load FAILURE, distinct from `stats === []` (loaded,
+  // genuinely zero positions). Never collapse the two — that's the bug this
+  // FRD exists to fix.
+  const [stats, setStats] = useState<AdminStakingStat[] | null>(null);
+  const [statsError, setStatsError] = useState<string | null>(null);
   const [referral, setReferral] = useState<ReferralOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -64,14 +72,26 @@ export default function AdminStakingPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [p, pos, st, run, ref] = await Promise.all([
+      const [p, pos, run, ref] = await Promise.all([
         listStakingProducts(), listStakingPositions(),
-        getStakingStats().catch(() => []), getStakingRunStatus().catch(() => null),
+        getStakingRunStatus().catch(() => null),
         getReferralOverview().catch(() => null),
       ]);
-      setProducts(p); setPositions(pos); setStats(st); setStatus(run); setReferral(ref);
+      setProducts(p); setPositions(pos); setStatus(run); setReferral(ref);
     } catch (e) { setError((e as Error).message); }
     finally { setLoading(false); }
+
+    // Liability stats are fetched (and their failure tracked) independently of
+    // the rest of the page — a stats-fetch failure must not blank the whole
+    // page, and the rest of the page loading must not hide a stats failure.
+    try {
+      const st = await getStakingStats();
+      setStats(st);
+      setStatsError(null);
+    } catch (e) {
+      setStats(null);
+      setStatsError((e as Error).message);
+    }
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -97,8 +117,8 @@ export default function AdminStakingPage() {
     try {
       const r = await runStakingSettlement();
       setRunMsg(r.daysCredited > 0
-        ? `Paid ${r.totalPaid} across ${r.daysCredited} day(s); ${r.matured} matured.`
-        : `Up to date — nothing new to pay (${r.processed} active).`);
+        ? t('settlement.runResult', { amount: r.totalPaid, coin: 'BANA', days: r.daysCredited, matured: r.matured })
+        : t('settlement.runResultNoop', { n: r.processed }));
       await load();
     } catch (e) { setError((e as Error).message); }
     finally { setRunning(false); }
@@ -176,6 +196,8 @@ export default function AdminStakingPage() {
   const POS_STYLE: Record<string, string> = {
     ACTIVE: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/25',
     MATURED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25',
+    // P-6: this state is unreachable under current code (INV-1). If it ever
+    // renders, StakingIncidentBanner fires alongside it — kept for that case.
     PAID: 'bg-slate-500/10 text-slate-300 border-slate-500/25',
   };
 
@@ -193,129 +215,63 @@ export default function AdminStakingPage() {
         </button>
       </header>
 
+      {/* §5.5 — the one non-dismissible alarm on this screen. Above the error banner (INV violation trumps a routine fetch error). */}
+      <StakingIncidentBanner stats={stats} />
+
       {error && <div className="px-4 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm">{error}</div>}
-
-      {/* Daily settlement — status + manual run */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
-        <div className="flex flex-col gap-1 text-xs font-mono text-[#8c90a0]">
-          <span className="text-[11px] uppercase tracking-wider text-[#d8e2ff] font-bold">Daily settlement</span>
-          <span>
-            Last interest paid:{' '}
-            <span className="text-[#afc6ff]">{status?.lastPayoutAt ? new Date(status.lastPayoutAt).toLocaleString() : 'never'}</span>
-            {'  ·  '}Paid today: <span className="text-emerald-400">{status?.totalPaidToday ?? '0'}</span> ({status?.payoutsToday ?? 0})
-            {'  ·  '}<span className="text-[#afc6ff]">{status?.activeCount ?? 0}</span> active
-          </span>
-          {runMsg && <span data-testid="settlement-msg" className="text-emerald-300">{runMsg}</span>}
-        </div>
-        <button
-          data-testid="run-settlement"
-          disabled={running}
-          onClick={runSettlement}
-          title="Run the daily interest payout now (idempotent)"
-          className="self-start inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-bold cursor-pointer whitespace-nowrap"
-        >
-          {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Run settlement now
-        </button>
-      </div>
-
-      {/* Create form */}
-      {showForm && (
-        <div className="p-6 rounded-2xl bg-[#112643]/70 border border-amber-500/20 flex flex-col gap-4">
-          <h3 className="font-bold text-white text-sm">{t('newProduct')}</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('coin')}</span><input className={`${field} opacity-70 cursor-not-allowed`} value="BANA" readOnly title="Only BANA is stakeable" /></label>
-            <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('name')}</span><input data-testid="np-name" className={field} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t('namePlaceholder')} /></label>
-            <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('termDays')}</span><input data-testid="np-term" className={field} type="number" min={1} value={form.termDays} onChange={(e) => setForm({ ...form, termDays: Number(e.target.value) })} /></label>
-            <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('dailyRate')}</span><input data-testid="np-rate" className={field} value={form.dailyRatePct} onChange={(e) => setForm({ ...form, dailyRatePct: e.target.value })} placeholder="0.05" /></label>
-            <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('minOpt')}</span><input className={field} value={form.minAmount ?? ''} onChange={(e) => setForm({ ...form, minAmount: e.target.value })} placeholder="—" /></label>
-            <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('maxOpt')}</span><input className={field} value={form.maxAmount ?? ''} onChange={(e) => setForm({ ...form, maxAmount: e.target.value })} placeholder="—" /></label>
-            <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('capacityOpt')}</span><input className={field} value={form.capacity ?? ''} onChange={(e) => setForm({ ...form, capacity: e.target.value })} placeholder="—" /></label>
-          </div>
-          <p className="text-[11px] font-mono text-[#8c90a0]">{t('rateHint')}</p>
-          <div className="flex gap-2">
-            <button data-testid="np-submit" disabled={busy} onClick={create} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-bold cursor-pointer">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} {t('create')}</button>
-            <button disabled={busy} onClick={() => { setShowForm(false); setForm(EMPTY); }} className="px-4 py-2.5 rounded-xl bg-[#020d24]/60 hover:bg-[#112643] text-[#8c90a0] hover:text-white text-sm font-bold border border-[#1E3559]/80 cursor-pointer">{t('cancel')}</button>
-          </div>
-        </div>
-      )}
 
       {loading ? (
         <p className="text-xs font-mono text-[#8c90a0] py-6">{t('loading')}</p>
       ) : (
         <>
-          {/* Liability overview — real active principal + interest paid to date (per coin) */}
-          {stats.length > 0 && (
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {stats.map((s) => (
-                <div key={s.coin} className="p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-3">
-                  <div className="flex items-center gap-2 text-sm font-bold text-white"><Coins className="h-4 w-4 text-[#528dff]" /> {s.coin}</div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <div className="text-[10px] font-mono uppercase tracking-wide text-[#8c90a0] flex items-center gap-1"><Lock className="h-3 w-3" /> Active staked</div>
-                      <div className="font-mono font-bold text-white truncate">{s.activePrincipal} {s.coin}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] font-mono uppercase tracking-wide text-[#8c90a0]">Interest paid</div>
-                      <div className="font-mono font-bold text-emerald-400 truncate">+{s.totalPaid} {s.coin}</div>
-                    </div>
-                  </div>
-                  <div className="text-[10px] font-mono text-[#8c90a0]">{s.activeCount} active · {s.totalCount} total positions</div>
-                </div>
-              ))}
-            </section>
-          )}
+          {/* §4.1 【1】 — liability overview, replacing the old undifferentiated totalPaid grid. */}
+          <StakingLiabilitySection stats={stats} error={statsError} onRetry={load} />
 
-          {/* Referral commissions (대·소실적 매칭 + 유니레벨 부스트) */}
-          {referral && (
-            <section className="flex flex-col gap-3">
-              <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#d8e2ff] flex items-center gap-2">
-                Referral commissions
-                {!referral.enabled && <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-400 border border-slate-500/25">flag OFF</span>}
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div className="p-4 rounded-2xl bg-[#112643]/70 border border-[#1E3559]">
-                  <div className="text-[10px] font-mono uppercase tracking-wide text-[#8c90a0]">Total paid</div>
-                  <div className="font-mono font-bold text-emerald-400 truncate">+{referral.grandTotal} BANA</div>
-                </div>
-                <div className="p-4 rounded-2xl bg-[#112643]/70 border border-[#1E3559]">
-                  <div className="text-[10px] font-mono uppercase tracking-wide text-[#8c90a0]">Uplines (with downline)</div>
-                  <div className="font-mono font-bold text-white">{referral.uplines}</div>
-                </div>
-                <div className="p-4 rounded-2xl bg-[#112643]/70 border border-[#1E3559]">
-                  <div className="text-[10px] font-mono uppercase tracking-wide text-[#8c90a0]">Earners</div>
-                  <div className="font-mono font-bold text-white">{referral.earners.length}</div>
-                </div>
+          {/* §4.1 【2】/§4.5 — daily accrual status + manual run. Moved directly under liability
+              so "how much is owed" and "how fast it's growing" read as one pair. */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+            <div className="flex flex-col gap-1 text-xs font-mono text-[#8c90a0]">
+              <span className="text-[11px] uppercase tracking-wider text-[#d8e2ff] font-bold">{t('settlement.title')}</span>
+              <span>
+                {t('settlement.lastAccrual', { when: status?.lastPayoutAt ? new Date(status.lastPayoutAt).toLocaleString() : t('settlement.never') })}
+                {'  ·  '}{t('settlement.accruedToday', { amount: formatLedgerAmount(status?.totalPaidToday ?? '0').display, count: status?.payoutsToday ?? 0 })}
+                {'  ·  '}{t('settlement.activeN', { n: status?.activeCount ?? 0 })}
+              </span>
+              {runMsg && <span data-testid="settlement-msg" className="text-[#afc6ff]">{runMsg}</span>}
+            </div>
+            <button
+              data-testid="run-settlement"
+              disabled={running}
+              onClick={runSettlement}
+              title={t('settlement.runNowTitle')}
+              className="self-start inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-bold cursor-pointer whitespace-nowrap"
+            >
+              {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} {t('settlement.runNow')}
+            </button>
+          </div>
+
+          {/* §4.1 【3】 — create form */}
+          {showForm && (
+            <div className="p-6 rounded-2xl bg-[#112643]/70 border border-amber-500/20 flex flex-col gap-4">
+              <h3 className="font-bold text-white text-sm">{t('newProduct')}</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('coin')}</span><input className={`${field} opacity-70 cursor-not-allowed`} value="BANA" readOnly title="Only BANA is stakeable" /></label>
+                <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('name')}</span><input data-testid="np-name" className={field} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t('namePlaceholder')} /></label>
+                <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('termDays')}</span><input data-testid="np-term" className={field} type="number" min={1} value={form.termDays} onChange={(e) => setForm({ ...form, termDays: Number(e.target.value) })} /></label>
+                <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('dailyRate')}</span><input data-testid="np-rate" className={field} value={form.dailyRatePct} onChange={(e) => setForm({ ...form, dailyRatePct: e.target.value })} placeholder="0.05" /></label>
+                <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('minOpt')}</span><input className={field} value={form.minAmount ?? ''} onChange={(e) => setForm({ ...form, minAmount: e.target.value })} placeholder="—" /></label>
+                <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('maxOpt')}</span><input className={field} value={form.maxAmount ?? ''} onChange={(e) => setForm({ ...form, maxAmount: e.target.value })} placeholder="—" /></label>
+                <label className="flex flex-col gap-1"><span className="text-[11px] font-mono text-[#8c90a0]">{t('capacityOpt')}</span><input className={field} value={form.capacity ?? ''} onChange={(e) => setForm({ ...form, capacity: e.target.value })} placeholder="—" /></label>
               </div>
-              {referral.earners.length > 0 && (
-                <div className="overflow-x-auto rounded-2xl border border-[#1E3559]">
-                  <table className="w-full text-sm">
-                    <thead className="bg-[#0a1b33] text-[11px] font-mono uppercase text-[#8c90a0]">
-                      <tr>
-                        <th className="text-left px-4 py-3">User</th>
-                        <th className="text-right px-4 py-3">Matching</th>
-                        <th className="text-right px-4 py-3">Boost</th>
-                        <th className="text-right px-4 py-3">Total</th>
-                        <th className="text-right px-4 py-3">Days</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#1E3559]/50">
-                      {referral.earners.map((e) => (
-                        <tr key={e.email} className="hover:bg-[#112643]/40">
-                          <td className="px-4 py-3 font-mono text-[#afc6ff] truncate max-w-[220px]">{e.email}</td>
-                          <td className="px-4 py-3 text-right font-mono text-[#8c90a0]">{e.matching}</td>
-                          <td className="px-4 py-3 text-right font-mono text-[#8c90a0]">{e.boost}</td>
-                          <td className="px-4 py-3 text-right font-mono text-emerald-400 font-bold">+{e.total}</td>
-                          <td className="px-4 py-3 text-right font-mono">{e.days}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </section>
+              <p className="text-[11px] font-mono text-[#8c90a0]">{t('rateHint')}</p>
+              <div className="flex gap-2">
+                <button data-testid="np-submit" disabled={busy} onClick={create} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-bold cursor-pointer">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} {t('create')}</button>
+                <button disabled={busy} onClick={() => { setShowForm(false); setForm(EMPTY); }} className="px-4 py-2.5 rounded-xl bg-[#020d24]/60 hover:bg-[#112643] text-[#8c90a0] hover:text-white text-sm font-bold border border-[#1E3559]/80 cursor-pointer">{t('cancel')}</button>
+              </div>
+            </div>
           )}
 
-          {/* Products */}
+          {/* §4.1 【3】 — products list */}
           <section className="flex flex-col gap-3">
             <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#d8e2ff]">{t('productsTitle')}</h2>
 
@@ -412,7 +368,57 @@ export default function AdminStakingPage() {
             )}
           </section>
 
-          {/* Grant a staking position to a user (bonus / promotion) */}
+          {/* §4.1 【4】 — Referral commissions (대·소실적 매칭 + 유니레벨 부스트) */}
+          {referral && (
+            <section className="flex flex-col gap-3">
+              <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#d8e2ff] flex items-center gap-2">
+                Referral commissions
+                {!referral.enabled && <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-400 border border-slate-500/25">flag OFF</span>}
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-[#112643]/70 border border-[#1E3559]">
+                  <div className="text-[10px] font-mono uppercase tracking-wide text-[#8c90a0]">Total paid</div>
+                  <div className="font-mono font-bold text-emerald-400 truncate">+{referral.grandTotal} BANA</div>
+                </div>
+                <div className="p-4 rounded-2xl bg-[#112643]/70 border border-[#1E3559]">
+                  <div className="text-[10px] font-mono uppercase tracking-wide text-[#8c90a0]">Uplines (with downline)</div>
+                  <div className="font-mono font-bold text-white">{referral.uplines}</div>
+                </div>
+                <div className="p-4 rounded-2xl bg-[#112643]/70 border border-[#1E3559]">
+                  <div className="text-[10px] font-mono uppercase tracking-wide text-[#8c90a0]">Earners</div>
+                  <div className="font-mono font-bold text-white">{referral.earners.length}</div>
+                </div>
+              </div>
+              {referral.earners.length > 0 && (
+                <div className="overflow-x-auto rounded-2xl border border-[#1E3559]">
+                  <table className="w-full text-sm">
+                    <thead className="bg-[#0a1b33] text-[11px] font-mono uppercase text-[#8c90a0]">
+                      <tr>
+                        <th className="text-left px-4 py-3">User</th>
+                        <th className="text-right px-4 py-3">Matching</th>
+                        <th className="text-right px-4 py-3">Boost</th>
+                        <th className="text-right px-4 py-3">Total</th>
+                        <th className="text-right px-4 py-3">Days</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#1E3559]/50">
+                      {referral.earners.map((e) => (
+                        <tr key={e.email} className="hover:bg-[#112643]/40">
+                          <td className="px-4 py-3 font-mono text-[#afc6ff] truncate max-w-[220px]">{e.email}</td>
+                          <td className="px-4 py-3 text-right font-mono text-[#8c90a0]">{e.matching}</td>
+                          <td className="px-4 py-3 text-right font-mono text-[#8c90a0]">{e.boost}</td>
+                          <td className="px-4 py-3 text-right font-mono text-emerald-400 font-bold">+{e.total}</td>
+                          <td className="px-4 py-3 text-right font-mono">{e.days}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* §4.1 【5】 — Grant a staking position to a user (bonus / promotion) */}
           <section className="flex flex-col gap-3">
             <div className="p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] flex flex-col gap-3">
               <div>
@@ -458,39 +464,60 @@ export default function AdminStakingPage() {
             </div>
           </section>
 
-          {/* Positions */}
+          {/* §4.1 【6】 — Positions (§4.4 P-1..P-6) */}
           <section className="flex flex-col gap-3">
             <h2 className="text-sm font-extrabold uppercase tracking-wider text-[#d8e2ff] flex items-center gap-2"><Users className="h-4 w-4 text-[#528dff]" /> {t('positionsTitle')}</h2>
             {positions.length === 0 ? (
               <div className="p-6 rounded-2xl bg-[#112643]/70 border border-[#1E3559] text-center text-sm text-[#8c90a0]">{t('noPositions')}</div>
             ) : (
-              <div className="overflow-x-auto rounded-2xl border border-[#1E3559]">
-                <table className="w-full text-sm">
-                  <thead className="bg-[#0a1b33] text-[11px] font-mono uppercase text-[#8c90a0]">
-                    <tr>
-                      <th className="text-left px-4 py-3">{t('user')}</th>
-                      <th className="text-left px-4 py-3">{t('product')}</th>
-                      <th className="text-right px-4 py-3">{t('principal')}</th>
-                      <th className="text-right px-4 py-3">{t('accrued')}</th>
-                      <th className="text-right px-4 py-3">Paid</th>
-                      <th className="text-left px-4 py-3">{t('matures')}</th>
-                      <th className="text-center px-4 py-3">{t('status')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#1E3559]/50">
-                    {positions.map((p) => (
-                      <tr key={p.id} className="hover:bg-[#112643]/40">
-                        <td className="px-4 py-3 font-mono text-[#afc6ff] truncate max-w-[180px]">{p.email}</td>
-                        <td className="px-4 py-3">{p.productName}</td>
-                        <td className="px-4 py-3 text-right font-mono text-white">{p.principal} {p.coin}</td>
-                        <td className="px-4 py-3 text-right font-mono text-[#8c90a0]">+{p.accruedInterest}</td>
-                        <td className="px-4 py-3 text-right font-mono text-emerald-400 font-bold">+{p.paidInterest}</td>
-                        <td className="px-4 py-3 font-mono text-[10px] text-[#8c90a0]">{new Date(p.maturityAt).toLocaleDateString()}</td>
-                        <td className="px-4 py-3 text-center"><span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${POS_STYLE[p.status]}`}>{p.status}</span></td>
+              <div className="flex flex-col gap-2">
+                {/* P-4: group caption over the two ledger columns. */}
+                <p className="text-[11px] text-[#8c90a0] font-mono px-1">{t('ledgerColsNote')}</p>
+                <div className="overflow-x-auto rounded-2xl border border-[#1E3559]">
+                  <table className="w-full text-sm">
+                    <thead className="bg-[#0a1b33] text-[11px] font-mono uppercase text-[#8c90a0]">
+                      <tr>
+                        <th className="text-left px-4 py-3">{t('user')}</th>
+                        <th className="text-left px-4 py-3">{t('product')}</th>
+                        <th className="text-right px-4 py-3">{t('principal')}</th>
+                        <th className="text-right px-4 py-3">{t('accrued')}</th>
+                        <th className="text-right px-4 py-3">{t('unpaidCol')}</th>
+                        <th className="text-left px-4 py-3">{t('matures')}</th>
+                        <th className="text-center px-4 py-3">{t('status')}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-[#1E3559]/50">
+                      {positions.map((p) => {
+                        const unpaid = formatLedgerAmount(p.paidInterest);
+                        return (
+                          <tr key={p.id} className="hover:bg-[#112643]/40">
+                            <td className="px-4 py-3 font-mono text-[#afc6ff] truncate max-w-[180px]">
+                              {p.email}
+                              {/* P-5: grant marker — derived server-side from grantedByAdminId (admin route only). */}
+                              {p.isGrant && (
+                                <span data-testid="grant-badge" className="ml-1.5 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/25 align-middle">
+                                  {t('grantBadge')}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">{p.productName}</td>
+                            <td className="px-4 py-3 text-right font-mono text-white">{p.principal} {p.coin}</td>
+                            <td className="px-4 py-3 text-right font-mono text-[#8c90a0]">{p.accruedInterest}</td>
+                            {/* P-2: no emerald, no "+" prefix — this is unpaid ledger interest, not a credit. */}
+                            <td
+                              className="px-4 py-3 text-right font-mono text-amber-300 font-bold"
+                              title={unpaid.truncated ? p.paidInterest : undefined}
+                            >
+                              {unpaid.display} {p.coin}
+                            </td>
+                            <td className="px-4 py-3 font-mono text-[10px] text-[#8c90a0]">{new Date(p.maturityAt).toLocaleDateString()}</td>
+                            <td className="px-4 py-3 text-center"><span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${POS_STYLE[p.status]}`}>{p.status}</span></td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </section>

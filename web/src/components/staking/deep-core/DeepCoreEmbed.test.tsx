@@ -5,7 +5,7 @@
 // Q4's "no gear-track tab" guard). Phaser itself is mocked out via
 // `next/dynamic` so this stays a fast, jsdom-only test (no WebGL/Canvas boot).
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string, params?: Record<string, unknown>) => (params ? `${key}:${JSON.stringify(params)}` : key),
@@ -83,5 +83,33 @@ describe('DeepCoreEmbed', () => {
 
   it('R-1-adjacent — the well-click callback prop is threaded through without throwing when absent', () => {
     expect(() => render(<DeepCoreEmbed game={baseGame()} loading={false} />)).not.toThrow();
+  });
+
+  it('CH-2 — accepts focusWellId without throwing when absent or set', () => {
+    expect(() => render(<DeepCoreEmbed game={baseGame()} loading={false} focusWellId={null} />)).not.toThrow();
+    cleanup();
+    expect(() => render(<DeepCoreEmbed game={baseGame()} loading={false} focusWellId="pos-1" />)).not.toThrow();
+  });
+
+  it('CH-1 — the empty-rig HUD CTA calls onOpenStake instead of scrolling when provided', () => {
+    const onOpenStake = vi.fn();
+    const scrollSpy = vi.fn();
+    Element.prototype.scrollIntoView = scrollSpy;
+    render(<DeepCoreEmbed game={baseGame({ surfaceState: 'S4_IDLE_RIG', activeWellCount: 0 })} loading={false} onOpenStake={onOpenStake} />);
+    fireEvent.click(screen.getByTestId('deep-core-empty-cta'));
+    expect(onOpenStake).toHaveBeenCalledTimes(1);
+    expect(scrollSpy).not.toHaveBeenCalled();
+  });
+
+  it('CH-1 fallback — the empty-rig HUD CTA scrolls to #staking-earn-section when onOpenStake is absent', () => {
+    const scrollSpy = vi.fn();
+    Element.prototype.scrollIntoView = scrollSpy;
+    const target = document.createElement('div');
+    target.id = 'staking-earn-section';
+    document.body.appendChild(target);
+    render(<DeepCoreEmbed game={baseGame({ surfaceState: 'S4_IDLE_RIG', activeWellCount: 0 })} loading={false} />);
+    fireEvent.click(screen.getByTestId('deep-core-empty-cta'));
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
+    target.remove();
   });
 });

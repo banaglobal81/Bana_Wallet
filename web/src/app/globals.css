@@ -390,3 +390,182 @@ html:not(.light) svg.lucide.text-slate-600 { color: #7c8798; }
     cursor: not-allowed;
   }
 }
+
+/* ============================================================================
+   STAKING V2 STATE TOKENS (Semantic)
+   Reusable styles for claim slot states, control bar buttons, notices, etc.
+   Scoped to dark mode only; light mode uses .light overrides below.
+   ============================================================================ */
+
+/* Claim slot: UNAVAILABLE (state chip, not a button) */
+.state-chip-unavailable {
+  background-color: rgba(30, 52, 89, 0.4); /* #1E3559/40 */
+  border-color: rgba(30, 52, 89, 0.6); /* #1E3559/60 */
+  color: #8c90a0; /* muted secondary text */
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Claim slot: DISABLED (inactive button, user action awaits) */
+.state-button-disabled {
+  background-color: rgba(30, 52, 89, 0.3); /* #1E3559/30 */
+  border-color: rgba(30, 52, 89, 0.5); /* #1E3559/50 */
+  color: #8c90a0;
+  cursor: not-allowed;
+}
+
+/* Claim slot: ENABLED (active, clickable) */
+.state-button-enabled {
+  background-color: rgba(46, 125, 255, 0.9); /* #2E7DFF/90 */
+  border-color: #2E7DFF;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 200ms ease, border-color 200ms ease;
+}
+.state-button-enabled:hover {
+  background-color: #2E7DFF;
+  border-color: #2E7DFF;
+}
+.state-button-enabled:focus-visible {
+  outline: 2px solid #2E7DFF;
+  outline-offset: 2px;
+}
+
+/* Notice: Maintenance / Worker paused (warning banner) */
+.notice-critical {
+  background-color: rgba(30, 52, 89, 0.4); /* #1E3559/40 */
+  border-color: #1E3559;
+  color: #ffffff;
+}
+
+/* Notice: Maturity nudge / Info (info banner) */
+.notice-info {
+  background-color: rgba(46, 125, 255, 0.15); /* #2E7DFF/15 */
+  border-color: rgba(46, 125, 255, 0.5); /* #2E7DFF/50 */
+  color: #afc6ff;
+}
+
+/* Notice: Auto-renew success (success banner) */
+.notice-success {
+  background-color: rgba(16, 185, 129, 0.15); /* emerald-500/15 */
+  border-color: rgba(16, 185, 129, 0.5); /* emerald-500/50 */
+  color: #a7f3d0; /* emerald-200 */
+}
+
+/* Notice: Auto-renew failure (error banner) */
+.notice-error {
+  background-color: rgba(244, 63, 94, 0.15); /* rose-500/15 */
+  border-color: rgba(244, 63, 94, 0.5); /* rose-500/50 */
+  color: #fca5a5; /* rose-200 */
+}
+
+/* Control bar button (B3 Vault / B4 Rig common style) */
+.control-button {
+  background-color: rgba(17, 38, 67, 0.7); /* #112643/70 */
+  border-color: #1E3559;
+  color: #afc6ff;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.control-button:hover {
+  background-color: #1e3459;
+  color: #ffffff;
+}
+.control-button:focus-visible {
+  outline: 2px solid #2E7DFF;
+  outline-offset: 2px;
+}
+.control-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Light mode overrides for staking v2 state tokens */
+.light .state-chip-unavailable {
+  background-color: rgba(211, 221, 236, 0.4); /* #d3ddec/40 */
+  border-color: rgba(211, 221, 236, 0.6); /* #d3ddec/60 */
+  color: #5b6576; /* muted in light */
+}
+
+.light .state-button-disabled {
+  background-color: rgba(211, 221, 236, 0.3);
+  border-color: rgba(211, 221, 236, 0.5);
+  color: #5b6576;
+}
+
+.light .state-button-enabled {
+  background-image: linear-gradient(180deg, #39435a 0%, #232c40 52%, #161d2c 100%);
+  background-color: #39435a;
+  border-color: #2b3548;
+  color: #ffffff;
+}
+.light .state-button-enabled:hover {
+  background-image: linear-gradient(180deg, #4a566f 0%, #313b52 52%, #1f2739 100%);
+}
+
+.light .notice-critical {
+  background-color: rgba(211, 221, 236, 0.4);
+  border-color: #d3ddec;
+  color: #15233f;
+}
+
+.light .notice-info {
+  background-color: rgba(57, 67, 90, 0.12); /* graphite/12 */
+  border-color: rgba(57, 67, 90, 0.25);
+  color: #39435a;
+}
+
+.light .notice-success {
+  background-color: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #059669; /* emerald-600 */
+}
+
+.light .notice-error {
+  background-color: rgba(244, 63, 94, 0.1);
+  border-color: rgba(244, 63, 94, 0.3);
+  color: #dc2626; /* rose-600 */
+}
+
+.light .control-button {
+  background-color: rgba(211, 221, 236, 0.5);
+  border-color: #d3ddec;
+  color: #39435a;
+}
+.light .control-button:hover {
+  background-color: #e3e9f3;
+  color: #15233f;
+}
+
+/* ============================================================================
+   DEEP CORE CHAPTER PALETTE (Optional: for future visual progress indicators)
+   Reference: docs/specs/deep-core-07-art-style-guide.md §3.2
+   Use only when chapter-specific accent is needed (e.g., progress bar fills,
+   chapter milestones). Main page background remains neutral #06132a.
+   ============================================================================ */
+
+/* Chapter 1: Surface Excavation (sand/earth tones) */
+.chapter-1-accent { color: #C9A15E; }
+.chapter-1-light { color: #E8D5A8; }
+.chapter-1-dark { color: #8B5A2B; }
+
+/* Chapter 2: Stratum Breakthrough (amber/sunset) */
+.chapter-2-accent { color: #D98A3D; }
+.chapter-2-light { color: #F2B36B; }
+.chapter-2-dark { color: #7A4A2A; }
+
+/* Chapter 3: Basalt Rupture (dark volcanic + artificial light) */
+.chapter-3-accent { color: #22262E; }
+.chapter-3-light { color: #E8ECF2; }
+
+/* Chapter 4: Geothermal Abyss (red-hot + steam gray) */
+.chapter-4-accent { color: #B4432E; }
+.chapter-4-gray { color: #8A8F98; }
+
+/* Chapter 5: Crystal Cavity (teal/cyan glow) */
+.chapter-5-accent { color: #2FD1C4; } /* closest to #528dff in the palette */
+.chapter-5-dark { color: #0F3A38; }
+
+/* Chapter 6: Core Layer (pure white/deep navy split) */
+.chapter-6-light { color: #F4F6FA; }
+.chapter-6-dark { color: #06132a; } /* (keep existing token) */

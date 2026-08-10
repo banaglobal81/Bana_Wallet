@@ -182,10 +182,21 @@ export interface DeepCoreGameState {
 
 /** Positions + the DEEP CORE game block, in a single request (G-7). `game` is
  *  `null` when the derivation failed server-side (degrades gracefully — R-5)
- *  or was never returned by an older/mocked response shape. */
-export async function getStakePositionsAndGame(): Promise<{ positions: StakePosition[]; game: DeepCoreGameState | null }> {
-  const r = await getJson<{ ok: boolean; data: StakePosition[]; game?: DeepCoreGameState | null }>('/api/staking/positions');
-  return { positions: Array.isArray(r.data) ? r.data : [], game: r.game ?? null };
+ *  or was never returned by an older/mocked response shape.
+ *
+ *  `lockedPrincipal` (docs/specs/staking-page-v2-screen-flow-frd.md §4.2.2 ③ /
+ *  R-D2) is the server's own per-coin sum of soft-locked principal — the
+ *  SAME function the withdrawal route uses to compute the withdrawal lock.
+ *  Callers must use this instead of summing `positions` client-side. */
+export async function getStakePositionsAndGame(): Promise<{
+  positions: StakePosition[];
+  game: DeepCoreGameState | null;
+  lockedPrincipal: Record<string, string>;
+}> {
+  const r = await getJson<{
+    ok: boolean; data: StakePosition[]; game?: DeepCoreGameState | null; lockedPrincipal?: Record<string, string>;
+  }>('/api/staking/positions');
+  return { positions: Array.isArray(r.data) ? r.data : [], game: r.game ?? null, lockedPrincipal: r.lockedPrincipal ?? {} };
 }
 
 /** Real staking-interest rewards actually credited by the daily worker (most recent page, newest first). */
@@ -228,8 +239,11 @@ export async function getStakingPositionLedger(
 
 /**
  * Lock funds into a staking product. `autoRenew` is an optional rider (PRD §4
- * S1) — omit it, or pass `false`, for a plain stake. Throws with the server
- * message on failure.
+ * S1) — omit it, or pass `false`, for a plain stake. Throws on failure; the
+ * thrown Error also carries a stable `.code` (docs/specs/staking-page-v2-screen-flow-frd.md
+ * §7.1 R-D5 — e.g. `STAKE_BELOW_MIN`) plus, for the codes that need one,
+ * `.params` (e.g. `{ min, coin }`) so the caller renders a localized
+ * `staking.error.<code>` string instead of the raw server message.
  */
 export async function stake(productId: string, amount: string, autoRenew?: boolean): Promise<{ id: string; maturityAt: string }> {
   const res = await fetch('/api/staking/stake', {
@@ -237,9 +251,15 @@ export async function stake(productId: string, amount: string, autoRenew?: boole
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({ productId, amount, ...(autoRenew !== undefined ? { autoRenew } : {}) }),
   });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok || body?.ok === false) throw new Error(body?.error || `Request failed (${res.status})`);
-  return body.data;
+  const body: { ok: boolean; data?: { id: string; maturityAt: string }; error?: string; code?: string; params?: Record<string, string> } =
+    await res.json().catch(() => ({ ok: false }));
+  if (!res.ok || body?.ok === false) {
+    const err = new Error(body?.error || `Request failed (${res.status})`) as Error & { code?: string; params?: Record<string, string> };
+    err.code = body?.code;
+    err.params = body?.params;
+    throw err;
+  }
+  return body.data as { id: string; maturityAt: string };
 }
 
 /**

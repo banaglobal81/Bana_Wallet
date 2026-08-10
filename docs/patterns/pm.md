@@ -293,3 +293,49 @@ Two smaller field notes from the same review:
   that citation was unverifiable and the renewal path's money semantics (does it compound
   unpaid interest into new principal?) had to become an explicit blocking question rather than
   an inherited assumption.
+
+## A discretionary bonus and a contracted one need opposite control surfaces
+
+*Learned 2026-08-10, writing `docs/specs/staking-yield-system-v2-prd.md` — the rebuild that
+folded the game bonus into the yield formula instead of bolting it on.*
+
+When a bonus lives *outside* the contract, you control exposure by **truncating the payment**
+(per-user daily caps, a monthly budget that auto-pauses the program). When the same increment
+is moved *inside* the contract — disclosed at stake time as a rate band with a guaranteed floor
+— every one of those caps becomes a **breach**. You cannot cap a payment you contracted; you can
+only cap **how much you contract**. So each truncation control has to be re-sited at the
+admission point: a per-user exposure ceiling checked at stake time, and a reservation pool that
+must have capacity before a position may be opened at all.
+
+This is not merely a relocation, it is the better shape, and the reason is worth remembering:
+**a per-position contracted maximum is computable at stake time, so it can be pre-funded.** The
+open-ended program budget could only be checked after issuance, which is exactly the "size gets
+decided by accretion" failure in the ledger entry above. The unanswerable financing question
+("what should the monthly budget be?") becomes an answerable one ("how much do we put in the
+pool?").
+
+The trade the reframing costs you, which must be priced explicitly rather than discovered later:
+
+- **You lose the instant kill switch.** A discretionary program stops today; contracted bands
+  run to maturity. Bound this with **time**: cap the term of banded products at launch, so the
+  maximum unwind horizon is a number you chose. Then say in the ruling that the legal/
+  jurisdiction gate must now clear *before the first banded position is opened*, because after
+  that there is nothing to switch off.
+- **Monotonicity becomes a requirement, not a coincidence.** If the in-band position can fall,
+  the user experiences a contracted payment shrinking. Any decay/consumable/season-reset
+  mechanic must be banned outright, not merely "not planned".
+- **Half your approved disclosure strings become false.** "This is a separate additional
+  payment", "this does not change your contracted rate", and "the program may be discontinued"
+  are each *correct under the bolt-on model and wrong under the banded one*. Enumerate the
+  disclosure set and rule string-by-string; an approved spec's copy table is exactly the place
+  a stale premise survives a redesign.
+
+Two structural bonuses fell out of the same change, both worth looking for in any rebuild:
+
+- **A model change can delete a defect instead of fixing it.** The recomputed-column bug
+  (`paidInterest = perDay × dueDays`) cannot be written at all once the daily amount varies, so
+  the accumulate-from-rows fix stops being a discipline the implementer must remember.
+- **Migrate by widening, not by forking.** Legacy positions became v2 positions with a
+  zero-width band, which is bit-identical to their existing contract. One settlement engine, one
+  ledger, no money-row backfill — only metadata columns. Before designing a dual-run or a
+  big-bang conversion, check whether the new model has a parameter value that *is* the old model.

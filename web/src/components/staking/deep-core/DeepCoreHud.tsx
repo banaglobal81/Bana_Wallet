@@ -12,7 +12,18 @@ import { hudIconUrl } from './assetManifest';
 // here, not even the "cosmetic only" disclosure line — MP does not exist as
 // a concept until P1 is unblocked, and Q4 forbids building even an inert
 // placeholder for it.
-export default function DeepCoreHud({ game, chapterName }: { game: DeepCoreGameState; chapterName: string }) {
+export default function DeepCoreHud({
+  game, chapterName, onOpenStake,
+}: {
+  game: DeepCoreGameState;
+  chapterName: string;
+  /** docs/specs/staking-page-v2-screen-flow-frd.md CH-1 — the empty-rig CTA
+   * opens the S-STAKE sheet in the (now sheet-based) v2 page layout. Falls
+   * back to the pre-v2 `#staking-earn-section` scroll when the caller
+   * doesn't pass this (keeps the component safe to render standalone, e.g.
+   * in tests, without throwing or dead-clicking). */
+  onOpenStake?: () => void;
+}) {
   const t = useTranslations('staking.game');
   const { xp, chapter, operatingDays, activeWellCount, surfaceState, lastLiftAt } = game;
 
@@ -57,7 +68,10 @@ export default function DeepCoreHud({ game, chapterName }: { game: DeepCoreGameS
             <button
               type="button"
               data-testid="deep-core-empty-cta"
-              onClick={() => document.getElementById('staking-earn-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              onClick={() => {
+                if (onOpenStake) { onOpenStake(); return; }
+                document.getElementById('staking-earn-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
               className="pointer-events-auto text-[#528dff] hover:text-white font-bold cursor-pointer"
             >
               {t('empty.cta')}

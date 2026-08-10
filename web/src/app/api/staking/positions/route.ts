@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { requireUser } from '@/lib/auth/session';
-import { settleMaturedPositions, serializePosition } from '@/lib/staking';
+import { settleMaturedPositions, serializePosition, lockedPrincipalByCoin } from '@/lib/staking';
 import { getDeepCoreState } from '@/lib/deepCoreProgress';
 
 // GET /api/staking/positions — the signed-in user's stake positions.
@@ -47,5 +47,16 @@ export async function GET(): Promise<NextResponse> {
     console.error('[deep-core] state derivation failed for user', dbUserId, e);
   }
 
-  return NextResponse.json({ ok: true, data, game });
+  // docs/specs/staking-page-v2-screen-flow-frd.md §4.2.2 ③ / R-D2 — the
+  // single source of truth for "locked principal" per coin. This is the
+  // EXACT SAME function the withdrawal route calls (web/src/app/api/nia/withdrawals/route.ts)
+  // to compute the withdrawal lock, so the number shown here can never drift
+  // from what actually blocks a withdrawal. The client must not recompute
+  // this by summing positions itself (that was the bug — see the report to
+  // the parent agent).
+  const lockedMap = await lockedPrincipalByCoin(dbUserId);
+  const lockedPrincipal: Record<string, string> = {};
+  for (const [coin, amt] of lockedMap) lockedPrincipal[coin] = amt.toFixed();
+
+  return NextResponse.json({ ok: true, data, game, lockedPrincipal });
 }

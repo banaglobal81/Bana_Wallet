@@ -26,13 +26,23 @@ export interface DeepCoreEmbedProps {
   game: DeepCoreGameState | null;
   loading: boolean;
   onWellClick?: (positionId: string) => void;
+  /** docs/specs/staking-page-v2-screen-flow-frd.md CH-1 — HUD's empty-rig CTA
+   * calls this instead of scrolling to the now-removed inline product list,
+   * so the parent (`Staking.tsx`) can open the S-STAKE deposit sheet. */
+  onOpenStake?: () => void;
+  /** docs/specs/staking-page-v2-screen-flow-frd.md CH-2 / UF-5 — set by the
+   * parent when a position row's well badge is clicked (in the now
+   * sheet-based S-POS list) so the canvas can pan the camera to and
+   * highlight the corresponding well, replacing the old `scrollIntoView`
+   * round-trip. `null`/`undefined` clears any active focus. */
+  focusWellId?: string | null;
 }
 
 // The ONE insertion point into Staking.tsx (G-10: import 1 line + JSX 1
 // block). Everything else — mount gating (S-0/hide), the canvas, the HUD,
 // the control bar, the intro/chapter overlays — lives inside this tree
 // (G-3).
-export default function DeepCoreEmbed({ game, loading, onWellClick }: DeepCoreEmbedProps) {
+export default function DeepCoreEmbed({ game, loading, onWellClick, onOpenStake, focusWellId }: DeepCoreEmbedProps) {
   const t = useTranslations('staking.game');
   const [hidden, setHiddenState] = useState(true); // default true until the effect below reads localStorage (SSR-safe)
   const [motionReduced, setMotionReduced] = useState(true);
@@ -137,6 +147,7 @@ export default function DeepCoreEmbed({ game, loading, onWellClick }: DeepCoreEm
             crew={crewState}
             motionReduced={motionReduced}
             liftBurstToken={liftBurstToken}
+            focusWellId={focusWellId}
             onWellClick={onWellClick}
             onBootError={() => setBootFailed(true)}
           />
@@ -146,7 +157,7 @@ export default function DeepCoreEmbed({ game, loading, onWellClick }: DeepCoreEm
           </div>
         )}
 
-        <DeepCoreHud game={game} chapterName={t(`chapter.${game.chapter}.name`)} />
+        <DeepCoreHud game={game} chapterName={t(`chapter.${game.chapter}.name`)} onOpenStake={onOpenStake} />
 
         <button
           type="button"

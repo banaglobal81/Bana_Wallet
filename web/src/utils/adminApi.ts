@@ -229,14 +229,38 @@ export interface AdminStakePosition {
   accruedInterest: string;
   paidInterest: string;
   daysPaid: number;
+  // admin-staking-debt-visibility-frd.md §4.4 P-5 — derived server-side from
+  // grantedByAdminId on the admin positions route only. Deliberately absent
+  // from serializePosition / the user-facing /api/staking/positions response
+  // (A6 — admin identity stays out of the user API surface).
+  isGrant: boolean;
 }
 
+// admin-staking-debt-visibility-frd.md §3.1. `totalPaid` is REMOVED — do not
+// reintroduce it, aliased or otherwise (see stats/route.ts header comment).
 export interface AdminStakingStat {
   coin: string;
-  activePrincipal: string;
-  totalPaid: string;
+
+  // Sec 1: user funds. Not a platform liability (grants excepted, see below).
+  activePrincipal: string;          // SUM(principal) WHERE status='ACTIVE'
+  grantedActivePrincipal: string;   // subset of activePrincipal — WHERE grantedByAdminId IS NOT NULL. Never sum with activePrincipal.
+
+  // Sec 2: liability. Interest that exists only in this ledger.
+  ledgeredInterest: string;         // SUM(paidInterest) — all statuses (A10: includes renewed-then-MATURED predecessors)
+  hubSettled: string;               // structural constant "0" — see stats/route.ts DS-1
+  unpaidInterest: string;           // ledgeredInterest − hubSettled, computed server-side
+  hubSettledStatus: 'NO_RAIL';      // discriminator the UI keys copy off of, not the raw "0"
+
+  // Sec 3: rate of increase.
+  dailyAccrualRate: string;         // SUM(principal × dailyRatePct / 100) WHERE status='ACTIVE'
+
   activeCount: number;
+  maturedCount: number;
   totalCount: number;
+
+  // INV-1 watchdog — expected 0. Non-zero means "Actually sent to wallets = 0"
+  // is no longer trustworthy; the UI must show an incident banner (§3.4/§5.5).
+  settledStatusCount: number;
 }
 
 export interface StakingProductInput {
@@ -296,7 +320,12 @@ export async function listStakingPositions(): Promise<AdminStakePosition[]> {
   return Array.isArray(r.data) ? r.data : [];
 }
 
-/** Per-coin staking liability overview (active principal + interest paid to date). */
+/**
+ * Per-coin staking liability overview — active principal, unpaid (ledger-only)
+ * interest, and the structural hub-settled zero. Throws on failure; callers
+ * MUST distinguish "failed to load" from "loaded, zero liability" (A8 — do
+ * NOT `.catch(() => [])` this, admin-staking-debt-visibility-frd.md §5.4 E-1).
+ */
 export async function getStakingStats(): Promise<AdminStakingStat[]> {
   const r = await getJson<{ ok: boolean; data: AdminStakingStat[] }>('/api/admin/staking/stats');
   return Array.isArray(r.data) ? r.data : [];

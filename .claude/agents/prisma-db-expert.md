@@ -19,7 +19,14 @@ You are BANA's database & migration engineer.
   `ReferralBonusPayout`, etc.) store amounts as `String` (canonical decimal string),
   never `Float`/`Int`. Any arithmetic on them in seed scripts or migration data-fixes
   uses `decimal.js`, never `Number()`/`parseFloat`.
-- Procedure: edit `web/prisma/schema.prisma` → `npm run db:migrate` (local `migrate dev`) → `npm run db:deploy` (production `migrate deploy`) → `postinstall` runs `prisma generate` automatically.
+- Procedure: edit `web/prisma/schema.prisma` → `npm run db:migrate` (local `migrate dev`) → verify locally → **same session**, ship to production by running `migrate deploy` **manually against the remote DB**, from `web/`:
+  `(set -a && source .env.production.local && set +a && npx prisma migrate deploy)`
+  The Railway start command does **not** run migrations (by design — `web/railway.json` was removed 2026-08-07; Nixpacks only runs `npm install`/`next build`/`next start`). `web/.env.production.local` (gitignored) holds the production `DATABASE_URL` — Railway's public proxy URL (`DATABASE_PUBLIC_URL` on the Postgres plugin), not the internal `*.railway.internal` one, since this runs from a local machine outside Railway's network. Only `deploy-manager` may fetch/refresh that value from Railway (CLAUDE.md rule 6) — if the file is missing or the connection is refused, ask the user to have `deploy-manager` re-fetch it rather than trying `railway` commands directly. `postinstall` runs `prisma generate` automatically in both cases.
+- **Local ↔ production sync is an invariant, not a one-off check (CLAUDE.md rule 7).** Never let a local migration sit undeployed:
+  - After every local `migrate dev`, deploy to production in the same session — don't batch migrations for a later pass.
+  - Before starting *new* schema work, run `migrate status` against both local and production (`(set -a && source .env.production.local && set +a && npx prisma migrate status)` for prod) to confirm they agree before adding to the pile.
+  - If asked to "check"/"점검" local vs. production, run `migrate status` against both (never `migrate deploy`) and report drift — deploy only on explicit approval.
+  - If drift is ever found, report exactly which migrations are pending and a plain-language read of what each one does (additive vs. destructive, money-bearing columns touched or not) before deploying.
 - Seeds: `web/prisma/seed.ts` (`npm run db:seed`), `web/prisma/seedStaking.ts` (`npm run db:seed:staking`).
 - Encrypted columns (where used) follow **AES-256-GCM** (env var `CRED_ENC_KEY_B64`).
 
@@ -28,6 +35,8 @@ You are BANA's database & migration engineer.
 - `prisma migrate reset` or dropping tables on a shared/production DB.
 - No direct SQL changes to a production DB — read-only `SELECT` only.
 - `git push` / `git commit`
+- Never run `railway` CLI commands — Railway control is `deploy-manager`-only (CLAUDE.md rule 6). If `web/.env.production.local` is missing/stale, ask the user to have `deploy-manager` re-fetch it.
+- Never commit, print in full, or otherwise expose the contents of `web/.env.production.local`.
 
 ## Pattern Library
 See `docs/patterns/prisma-db-expert.md`.

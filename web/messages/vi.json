@@ -411,6 +411,57 @@
       "error": {
         "GAME_LOAD_FAILED": "Không thể tải màn hình này. Chức năng staking vẫn hoạt động bình thường."
       }
+    },
+    "yield": {
+      "recordedLabel": "Lợi tức đã ghi nhận",
+      "recordedHelp": "Đã ghi nhận trong sổ lợi tức staking của bạn. Khoản này chưa nằm trong số dư ví.",
+      "claimedLabel": "Đã nhận vào ví",
+      "claimedHelp": "Đã chuyển vào số dư ví của bạn.",
+      "lockedLabel": "Vốn gốc đang khóa",
+      "lockedHelp": "Vốn gốc vẫn nằm trong ví của bạn nhưng không thể rút cho đến khi hết kỳ hạn.",
+      "empty": "Chưa có lợi tức nào được ghi nhận."
+    },
+    "claim": {
+      "unavailable": "Chưa hỗ trợ thanh toán vào ví."
+    },
+    "nav": {
+      "stake": "Stake",
+      "positions": "Vị thế của tôi",
+      "yieldLog": "Nhật ký lợi tức"
+    },
+    "sheet": {
+      "stakeTitle": "Stake",
+      "amountTitle": "Số tiền",
+      "confirmTitle": "Xác nhận",
+      "positionsTitle": "Vị thế của tôi",
+      "step": "Bước {current}/{total}",
+      "back": "Quay lại"
+    },
+    "stakeSheet": {
+      "contractTerms": "Lãi cơ sở trong {days} ngày: {baseTotal} {coin}",
+      "notEstimate": "Con số này được tính từ lãi suất đã cam kết, không phải là dự báo.",
+      "lockNote": "Không thể rút tiền đã stake trước khi hết kỳ hạn."
+    },
+    "position": {
+      "recordedLabel": "Đã ghi nhận",
+      "settledDays": "Đã tất toán {d}/{total} ngày",
+      "maturedNote": "Khi hết kỳ hạn, vốn gốc sẽ được mở khóa và khả dụng trong ví của bạn. Lợi tức đã ghi nhận không tự động được chuyển đi."
+    },
+    "yieldLog": {
+      "title": "Nhật ký lợi tức",
+      "empty": "Chưa có mục nào.",
+      "loadMore": "Xem thêm"
+    },
+    "error": {
+      "STAKE_INVALID_AMOUNT": "Vui lòng nhập số tiền lớn hơn 0.",
+      "STAKE_PRODUCT_NOT_FOUND": "Gói này không còn khả dụng.",
+      "STAKE_PRODUCT_CLOSED": "Gói này đã đóng, không nhận thêm khoản stake mới.",
+      "STAKE_PRODUCT_FULL": "Gói này đã đầy.",
+      "STAKE_BELOW_MIN": "Mức tối thiểu cho gói này là {min} {coin}.",
+      "STAKE_ABOVE_MAX": "Mức tối đa cho gói này là {max} {coin}.",
+      "STAKE_INSUFFICIENT_AVAILABLE": "Số dư khả dụng là {available} {coin}.",
+      "UNAUTHENTICATED": "Phiên đăng nhập đã kết thúc. Vui lòng đăng nhập lại để tiếp tục.",
+      "GENERIC": "Yêu cầu chưa hoàn tất."
     }
   },
   "deposit": {
@@ -711,7 +762,13 @@
     "recentDeposits": "Nạp tiền gần đây",
     "noWithdrawals": "Chưa có khoản rút.",
     "noDeposits": "Chưa có khoản nạp gần đây. Sẽ hiển thị khi webhook nạp tiền được cấu hình trên hub.",
-    "viewAll": "Xem tất cả"
+    "viewAll": "Xem tất cả",
+    "stakingLiability": {
+      "title": "Nợ staking (chưa chi trả)",
+      "unpaid": "Lãi chưa chi trả {coin}",
+      "principalSub": "{amount} đang khóa · {n} đang hoạt động",
+      "error": "Không có số liệu nợ — đừng hiểu là bằng 0."
+    }
   },
   "adminSettings": {
     "pageTitle": "Cài đặt nền tảng",
@@ -795,8 +852,62 @@
     "user": "Người dùng",
     "product": "Gói",
     "principal": "Tiền gốc",
-    "accrued": "Đã nhận",
+    "accrued": "Đang phát sinh (tính theo thời gian thực)",
+    "unpaidCol": "Chưa chi trả (sổ sách)",
+    "ledgerColsNote": "Cả hai cột đều là bản ghi sổ sách, không phải số dư ví.",
+    "grantBadge": "Được cấp",
     "matures": "Đáo hạn",
+    "liability": {
+      "sectionTitle": "Nợ staking",
+      "sectionNote": "Đây là các con số trên sổ sách. Lãi được ghi nhận ở đây chưa từng được cộng vào ví của bất kỳ người dùng nào.",
+      "unpaid": {
+        "label": "Lãi chưa chi trả (chỉ trên sổ sách)",
+        "note": "Chưa được phản ánh vào số dư ví của bất kỳ người dùng nào.",
+        "rate": "+{amount} {coin} mỗi ngày quyết toán"
+      },
+      "settled": {
+        "label": "Đã chuyển vào ví thực tế",
+        "noRail": "Chưa có kênh thanh toán",
+        "noRailTooltip": "Hiện không có đoạn mã nào ghi có lãi staking vào số dư Nia-Hub. Con số này là số 0 mang tính cấu trúc, không phải số đo thực tế."
+      },
+      "principal": {
+        "label": "Vốn gốc đang khóa (đang hoạt động)",
+        "note": "Đây là tiền của người dùng. Chỉ đang bị khóa, không phải là khoản nợ của nền tảng."
+      },
+      "grant": {
+        "label": "Trong đó vốn gốc do nền tảng cấp",
+        "note": "Khoản này có phải là nợ của nền tảng hay không phụ thuộc vào một câu hỏi vận hành chưa có câu trả lời (B-4): vốn gốc được cấp có thực sự được nạp vào ví hub của người dùng không?"
+      },
+      "counts": "{active} đang hoạt động · {matured} đáo hạn · {total} tổng",
+      "badge": {
+        "noRail": "Chưa có kênh thanh toán"
+      },
+      "state": {
+        "loading": "Đang tải số liệu nợ…",
+        "error": {
+          "title": "Không thể tải số liệu nợ",
+          "body": "Đừng hiểu khoảng trống này là \"nợ bằng 0\". Hãy thử lại; nếu vẫn thất bại, coi các số liệu là chưa xác định.",
+          "retry": "Thử lại"
+        },
+        "empty": "Không có vị thế staking nào — nợ hiện tại bằng 0."
+      },
+      "incident": {
+        "paidStatus": "Cảnh báo toàn vẹn dữ liệu — phát hiện {n} vị thế ở trạng thái PAID. Không có đoạn mã nào trong hệ thống gán trạng thái này, vì vậy \"Đã chuyển vào ví thực tế = 0\" không còn đáng tin cậy. Hãy điều tra nguyên nhân trước khi thực hiện bất kỳ công việc chi trả nào.",
+        "negative": "Cảnh báo toàn vẹn dữ liệu — lãi chưa chi trả được tính ra giá trị âm. Sổ sách không nhất quán.",
+        "grantExceeds": "Cảnh báo toàn vẹn dữ liệu — vốn gốc do nền tảng cấp vượt quá tổng vốn gốc đang hoạt động."
+      }
+    },
+    "settlement": {
+      "title": "Tích lũy lãi hàng ngày",
+      "lastAccrual": "Lần tích lũy gần nhất: {when}",
+      "never": "chưa từng",
+      "accruedToday": "Đã tích lũy hôm nay: {amount} ({count})",
+      "activeN": "{n} đang hoạt động",
+      "runNow": "Chạy tích lũy ngay",
+      "runNowTitle": "Ghi nhận lãi hôm nay vào sổ sách (thao tác lặp lại không đổi kết quả). Không gửi bất kỳ khoản nào vào ví người dùng.",
+      "runResult": "Đã ghi nhận {amount} {coin} vào sổ sách qua {days} ngày; {matured} vị thế đáo hạn. Không có khoản nào được gửi vào ví người dùng.",
+      "runResultNoop": "Đã cập nhật — không có gì mới để ghi nhận ({n} đang hoạt động)."
+    },
     "autoRenewWarning": {
       "inlineTitle": "Giảm lãi suất sẽ từ chối {count, plural, one {# gia hạn tự động đang chờ} other {# gia hạn tự động đang chờ}}.",
       "inlineBody": "{count, plural, one {# vị thế hoạt động} other {# vị thế hoạt động}} trên {productName} đã bật tự động gia hạn. Mỗi vị thế được kiểm tra so với lãi suất của sản phẩm này vào thời điểm đáo hạn. Nếu lãi suất được lưu thấp hơn lãi suất trên vị thế, gia hạn đó sẽ bị từ chối và tiền gốc sẽ được trả về ví của người dùng thay vì được gửi lại.",

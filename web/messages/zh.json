@@ -411,6 +411,57 @@
       "error": {
         "GAME_LOAD_FAILED": "无法加载该界面。质押功能可正常使用。"
       }
+    },
+    "yield": {
+      "recordedLabel": "已记录收益",
+      "recordedHelp": "已记录在您的质押账本中，不计入钱包余额。",
+      "claimedLabel": "已领取到钱包",
+      "claimedHelp": "已转入您的钱包余额。",
+      "lockedLabel": "锁定本金",
+      "lockedHelp": "本金仍保留在您的钱包中，但在期限结束前无法提现。",
+      "empty": "目前还没有已记录的收益。"
+    },
+    "claim": {
+      "unavailable": "尚未提供发放到钱包的功能。"
+    },
+    "nav": {
+      "stake": "质押",
+      "positions": "我的仓位",
+      "yieldLog": "收益记录"
+    },
+    "sheet": {
+      "stakeTitle": "质押",
+      "amountTitle": "金额",
+      "confirmTitle": "确认",
+      "positionsTitle": "我的仓位",
+      "step": "步骤 {current}/{total}",
+      "back": "返回"
+    },
+    "stakeSheet": {
+      "contractTerms": "{days}天基准利息：{baseTotal} {coin}",
+      "notEstimate": "此数值根据合同利率计算得出，并非预测值。",
+      "lockNote": "质押的资金在期限结束前无法提现。"
+    },
+    "position": {
+      "recordedLabel": "已记录",
+      "settledDays": "已结算 {d}/{total} 天",
+      "maturedNote": "期限结束后，本金将解除锁定并可在钱包中使用。已记录的收益不会自动转入钱包。"
+    },
+    "yieldLog": {
+      "title": "收益记录",
+      "empty": "暂无记录。",
+      "loadMore": "加载更多"
+    },
+    "error": {
+      "STAKE_INVALID_AMOUNT": "请输入大于0的金额。",
+      "STAKE_PRODUCT_NOT_FOUND": "该产品已不再提供。",
+      "STAKE_PRODUCT_CLOSED": "该产品已停止接受新的质押。",
+      "STAKE_PRODUCT_FULL": "该产品名额已满。",
+      "STAKE_BELOW_MIN": "该产品的最小金额为{min} {coin}。",
+      "STAKE_ABOVE_MAX": "该产品的最大金额为{max} {coin}。",
+      "STAKE_INSUFFICIENT_AVAILABLE": "可用余额为{available} {coin}。",
+      "UNAUTHENTICATED": "会话已过期，请重新登录后继续。",
+      "GENERIC": "请求未能完成。"
     }
   },
   "deposit": {
@@ -711,7 +762,13 @@
     "recentDeposits": "最近充值",
     "noWithdrawals": "暂无提现。",
     "noDeposits": "暂无最近充值。在枢纽配置充值 Webhook 后将在此显示。",
-    "viewAll": "查看全部"
+    "viewAll": "查看全部",
+    "stakingLiability": {
+      "title": "质押负债（未支付）",
+      "unpaid": "{coin} 未支付利息",
+      "principalSub": "锁定 {amount} · 活跃 {n}",
+      "error": "无法获取负债数据 — 请勿理解为零。"
+    }
   },
   "adminSettings": {
     "pageTitle": "平台设置",
@@ -795,8 +852,62 @@
     "user": "用户",
     "product": "产品",
     "principal": "本金",
-    "accrued": "已赚",
+    "accrued": "实时计息中",
+    "unpaidCol": "未支付（账面）",
+    "ledgerColsNote": "以下两列均为账本记录，并非钱包余额。",
+    "grantBadge": "发放",
     "matures": "到期",
+    "liability": {
+      "sectionTitle": "质押负债",
+      "sectionNote": "以下为账面数字。此处记录的利息从未计入任何用户的钱包。",
+      "unpaid": {
+        "label": "未支付利息（仅账面）",
+        "note": "尚未计入任何用户的钱包余额。",
+        "rate": "每个结算日增加 +{amount} {coin}"
+      },
+      "settled": {
+        "label": "实际发放至钱包",
+        "noRail": "尚无支付通道",
+        "noRailTooltip": "目前没有任何代码路径可将质押利息计入 Nia-Hub 余额。此数值是结构性的零，而非实测值。"
+      },
+      "principal": {
+        "label": "锁定本金（活跃）",
+        "note": "这是用户资金。仅为锁定状态，并非平台负债。"
+      },
+      "grant": {
+        "label": "其中平台发放本金",
+        "note": "该金额是否构成平台负债取决于一个尚未确认的运营问题（B-4）：发放本金是否已实际存入用户的枢纽钱包？"
+      },
+      "counts": "活跃 {active} · 到期 {matured} · 总计 {total}",
+      "badge": {
+        "noRail": "无支付通道"
+      },
+      "state": {
+        "loading": "正在加载负债数据…",
+        "error": {
+          "title": "无法加载负债数据",
+          "body": "请勿将此空白解读为“零负债”。请重试；若持续失败，请将数据视为未知。",
+          "retry": "重试"
+        },
+        "empty": "暂无质押持仓 — 当前负债为 0。"
+      },
+      "incident": {
+        "paidStatus": "数据完整性警告 — 检测到 {n} 个处于 PAID 状态的持仓。当前代码库中没有任何逻辑会赋予该状态，因此“实际发放至钱包 = 0”已不再可信。在进行任何支付相关操作前请先排查原因。",
+        "negative": "数据完整性警告 — 未支付利息被计算为负值。账本数据不一致。",
+        "grantExceeds": "数据完整性警告 — 发放本金超过了活跃本金总额。"
+      }
+    },
+    "settlement": {
+      "title": "每日计息",
+      "lastAccrual": "上次计息：{when}",
+      "never": "从未",
+      "accruedToday": "今日计息：{amount}（{count}）",
+      "activeN": "活跃 {n}",
+      "runNow": "立即执行计息",
+      "runNowTitle": "将今日利息记录到账本（幂等操作）。不会向任何用户钱包发送资金。",
+      "runResult": "已在账本中记录 {days} 天、共 {amount} {coin}；{matured} 笔到期。未向任何用户钱包发送资金。",
+      "runResultNoop": "数据已是最新 — 没有新内容需要记录（活跃 {n}）。"
+    },
     "autoRenewWarning": {
       "inlineTitle": "降低利率将拒绝{count, plural, one {# 项待处理的自动续约} other {# 项待处理的自动续约}}。",
       "inlineBody": "{productName}上的{count, plural, one {# 个活跃持仓} other {# 个活跃持仓}}已启用自动续约。每个持仓都将根据其到期时本产品的利率进行检查。如果保存的利率低于持仓的利率，该续约将被拒绝，本金将返还给用户的钱包，而不是再次质押。",

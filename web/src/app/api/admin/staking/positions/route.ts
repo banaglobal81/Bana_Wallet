@@ -30,6 +30,11 @@ export async function GET(): Promise<NextResponse> {
     ...serializePosition(p),
     email: p.email,
     productName: p.product?.name ?? '',
+    // admin-staking-debt-visibility-frd.md §4.4 P-5 — derived HERE, not in
+    // serializePosition (A6: that function deliberately omits admin identity
+    // from the response so the user-facing /api/staking/positions route
+    // never leaks it). This route is admin-only (requireAdmin above).
+    isGrant: p.grantedByAdminId != null,
   }));
   return NextResponse.json({ ok: true, data });
 }

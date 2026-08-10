@@ -68,6 +68,8 @@ export class DeepCoreScene extends Phaser.Scene {
   private wellField?: Phaser.GameObjects.Container;
   private crewField?: Phaser.GameObjects.Container;
   private activeTweens: Phaser.Tweens.Tween[] = [];
+  private focusRing?: Phaser.GameObjects.Arc;
+  private focusResetEvent?: Phaser.Time.TimerEvent;
 
   private queuedTextureKeys = new Set<string>();
   private failedTextureKeys = new Set<string>();
@@ -262,6 +264,7 @@ export class DeepCoreScene extends Phaser.Scene {
         obj = g;
       }
       obj.setPosition(x, baseY);
+      obj.setName(this.wellObjectName(well.positionId));
       obj.on('pointerup', () => this.onWellClick?.(well.positionId));
       this.wellField?.add(obj);
     });
@@ -376,6 +379,59 @@ export class DeepCoreScene extends Phaser.Scene {
     this.drawWells();
   }
 
+  private wellObjectName(positionId: string): string {
+    return `well-${positionId}`;
+  }
+
+  /** staking-page-v2-screen-flow-frd.md CH-2 / UF-5 — pans the camera to and
+   * pulses a highlight ring on the well matching `positionId`, replacing
+   * the pre-v2 `scrollIntoView` round-trip between the canvas and the
+   * position list (now a sheet). `null` just clears any active focus
+   * (camera + ring), which is also what runs first on every call so a new
+   * focus target never stacks on top of a stale one. No-op (beyond the
+   * clear) if the well isn't among the currently-rendered ones — e.g.
+   * beyond `MAX_VISIBLE_WELLS` — rather than throwing. R-4: this is a pure
+   * visual cue, no text is drawn. */
+  focusWell(positionId: string | null): void {
+    this.clearWellFocus();
+    if (!positionId || !this.wellField) return;
+    const target = this.wellField.list.find(
+      (obj) => (obj as Phaser.GameObjects.Image | Phaser.GameObjects.Graphics).name === this.wellObjectName(positionId),
+    ) as (Phaser.GameObjects.Image | Phaser.GameObjects.Graphics) | undefined;
+    if (!target) return;
+
+    const { width, height } = this.scale;
+    if (!this.motionReduced) {
+      this.cameras.main.pan(target.x, height / 2, 350, 'Sine.easeInOut');
+      this.cameras.main.zoomTo(1.15, 350);
+    }
+
+    this.focusRing = this.add.circle(target.x, target.y - 10, 4, 0xffffff, 0).setDepth(7);
+    this.focusRing.setStrokeStyle(2, 0x9fe6d0, 0.95);
+    this.tweens.add({
+      targets: this.focusRing,
+      radius: 26,
+      alpha: { from: 0.95, to: 0 },
+      duration: 900,
+      repeat: this.motionReduced ? 0 : 1,
+      onComplete: () => { this.focusRing?.destroy(); this.focusRing = undefined; },
+    });
+
+    this.focusResetEvent = this.time.delayedCall(2000, () => {
+      if (!this.motionReduced) {
+        this.cameras.main.pan(width / 2, height / 2, 350, 'Sine.easeInOut');
+        this.cameras.main.zoomTo(1, 350);
+      }
+    });
+  }
+
+  private clearWellFocus(): void {
+    this.focusRing?.destroy();
+    this.focusRing = undefined;
+    if (this.focusResetEvent) this.time.removeEvent(this.focusResetEvent);
+    this.focusResetEvent = undefined;
+  }
+
   setCrewState(crew: Record<string, CrewState>): void {
     this.crewState = crew;
     const missing = Object.keys(crew)
@@ -394,6 +450,7 @@ export class DeepCoreScene extends Phaser.Scene {
   shutdown(): void {
     this.activeTweens.forEach((t) => t.stop());
     this.activeTweens = [];
+    this.clearWellFocus();
     this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR);
     this.load.off(Phaser.Loader.Events.COMPLETE);
   }

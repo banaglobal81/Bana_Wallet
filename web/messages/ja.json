@@ -411,6 +411,57 @@
       "error": {
         "GAME_LOAD_FAILED": "画面を読み込めませんでした。ステーキング機能は通常どおりご利用いただけます。"
       }
+    },
+    "yield": {
+      "recordedLabel": "記録された収益",
+      "recordedHelp": "ステーキング台帳に記録された金額です。ウォレット残高には含まれません。",
+      "claimedLabel": "ウォレットへ受け取り済み",
+      "claimedHelp": "すでにウォレット残高へ移動済みです。",
+      "lockedLabel": "ロック中の元本",
+      "lockedHelp": "元本はウォレットにそのまま残りますが、期間が終了するまで出金できません。",
+      "empty": "記録された収益はまだありません。"
+    },
+    "claim": {
+      "unavailable": "ウォレットへの支払いはまだ提供されていません。"
+    },
+    "nav": {
+      "stake": "ステーク",
+      "positions": "マイポジション",
+      "yieldLog": "収益履歴"
+    },
+    "sheet": {
+      "stakeTitle": "ステーク",
+      "amountTitle": "金額",
+      "confirmTitle": "確認",
+      "positionsTitle": "マイポジション",
+      "step": "ステップ {current}/{total}",
+      "back": "戻る"
+    },
+    "stakeSheet": {
+      "contractTerms": "{days}日間の基準利息: {baseTotal} {coin}",
+      "notEstimate": "この数値は契約利率から計算された値であり、予測値ではありません。",
+      "lockNote": "ステークした資金は期間終了前に出金できません。"
+    },
+    "position": {
+      "recordedLabel": "記録済み",
+      "settledDays": "精算済み {d}/{total}日",
+      "maturedNote": "期間が終了すると元本のロックが解除され、ウォレットで利用できるようになります。記録された収益は自動的には移動しません。"
+    },
+    "yieldLog": {
+      "title": "収益履歴",
+      "empty": "まだ履歴がありません。",
+      "loadMore": "もっと見る"
+    },
+    "error": {
+      "STAKE_INVALID_AMOUNT": "0より大きい金額を入力してください。",
+      "STAKE_PRODUCT_NOT_FOUND": "この商品は現在提供されていません。",
+      "STAKE_PRODUCT_CLOSED": "この商品は新規のステークを受け付けていません。",
+      "STAKE_PRODUCT_FULL": "この商品は定員に達しています。",
+      "STAKE_BELOW_MIN": "この商品の最小金額は{min} {coin}です。",
+      "STAKE_ABOVE_MAX": "この商品の最大金額は{max} {coin}です。",
+      "STAKE_INSUFFICIENT_AVAILABLE": "利用可能な残高は{available} {coin}です。",
+      "UNAUTHENTICATED": "セッションが終了しました。続けるには再度ログインしてください。",
+      "GENERIC": "リクエストが完了しませんでした。"
     }
   },
   "deposit": {
@@ -711,7 +762,13 @@
     "recentDeposits": "最近の入金",
     "noWithdrawals": "まだ出金はありません。",
     "noDeposits": "最近の入金はありません。ハブで入金Webhookが設定されると、ここに表示されます。",
-    "viewAll": "すべて表示"
+    "viewAll": "すべて表示",
+    "stakingLiability": {
+      "title": "ステーキング負債（未払い）",
+      "unpaid": "{coin} 未払い利息",
+      "principalSub": "{amount} ロック中・アクティブ{n}件",
+      "error": "負債額を取得できませんでした — ゼロとして解釈しないでください。"
+    }
   },
   "adminSettings": {
     "pageTitle": "プラットフォーム設定",
@@ -795,8 +852,62 @@
     "user": "ユーザー",
     "product": "商品",
     "principal": "元本",
-    "accrued": "獲得",
+    "accrued": "発生中（リアルタイム計算）",
+    "unpaidCol": "未払い（帳簿）",
+    "ledgerColsNote": "両方の列とも帳簿記録であり、ウォレット残高ではありません。",
+    "grantBadge": "付与",
     "matures": "満期",
+    "liability": {
+      "sectionTitle": "ステーキング負債",
+      "sectionNote": "これらは帳簿上の数値です。ここに記録された利息はユーザーのウォレットに反映されたことがありません。",
+      "unpaid": {
+        "label": "未払い利息（帳簿上のみ）",
+        "note": "ユーザーのウォレット残高には反映されていない金額です。",
+        "rate": "決済1日あたり+{amount} {coin}増加中"
+      },
+      "settled": {
+        "label": "ウォレットへの実送金額",
+        "noRail": "支払いレールが存在しません",
+        "noRailTooltip": "ステーキング利息をNia-Hub残高に入金するコード経路は存在しません。この数値は測定値ではなく構造的にゼロです。"
+      },
+      "principal": {
+        "label": "ロック中の元本（アクティブ）",
+        "note": "ユーザー資金です。ロックされているだけで、プラットフォームの負債ではありません。"
+      },
+      "grant": {
+        "label": "うちプラットフォーム付与元本",
+        "note": "この金額がプラットフォームの負債かどうかは、未確認の運用上の質問（B-4）次第です：付与元本は実際にユーザーのハブウォレットに入金されていますか？"
+      },
+      "counts": "アクティブ{active}・満期{matured}・合計{total}",
+      "badge": {
+        "noRail": "支払いレールなし"
+      },
+      "state": {
+        "loading": "負債額を読み込み中…",
+        "error": {
+          "title": "負債額を読み込めませんでした",
+          "body": "この空白を「負債ゼロ」と解釈しないでください。再試行し、それでも失敗する場合は数値を不明として扱ってください。",
+          "retry": "再試行"
+        },
+        "empty": "ステーキングポジションがありません — 現在の負債は0です。"
+      },
+      "incident": {
+        "paidStatus": "データ整合性の警告 — {n}件のポジションがPAIDステータスです。このコードベースではそのステータスは割り当てられないため、「ウォレットへの実送金額 = 0」はもはや信頼できません。支払い関連の作業の前に原因を調査してください。",
+        "negative": "データ整合性の警告 — 未払い利息が負の値として計算されました。帳簿に矛盾があります。",
+        "grantExceeds": "データ整合性の警告 — 付与元本がアクティブな元本合計を超えています。"
+      }
+    },
+    "settlement": {
+      "title": "日次利息計上",
+      "lastAccrual": "最終計上: {when}",
+      "never": "なし",
+      "accruedToday": "本日の計上: {amount} ({count})",
+      "activeN": "アクティブ{n}件",
+      "runNow": "今すぐ計上実行",
+      "runNowTitle": "本日の利息を帳簿に記録します（冪等）。ユーザーのウォレットには何も送金されません。",
+      "runResult": "帳簿に{days}日分の{amount} {coin}を記録しました。{matured}件が満期。ユーザーのウォレットには何も送金されていません。",
+      "runResultNoop": "最新の状態です — 新たに記録する項目はありません（アクティブ{n}件）。"
+    },
     "autoRenewWarning": {
       "inlineTitle": "金利を引き下げると{count, plural, one {# 件の保留中の自動更新} other {# 件の保留中の自動更新}}が拒否されます。",
       "inlineBody": "{productName}の{count, plural, one {# 件のアクティブなポジション} other {# 件のアクティブなポジション}}で自動更新がオンになっています。それぞれは満期時のこの商品の金利に対して確認されます。保存された金利がポジションの金利より低い場合、その更新は拒否され、元本は再度ステーキングされるのではなくユーザーのウォレットに返却されます。",

@@ -133,6 +133,12 @@ fi
 # deploy-manager's own commit-message text (see header comment).
 case "$agent" in
   wallet-security-expert|code-compliance-checker|routine-tasks|deploy-manager)
+    # Strip whitespace-free angle-bracket tokens (`<user@host>` trailers like
+    # `Co-Authored-By: Name <noreply@anthropic.com>`, URLs, HTML-ish tags) before the
+    # redirect-operator check below. Without this, a commit message's closing `>` at
+    # end-of-line false-flags as a shell redirect and denies every ordinary
+    # deploy-manager commit that carries the mandated Co-Authored-By trailer.
+    cmd_noangle="$(printf '%s' "$cmd" | sed -E 's/<[^[:space:]<>]*>//g')"
     write_anchored="${ANCHOR}(sed\\s+-i|mv|cp|rm|mkdir|touch|tee|dd|install|truncate|xargs)\\b"
     write_anchored+='|(^|[^0-9])>{1,2}\|?(\s|$)'
     write_anchored+="|${ANCHOR}(python3?|node|ruby|perl|osascript|php)\\b"
@@ -141,7 +147,12 @@ case "$agent" in
     write_bare+='|>{1,2}'
     write_bare+='|\b(python3?|node|ruby|perl|osascript|php)\b'
     write_bare+='|\b(curl|wget)\b.*(-o\b|--output\b|-O\b)'
-    if flagged "$write_anchored" "$write_bare"; then
+    flagged_noangle() {
+      echo "$cmd_noangle" | grep -qE "$1" && return 0
+      has_wrapper && echo "$cmd_noangle" | grep -qE "$2" && return 0
+      return 1
+    }
+    if flagged_noangle "$write_anchored" "$write_bare"; then
       deny "$agent is review/detect-only — Bash may not write, move, or delete files, run a general-purpose script interpreter, or download to a file (CLAUDE.md § Forbidden)."
     fi
     ;;

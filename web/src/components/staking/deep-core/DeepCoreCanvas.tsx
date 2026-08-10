@@ -19,6 +19,9 @@ export interface DeepCoreCanvasProps {
   motionReduced: boolean;
   /** Bumped by the parent whenever a new lift should play its one-shot burst (05 §3.3). */
   liftBurstToken: number;
+  /** staking-page-v2-screen-flow-frd.md CH-2 / UF-5 — pans the camera to and
+   * highlights this well; `null`/`undefined` clears any active focus. */
+  focusWellId?: string | null;
   onWellClick?: (positionId: string) => void;
   /** Called once if Phaser fails to boot (G-5) — parent falls back to a static image. */
   onBootError?: () => void;
@@ -29,7 +32,7 @@ export interface DeepCoreCanvasProps {
 // this file is the only one in the tree that does `import Phaser from
 // 'phaser'` (G-2 / AC-S2: S-0 users never even parse this file).
 export default function DeepCoreCanvas({
-  chapter, wells, crew, motionReduced, liftBurstToken, onWellClick, onBootError,
+  chapter, wells, crew, motionReduced, liftBurstToken, focusWellId, onWellClick, onBootError,
 }: DeepCoreCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -106,6 +109,10 @@ export default function DeepCoreCanvas({
     if (firstBurst.current) { firstBurst.current = false; return; } // don't burst on initial mount
     sceneRef.current?.playLiftBurst();
   }, [liftBurstToken]);
+
+  useEffect(() => {
+    sceneRef.current?.focusWell(focusWellId ?? null);
+  }, [focusWellId]);
 
   return <div ref={containerRef} className="absolute inset-0" data-testid="deep-core-canvas-root" />;
 }

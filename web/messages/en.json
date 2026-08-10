@@ -411,6 +411,57 @@
       "error": {
         "GAME_LOAD_FAILED": "Could not load the view. Staking works normally."
       }
+    },
+    "yield": {
+      "recordedLabel": "Recorded yield",
+      "recordedHelp": "Recorded in your staking ledger. It is not part of your wallet balance.",
+      "claimedLabel": "Claimed to wallet",
+      "claimedHelp": "Already moved to your wallet balance.",
+      "lockedLabel": "Locked principal",
+      "lockedHelp": "Your principal stays in your wallet but cannot be withdrawn until the term ends.",
+      "empty": "No yield recorded yet."
+    },
+    "claim": {
+      "unavailable": "Payout to your wallet is not available yet."
+    },
+    "nav": {
+      "stake": "Stake",
+      "positions": "My positions",
+      "yieldLog": "Yield log"
+    },
+    "sheet": {
+      "stakeTitle": "Stake",
+      "amountTitle": "Amount",
+      "confirmTitle": "Confirm",
+      "positionsTitle": "My positions",
+      "step": "Step {current} of {total}",
+      "back": "Back"
+    },
+    "stakeSheet": {
+      "contractTerms": "Base yield over {days} days: {baseTotal} {coin}",
+      "notEstimate": "These figures come from the contracted rates, not from a forecast.",
+      "lockNote": "Staked funds cannot be withdrawn before the term ends."
+    },
+    "position": {
+      "recordedLabel": "Recorded",
+      "settledDays": "Settled {d}/{total} days",
+      "maturedNote": "When a term ends, the principal stops being locked and is available in your wallet. Recorded yield is not moved automatically."
+    },
+    "yieldLog": {
+      "title": "Yield log",
+      "empty": "No entries yet.",
+      "loadMore": "Load more"
+    },
+    "error": {
+      "STAKE_INVALID_AMOUNT": "Enter an amount greater than 0.",
+      "STAKE_PRODUCT_NOT_FOUND": "This product is no longer available.",
+      "STAKE_PRODUCT_CLOSED": "This product is closed to new stakes.",
+      "STAKE_PRODUCT_FULL": "This product is full.",
+      "STAKE_BELOW_MIN": "The minimum for this product is {min} {coin}.",
+      "STAKE_ABOVE_MAX": "The maximum for this product is {max} {coin}.",
+      "STAKE_INSUFFICIENT_AVAILABLE": "Available balance is {available} {coin}.",
+      "UNAUTHENTICATED": "Your session ended. Sign in again to continue.",
+      "GENERIC": "The request did not complete."
     }
   },
   "deposit": {
@@ -711,7 +762,13 @@
     "recentDeposits": "Recent deposits",
     "noWithdrawals": "No withdrawals yet.",
     "noDeposits": "No recent deposits. Deposits appear here once deposit webhooks are configured on the hub.",
-    "viewAll": "View all"
+    "viewAll": "View all",
+    "stakingLiability": {
+      "title": "Staking liability (unpaid)",
+      "unpaid": "{coin} unpaid interest",
+      "principalSub": "{amount} locked · {n} active",
+      "error": "Liability figures unavailable — do not read as zero."
+    }
   },
   "adminSettings": {
     "pageTitle": "Platform Settings",
@@ -795,8 +852,62 @@
     "user": "User",
     "product": "Product",
     "principal": "Principal",
-    "accrued": "Earned",
+    "accrued": "Accruing (live)",
+    "unpaidCol": "Unpaid (ledger)",
+    "ledgerColsNote": "Both columns are ledger records, not wallet balances.",
+    "grantBadge": "Grant",
     "matures": "Matures",
+    "liability": {
+      "sectionTitle": "Staking liability",
+      "sectionNote": "These are ledger figures. Interest recorded here has never been credited to a user's wallet.",
+      "unpaid": {
+        "label": "Unpaid interest — ledger only",
+        "note": "Not reflected in any user's wallet balance.",
+        "rate": "+{amount} {coin} per settlement day"
+      },
+      "settled": {
+        "label": "Actually sent to wallets",
+        "noRail": "No payout rail exists yet",
+        "noRailTooltip": "There is no code path that credits staking interest to a Nia-Hub balance. This figure is a structural zero, not a measurement."
+      },
+      "principal": {
+        "label": "Locked principal (active)",
+        "note": "User funds. Locked, not owed."
+      },
+      "grant": {
+        "label": "Of which platform grants",
+        "note": "Whether this is a platform liability depends on an unanswered operational question (B-4): is granted principal actually deposited to the user's hub wallet?"
+      },
+      "counts": "{active} active · {matured} matured · {total} total",
+      "badge": {
+        "noRail": "No payout rail"
+      },
+      "state": {
+        "loading": "Loading liability figures…",
+        "error": {
+          "title": "Could not load liability figures",
+          "body": "Do not read this blank as \"zero liability\". Retry, and if it keeps failing, treat the figures as unknown.",
+          "retry": "Retry"
+        },
+        "empty": "No staking positions — liability is 0."
+      },
+      "incident": {
+        "paidStatus": "Data integrity warning — {n} position(s) are in PAID status. Nothing in this codebase assigns that status, so \"Actually sent to wallets = 0\" can no longer be trusted. Investigate before any payout work.",
+        "negative": "Data integrity warning — unpaid interest computed as a negative value. The ledger is inconsistent.",
+        "grantExceeds": "Data integrity warning — granted principal exceeds total active principal."
+      }
+    },
+    "settlement": {
+      "title": "Daily accrual",
+      "lastAccrual": "Last accrual: {when}",
+      "never": "never",
+      "accruedToday": "Accrued today: {amount} ({count})",
+      "activeN": "{n} active",
+      "runNow": "Run accrual now",
+      "runNowTitle": "Record today's interest on the ledger (idempotent). This does not send anything to user wallets.",
+      "runResult": "Recorded {amount} {coin} across {days} day(s) on the ledger; {matured} matured. Nothing was sent to user wallets.",
+      "runResultNoop": "Up to date — nothing new to record ({n} active)."
+    },
     "autoRenewWarning": {
       "inlineTitle": "Lowering the rate will refuse {count, plural, one {# pending auto-renewal} other {# pending auto-renewals}}.",
       "inlineBody": "{count, plural, one {# active position} other {# active positions}} on {productName} {count, plural, one {has} other {have}} auto-renew on. Each one is checked against this product's rate at the moment it matures. If the saved rate is lower than the rate on the position, that renewal is refused and the principal is released to the user's wallet instead of being staked again.",
