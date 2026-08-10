@@ -42,25 +42,35 @@ export async function GET(): Promise<NextResponse> {
 /**
  * POST /api/admin/staking/positions — ADMIN grants a staking position to a user.
  *
- * Unlike the user flow (/api/staking/stake), this does NOT require the user to
- * hold a Nia-Hub balance: BANA is the platform's own token, so an admin can
- * issue a staked position as a bonus/promotion. The granted principal is a
- * deliberate liability of the platform, so:
- *   - ADMIN role is required,
- *   - every grant is written to the audit log (who / whom / how much),
- *   - the product's min/max rules are still enforced (a grant shouldn't be able
- *     to create a position the product itself would reject).
+ * docs/specs/staking-yield-system-v2-prd-rev05-creation-path-cutover.md §2.2
+ * CS-1′: this route is fail-closed and ALWAYS returns 409 GRANT_DISABLED_V2_CORE,
+ * regardless of product/status/body. rev04 §1.8 G-E ("V2-CORE does not offer a
+ * grant path") was written against the V2 path only and was never applied to
+ * this still-live v1 route — PoR's `grantPrincipalPayableTotal` only reads
+ * `StakePositionV2` (web/src/lib/localLedger.ts), so any v1 grant is invisible
+ * debt to reserve accounting, even for an OPEN product. This is entry-point
+ * rejection (CS-1′ requires NOT deleting the code below), kept until CUT-3/
+ * CUT-4 replace it with a V2 grant implementation. Do NOT reintroduce a
+ * conditional (e.g. `product.status !== 'OPEN'`) gate here — CS-1′ is
+ * unconditional for every input.
  *
- * The position is identical to a user-created one, so it accrues and pays
- * interest through the normal settlement engine.
+ * The dead code below (pre-CS-1′ implementation) is intentionally left in
+ * place, unreachable, as the basis for the eventual V2 replacement.
  */
-export async function POST(req: Request): Promise<NextResponse> {
-  let admin;
-  try { admin = await requireAdmin(); } catch (e) {
+export async function POST(_req: Request): Promise<NextResponse> {
+  try { await requireAdmin(); } catch (e) {
     const err = e as Error & { status?: number };
     return NextResponse.json({ ok: false, error: err.message }, { status: err.status ?? 500 });
   }
 
+  return NextResponse.json(
+    { ok: false, error: 'Staking grants are temporarily disabled while the platform migrates to V2-CORE.', code: 'GRANT_DISABLED_V2_CORE' },
+    { status: 409 },
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function _legacyGrantPositionUnreachable(req: Request, admin: Awaited<ReturnType<typeof requireAdmin>>): Promise<NextResponse> {
   let body: Record<string, unknown> = {};
   try { body = await req.json(); } catch {}
 

@@ -41,7 +41,28 @@ function sumBalance(raw: unknown, coin: string): Decimal {
 }
 
 // POST /api/staking/stake — lock funds into a staking product.
-export async function POST(req: Request): Promise<NextResponse> {
+//
+// docs/specs/staking-yield-system-v2-prd-rev05-creation-path-cutover.md §2.2
+// CS-1′: this v1 execution route is fail-closed and ALWAYS returns 503
+// STAKE_PATH_MIGRATING, unconditionally (not gated on product status/coin/
+// amount). PoR's `activeUserFundedPrincipalTotal` (web/src/lib/localLedger.ts)
+// only reads `StakePositionV2`, so any position created through this v1 route
+// is invisible debt to reserve accounting. Entry-point rejection only — the
+// pre-CS-1′ implementation below is intentionally left in place (unreachable)
+// as the basis for the eventual V2 replacement, kept until CUT-3/CUT-4.
+export async function POST(_req: Request): Promise<NextResponse> {
+  try { await requireUser(); } catch (e) {
+    return err(Object.assign(e as Error, { code: (e as { code?: string }).code ?? 'UNAUTHENTICATED' }));
+  }
+
+  return NextResponse.json(
+    { ok: false, error: 'The staking execution path is being migrated. Please try again later.', code: 'STAKE_PATH_MIGRATING' },
+    { status: 503 },
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function _legacyStakeUnreachable(req: Request): Promise<NextResponse> {
   let niaUserId: string, dbUserId: string, email: string;
   try {
     await requireUser();
