@@ -7,7 +7,14 @@ import { prisma } from '@/lib/db';
 import { requireUser } from '@/lib/auth/session';
 import { aprPct } from '@/lib/stakingMath';
 
-// GET /api/staking/products — open staking products available to users.
+// GET /api/staking/products — open V2 staking products available to users.
+//
+// docs/specs/staking-yield-system-v2-prd-rev05-creation-path-cutover.md §5.2①
+// (CUT-4 / T-7): `stakingProduct` -> `stakingProductV2`, response field
+// `dailyRatePct` -> `baseDailyRatePct` (A-4 principle 3 — "이름이 의미를
+// 정한다"), and capacity usage aggregated from `StakePositionV2`, not the
+// legacy v1 table (which — per CS-1′/CS-2′ — holds 0 rows anyway, but this
+// route must read the table that is actually kept current going forward).
 export async function GET(): Promise<NextResponse> {
   try {
     await requireUser();
@@ -16,13 +23,13 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: err.message }, { status: err.status ?? 500 });
   }
 
-  const products = await prisma.stakingProduct.findMany({
+  const products = await prisma.stakingProductV2.findMany({
     where: { status: 'OPEN' },
     orderBy: { createdAt: 'desc' },
   });
 
-  // Active staked totals per product (for capacity display).
-  const active = await prisma.stakePosition.findMany({
+  // Active staked totals per product (for capacity display) — V2 positions only.
+  const active = await prisma.stakePositionV2.findMany({
     where: { status: 'ACTIVE' },
     select: { productId: true, principal: true },
   });
@@ -37,7 +44,7 @@ export async function GET(): Promise<NextResponse> {
     const full = p.capacity ? used.gte(new Decimal(p.capacity)) : false;
     return {
       id: p.id, coin: p.coin, name: p.name, termDays: p.termDays,
-      dailyRatePct: p.dailyRatePct, aprPct: aprPct(p.dailyRatePct).toFixed(2),
+      baseDailyRatePct: p.baseDailyRatePct, aprPct: aprPct(p.baseDailyRatePct).toFixed(2),
       minAmount: p.minAmount, maxAmount: p.maxAmount,
       capacity: p.capacity, remaining, full,
     };

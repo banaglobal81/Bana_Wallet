@@ -5,10 +5,18 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { requireUser } from '@/lib/auth/session';
-import { settleMaturedPositions, serializePosition, lockedPrincipalByCoin } from '@/lib/staking';
+import { settleMaturedPositions, lockedPrincipalByCoin, serializePositionV2 } from '@/lib/staking';
 import { getDeepCoreState } from '@/lib/deepCoreProgress';
 
-// GET /api/staking/positions — the signed-in user's stake positions.
+// GET /api/staking/positions — the signed-in user's V2 stake positions.
+//
+// docs/specs/staking-yield-system-v2-prd-rev05-creation-path-cutover.md §5.2①
+// (CUT-4 / T-7): reads `StakePositionV2` (was `StakePosition`). Serialization
+// is `lib/staking.ts`'s `serializePositionV2` — shared with
+// api/staking/positions/[id]/auto-renew/route.ts so both routes' JSON shape
+// can never drift apart; see that function's own doc comment for the full
+// v1 -> V2 field-by-field rationale (accruedInterest deleted, paidInterest ->
+// ledgeredYield, dailyRatePct -> baseDailyRatePct, no 'PAID' status).
 //
 // Also returns a `game` block (DEEP CORE Phase 0 — docs/specs/deep-core-05-screen-flow-frd.md
 // G-7: the game surface must not add its own polling / API round trips, so its
@@ -32,13 +40,13 @@ export async function GET(): Promise<NextResponse> {
 
   await settleMaturedPositions(dbUserId);
 
-  const rows = await prisma.stakePosition.findMany({
+  const rows = await prisma.stakePositionV2.findMany({
     where: { userId: dbUserId },
     orderBy: { createdAt: 'desc' },
     include: { product: { select: { name: true } } },
   });
 
-  const data = rows.map((p) => ({ ...serializePosition(p), productName: p.product?.name ?? '' }));
+  const data = rows.map((p) => ({ ...serializePositionV2(p), productName: p.product?.name ?? '' }));
 
   let game = null;
   try {
@@ -54,6 +62,13 @@ export async function GET(): Promise<NextResponse> {
   // from what actually blocks a withdrawal. The client must not recompute
   // this by summing positions itself (that was the bug — see the report to
   // the parent agent).
+  //
+  // rev05 §5.2① (A-7 LB-C1): for a LOCAL-authority coin this is summed from
+  // ACTIVE LocalBalanceHold(STAKE_PRINCIPAL_LOCK) rows (lib/staking.ts's
+  // `lockedPrincipalByCoin` already delegates to stakingV2.ts's
+  // `lockedPrincipalForLocal` since CUT-3/T-6) — NOT a sum of
+  // StakePositionV2.principal directly, which would double-count once A-3
+  // holds are the source of truth for `available`.
   const lockedMap = await lockedPrincipalByCoin(dbUserId);
   const lockedPrincipal: Record<string, string> = {};
   for (const [coin, amt] of lockedMap) lockedPrincipal[coin] = amt.toFixed();

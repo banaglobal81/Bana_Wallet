@@ -1,27 +1,42 @@
 import 'server-only';
 import Decimal from 'decimal.js';
 import { prisma } from '@/lib/db';
-import { accruedInterest, fullInterest, aprPct } from '@/lib/stakingMath';
-import { AUTO_RENEW_MAX_TERM_DAYS } from '@/lib/stakingRenew';
+import { fullInterest, aprPct } from '@/lib/stakingMath';
+// Pure constant only (not `@/lib/stakingRenew`, which also pulls in `@/lib/db`
+// and `@/lib/email/resend` for the legacy renewal-decision engine this file
+// never calls) — same "math file, not the engine file" import this route
+// family already uses elsewhere (api/admin/staking/positions/route.ts,
+// api/staking/positions/[id]/auto-renew/route.ts).
+import { AUTO_RENEW_MAX_TERM_DAYS } from '@/lib/stakingRenewMath';
 import { settleMaturedPositionsV2, lockedPrincipalForLocal } from '@/lib/stakingV2';
 
-type Position = {
+// rev05 CUT-4 (T-7, §5.2①): the legacy v1 `Position`/`serializePosition` pair
+// (StakePosition shape: dailyRatePct/paidInterest/accruedInterest) is REMOVED,
+// not renamed — the last two callers (api/staking/positions/route.ts,
+// api/staking/positions/[id]/auto-renew/route.ts) were migrated to V2 in this
+// same cutover, and the v1 execution/grant routes have been fail-closed since
+// CUT-0 (CS-1′) with CS-2′ confirming 0 rows in the legacy table, so no
+// caller of the old shape can exist. `serializePositionV2` below (shared by
+// both of those routes, plus mirrored — not imported, per that route's own
+// admin/user separation — by api/admin/staking/positions/route.ts's own
+// `serializePositionV2`) is the only serializer left.
+type PositionV2 = {
   id: string;
+  productId: string;
   coin: string;
   principal: string;
-  dailyRatePct: string;
+  baseDailyRatePct: string;
   termDays: number;
   startAt: Date;
   maturityAt: Date;
   status: string;
-  productId: string;
-  paidInterest?: string;
-  daysPaid?: number;
-  autoRenew?: boolean;
-  renewalStatus?: string;
-  renewedIntoPositionId?: string | null;
-  renewedFromPositionId?: string | null;
-  grantedByAdminId?: string | null;
+  ledgeredYield: string;
+  daysPaid: number;
+  autoRenew: boolean;
+  renewalStatus: string;
+  renewedIntoPositionId: string | null;
+  renewedFromPositionId: string | null;
+  grantedByAdminId: string | null;
 };
 
 /**
@@ -69,28 +84,46 @@ export async function lockedPrincipalByCoin(userId: string): Promise<Map<string,
   return m;
 }
 
-/** Serialize a position with computed accrual fields for the API. */
-export function serializePosition(p: Position) {
-  const accrued = accruedInterest(p.principal, p.dailyRatePct, p.startAt, p.termDays);
-  const full = fullInterest(p.principal, p.dailyRatePct, p.termDays);
+/**
+ * Serialize a StakePositionV2 row for the user-facing API. Shared by
+ * api/staking/positions/route.ts and api/staking/positions/[id]/auto-renew/route.ts
+ * (CUT-4 / T-7) so both routes' JSON shape can never drift apart.
+ *
+ * rev05 §5.2① field changes from the legacy v1 serializer:
+ *   - `accruedInterest` DELETED (not renamed) — V2 has no live day-elapsed
+ *     projection concept; only what the settlement engine has actually
+ *     ledgered may ever be shown as "earned" (A-4 principles 2/6 F-C fix).
+ *   - `dailyRatePct` -> `baseDailyRatePct`.
+ *   - `paidInterest` -> `ledgeredYield`.
+ *   - status set has no `'PAID'` member (StakePositionV2Status, schema.prisma).
+ * `fullInterest`/`projectedTotal` are KEPT — a fixed term-contract quantity
+ * (principal × baseDailyRatePct × termDays), not the banned live projection —
+ * now computed from `baseDailyRatePct` per §5.2④'s note for StakeSheet's
+ * contract display.
+ */
+export function serializePositionV2(p: PositionV2) {
+  const full = fullInterest(p.principal, p.baseDailyRatePct, p.termDays);
   return {
     id: p.id,
     productId: p.productId,
     coin: p.coin,
     principal: p.principal,
-    dailyRatePct: p.dailyRatePct,
-    aprPct: aprPct(p.dailyRatePct).toFixed(2),
+    baseDailyRatePct: p.baseDailyRatePct,
+    aprPct: aprPct(p.baseDailyRatePct).toFixed(2),
     termDays: p.termDays,
     startAt: p.startAt.toISOString(),
     maturityAt: p.maturityAt.toISOString(),
     status: p.status,
-    accruedInterest: accrued.toFixed(),
     fullInterest: full.toFixed(),
     projectedTotal: new Decimal(p.principal).plus(full).toFixed(),
-    // Real amounts credited by the daily worker (the rewards ledger).
-    paidInterest: p.paidInterest ?? '0',
+    // Real amounts credited by the V2 settlement engine (the yield ledger).
+    ledgeredYield: p.ledgeredYield ?? '0',
     daysPaid: p.daysPaid ?? 0,
-    // --- Auto-renewal (docs/specs/staking-auto-renew-prd.md §4 S4) ---
+    // --- Auto-renewal — inert while AUTO_RENEW_V2_ENABLED=false
+    // (docs/specs/staking-v2-auto-renew-cutover-ruling.md). Every V2 position
+    // has autoRenew=false/renewalStatus='NONE' today (no supported path sets
+    // them otherwise) — hiding the corresponding UI control is T-9's job
+    // (R-AR-3), not this serializer's.
     autoRenew: p.autoRenew ?? false,
     renewalStatus: p.renewalStatus ?? 'NONE',
     renewedIntoPositionId: p.renewedIntoPositionId ?? null,

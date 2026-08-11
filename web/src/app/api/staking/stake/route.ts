@@ -6,18 +6,46 @@ import Decimal from 'decimal.js';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { requireUser } from '@/lib/auth/session';
-import { niaWalletRequest } from '@/lib/nia/client';
-import { resolveSessionUserId } from '@/lib/nia/resolve';
+import { createStakePositionV2 } from '@/lib/stakingV2';
+import { getCoinAuthority, CoinAuthorityBlockedError } from '@/lib/coinAuthority';
 import { settleMaturedPositions } from '@/lib/staking';
-import { DAY_MS } from '@/lib/stakingMath';
-import { AUTO_RENEW_MAX_TERM_DAYS } from '@/lib/stakingRenew';
 
-// docs/specs/staking-page-v2-screen-flow-frd.md §7.1 R-D5 / §7.2 — every
-// staking route must return a stable `code` so the client can render a
-// localized `staking.error.<code>` string instead of this raw English
-// message (which stays in the body for logging/debugging only — S-STAKE
-// never shows it directly, per T-7/AC-19). `params` carries the few
-// dynamic values (min/max/available + coin) some codes need.
+// POST /api/staking/stake — lock funds into a V2 staking product.
+//
+// docs/specs/staking-yield-system-v2-prd-rev05-creation-path-cutover.md §5.2①
+// (CUT-4 / T-7), full rewrite per that table's row for this file:
+//   ⓐ CP-2 (rev05 §3.2 ⓑ) — assertExecutionAllowed(coin, 'NEW_POSITION') runs
+//      before any position is created. This route does NOT call it directly —
+//      createStakePositionV2 (lib/stakingV2.ts, CUT-1/T-3, NOT reimplemented
+//      here) already calls it as the very first thing it does, before opening
+//      its transaction. Calling it again here would be redundant, not safer.
+//   ⓑ Authority branch — every live staking product is BANA, and BANA is
+//      always LOCAL-authority (N-6: "only BANA is stakeable"). The hub
+//      balance call the pre-CS-1′ implementation used
+//      (`niaWalletRequest('GET', '/api/v1/wallets', ...)`) is gone outright,
+//      not merely unreached — createStakePositionV2's USER_BALANCE branch
+//      only implements the LOCAL path (placeHold), by its own doc comment.
+//      getCoinAuthority() is checked below as a fail-closed backstop against
+//      that assumption changing under this route without a code review; it
+//      is not expected to ever return non-LOCAL for a live product today.
+//   ⓒ createStakePositionV2 creates the position AND places the
+//      STAKE_PRINCIPAL_LOCK hold (placeHold) inside the SAME `prisma.$transaction`
+//      — see that function's own doc comment ("create position -> create hold
+//      with relatedId=position.id -> backfill principalHoldId", all one tx).
+//      This route never opens its own transaction around the call.
+//   ⓓ Capacity re-check against StakePositionV2 (not the legacy table) —
+//      already inside createStakePositionV2.
+//   ⓔ coin -> product -> user advisory lock order — already inside
+//      createStakePositionV2 (see its lock-order note: this does not conflict
+//      with the fail-closed legacy v1 route's product -> user order, since
+//      the legacy route never acquires the coin lock).
+//
+// R-AR-2 (docs/specs/staking-v2-auto-renew-cutover-ruling.md §5.1) — checked
+// FIRST, before any field/product/balance validation: the mere presence of an
+// `autoRenew` key in the request body is rejected 409 AUTO_RENEW_UNAVAILABLE,
+// value irrelevant. V2 has no renewal decision engine (deferred to T-20), so
+// this is a REJECTION of the request shape, not a silent ignore of the field.
+
 function err(e: unknown) {
   const x = e as Error & { status?: number; code?: string; params?: Record<string, string> };
   return NextResponse.json(
@@ -26,54 +54,68 @@ function err(e: unknown) {
   );
 }
 
-// Sum the available (free) balance for a coin from a Nia /wallets response.
-function sumBalance(raw: unknown, coin: string): Decimal {
-  const rows: unknown[] = Array.isArray(raw)
-    ? raw
-    : raw && typeof raw === 'object'
-      ? Object.values(raw as Record<string, unknown>).flatMap((v) => (Array.isArray(v) ? v : []))
-      : [];
-  let total = new Decimal(0);
-  for (const r of rows as Array<{ currency?: string; balance?: string }>) {
-    if ((r?.currency ?? '').toUpperCase() === coin.toUpperCase()) total = total.plus(new Decimal(r.balance ?? '0'));
+/**
+ * Normalizes every error createStakePositionV2 (or its own placeHold/
+ * assertExecutionAllowed calls) can throw into this route's `code`/`status`
+ * response convention.
+ *   - createStakePositionV2's own errors are already Object.assign'd with
+ *     {code, status} (its internal `stakeError` helper) — passed through
+ *     unchanged: STAKE_PRODUCT_NOT_FOUND, STAKE_PRODUCT_COIN_MISMATCH,
+ *     STAKE_PRODUCT_CLOSED, STAKE_BELOW_MIN, STAKE_ABOVE_MAX,
+ *     STAKE_PRODUCT_FULL, STAKE_INTEREST_LIABILITY_CAP_NOT_SET,
+ *     STAKE_INTEREST_LIABILITY_CAP_EXCEEDED, STAKE_INVALID_AMOUNT.
+ *   - CP-2's CoinAuthorityBlockedError has no {code,status} of its own (it
+ *     carries `reason`/`symbol`) — mapped here to 403 + a STAKE_-prefixed
+ *     code, the "403 + 사유 코드" CP-2 requires, using the same STAKE_
+ *     namespace as every other code this route returns.
+ *   - placeHold's insufficient-balance error (thrown inside
+ *     createStakePositionV2's own transaction) carries only
+ *     `code: 'INSUFFICIENT_AVAILABLE_BALANCE'`, no status — mapped to this
+ *     route's STAKE_INSUFFICIENT_LOCAL_BALANCE / 400.
+ */
+function mapStakeError(e: unknown): Error & { code: string; status: number; params?: Record<string, string> } {
+  if (e instanceof CoinAuthorityBlockedError) {
+    const code =
+      e.reason === 'T2_HALTED' ? 'STAKE_COIN_HALTED'
+      : e.reason === 'T1_WARNING_NO_OVERRIDE' ? 'STAKE_COIN_T1_WARNING'
+      : e.reason === 'DIRECT_CHANGE_IN_PROGRESS' ? 'STAKE_COIN_AUTHORITY_CHANGE_IN_PROGRESS'
+      : 'STAKE_COIN_AUTHORITY_TRANSITION_IN_PROGRESS';
+    return Object.assign(new Error(e.message), { code, status: 403 });
   }
-  return total;
+  const x = e as Error & { code?: string; status?: number; params?: Record<string, string> };
+  if (x.code === 'INSUFFICIENT_AVAILABLE_BALANCE') {
+    return Object.assign(new Error(x.message), { code: 'STAKE_INSUFFICIENT_LOCAL_BALANCE', status: 400 });
+  }
+  if (x.code && x.status) return x as Error & { code: string; status: number; params?: Record<string, string> };
+  return Object.assign(new Error(x.message ?? 'Unexpected error'), { code: x.code ?? 'GENERIC', status: x.status ?? 500 });
 }
 
-// POST /api/staking/stake — lock funds into a staking product.
-//
-// docs/specs/staking-yield-system-v2-prd-rev05-creation-path-cutover.md §2.2
-// CS-1′: this v1 execution route is fail-closed and ALWAYS returns 503
-// STAKE_PATH_MIGRATING, unconditionally (not gated on product status/coin/
-// amount). PoR's `activeUserFundedPrincipalTotal` (web/src/lib/localLedger.ts)
-// only reads `StakePositionV2`, so any position created through this v1 route
-// is invisible debt to reserve accounting. Entry-point rejection only — the
-// pre-CS-1′ implementation below is intentionally left in place (unreachable)
-// as the basis for the eventual V2 replacement, kept until CUT-3/CUT-4.
-export async function POST(_req: Request): Promise<NextResponse> {
-  try { await requireUser(); } catch (e) {
-    return err(Object.assign(e as Error, { code: (e as { code?: string }).code ?? 'UNAUTHENTICATED' }));
-  }
-
-  return NextResponse.json(
-    { ok: false, error: 'The staking execution path is being migrated. Please try again later.', code: 'STAKE_PATH_MIGRATING' },
-    { status: 503 },
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function _legacyStakeUnreachable(req: Request): Promise<NextResponse> {
-  let niaUserId: string, dbUserId: string, email: string;
+export async function POST(req: Request): Promise<NextResponse> {
+  let dbUserId: string, email: string;
   try {
     await requireUser();
-    niaUserId = await resolveSessionUserId();
     const u = (await auth())?.user as { id?: string; email?: string } | undefined;
     if (!u?.id) throw Object.assign(new Error('Unauthorized'), { status: 401 });
     dbUserId = u.id; email = u.email ?? '';
-  } catch (e) { return err(Object.assign(e as Error, { code: (e as { code?: string }).code ?? 'UNAUTHENTICATED' })); }
+  } catch (e) {
+    return err(Object.assign(e as Error, { code: (e as { code?: string }).code ?? 'UNAUTHENTICATED' }));
+  }
 
   let body: Record<string, unknown> = {};
   try { body = await req.json(); } catch {}
+
+  // R-AR-2 — first, ahead of everything else (see doc comment above).
+  if (Object.prototype.hasOwnProperty.call(body, 'autoRenew')) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: 'Auto-renew is not available on V2 stakes yet.',
+        code: 'AUTO_RENEW_UNAVAILABLE',
+      },
+      { status: 409 },
+    );
+  }
+
   const productId = String(body.productId ?? '');
 
   let amount: Decimal;
@@ -84,96 +126,41 @@ async function _legacyStakeUnreachable(req: Request): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: 'Enter a valid amount greater than 0', code: 'STAKE_INVALID_AMOUNT' }, { status: 400 });
   }
 
-  const product = await prisma.stakingProduct.findUnique({ where: { id: productId } });
-  if (!product) return NextResponse.json({ ok: false, error: 'Staking product not found', code: 'STAKE_PRODUCT_NOT_FOUND' }, { status: 404 });
-  if (product.status !== 'OPEN') {
-    return NextResponse.json({ ok: false, error: 'This staking product is closed.', code: 'STAKE_PRODUCT_CLOSED' }, { status: 409 });
+  const product = await prisma.stakingProductV2.findUnique({ where: { id: productId }, select: { id: true, coin: true } });
+  if (!product) {
+    return NextResponse.json({ ok: false, error: 'Staking product not found', code: 'STAKE_PRODUCT_NOT_FOUND' }, { status: 404 });
   }
 
-  // Auto-renew rider (PRD §4 S1) — optional, defaults false. Never rejects the
-  // stake itself over this field: any non-boolean coerces to false, and
-  // requesting it on a product over the cap ALSO coerces to false rather than
-  // failing the stake (R-2 defensive re-check — the UI never offers this
-  // combination since S1 hides the control on those products).
-  const autoRenew = body.autoRenew === true && product.termDays <= AUTO_RENEW_MAX_TERM_DAYS;
-
-  // Per-stake min / max.
-  if (product.minAmount && amount.lt(new Decimal(product.minAmount))) {
+  // ⓑ — fail-closed backstop, see doc comment above.
+  const authority = await getCoinAuthority(product.coin);
+  if (authority !== 'LOCAL') {
     return NextResponse.json(
-      { ok: false, error: `Minimum stake is ${product.minAmount} ${product.coin}.`, code: 'STAKE_BELOW_MIN', params: { min: product.minAmount, coin: product.coin } },
-      { status: 400 },
-    );
-  }
-  if (product.maxAmount && amount.gt(new Decimal(product.maxAmount))) {
-    return NextResponse.json(
-      { ok: false, error: `Maximum stake is ${product.maxAmount} ${product.coin}.`, code: 'STAKE_ABOVE_MAX', params: { max: product.maxAmount, coin: product.coin } },
-      { status: 400 },
+      {
+        ok: false,
+        error: `${product.coin} staking is not available through this path.`,
+        code: 'STAKE_COIN_AUTHORITY_UNSUPPORTED',
+      },
+      { status: 503 },
     );
   }
 
-  // Fetch the user's free balance from Nia (external I/O — kept OUTSIDE the DB
-  // transaction below so we don't hold the row locks during a network call).
-  // Staking never changes this number; only deposits/withdrawals do, so reading
-  // it just before taking the lock is safe.
+  // Lazy-settle first, so a just-matured position's hold is released (and its
+  // principal becomes available again) before this request's own available-
+  // balance check runs inside createStakePositionV2 — same ordering the
+  // legacy route used (`settleMaturedPositions` before its balance read).
   await settleMaturedPositions(dbUserId);
-  let niaBal: Decimal;
+
   try {
-    const raw = await niaWalletRequest('GET', '/api/v1/wallets', { query: { userId: niaUserId, currency: product.coin } });
-    niaBal = sumBalance(raw, product.coin);
-  } catch (e) { return err(e); }
-
-  const startAt = new Date();
-  const maturityAt = new Date(startAt.getTime() + product.termDays * DAY_MS);
-
-  // Capacity re-check + available-balance re-check + position creation run in ONE
-  // transaction, guarded by Postgres advisory locks (product first, then user —
-  // a consistent lock order avoids deadlock). Without this, two concurrent stake
-  // requests could both read the same available balance / capacity and each
-  // create a position, locking more principal than the user actually holds (and
-  // then accruing daily interest on funds that aren't there). Serializing per
-  // user (balance) and per product (capacity) closes that race.
-  let position: { id: string };
-  try {
-    position = await prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`stake_product:${product.id}`}, 0))`;
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`stake_user:${dbUserId}`}, 0))`;
-
-      if (product.capacity) {
-        const active = await tx.stakePosition.findMany({
-          where: { productId, status: 'ACTIVE' }, select: { principal: true },
-        });
-        const used = active.reduce((s, p) => s.plus(new Decimal(p.principal)), new Decimal(0));
-        if (used.plus(amount).gt(new Decimal(product.capacity))) {
-          const left = Decimal.max(0, new Decimal(product.capacity).minus(used));
-          throw Object.assign(
-            new Error(`Not enough capacity left in this product (only ${left.toFixed()} ${product.coin} available).`),
-            { status: 409, code: 'STAKE_PRODUCT_FULL', params: { left: left.toFixed(), coin: product.coin } },
-          );
-        }
-      }
-
-      const lockedRows = await tx.stakePosition.findMany({
-        where: { userId: dbUserId, status: 'ACTIVE', coin: product.coin }, select: { principal: true },
-      });
-      const locked = lockedRows.reduce((s, p) => s.plus(new Decimal(p.principal)), new Decimal(0));
-      const available = niaBal.minus(locked);
-      if (amount.gt(available)) {
-        throw Object.assign(
-          new Error(`Not enough available ${product.coin}. You have ${Decimal.max(0, available).toFixed()} free to stake.`),
-          { status: 400, code: 'STAKE_INSUFFICIENT_AVAILABLE', params: { available: Decimal.max(0, available).toFixed(), coin: product.coin } },
-        );
-      }
-
-      return tx.stakePosition.create({
-        data: {
-          userId: dbUserId, niaUserId, email, productId: product.id, coin: product.coin,
-          principal: amount.toFixed(), dailyRatePct: product.dailyRatePct, termDays: product.termDays,
-          startAt, maturityAt, autoRenew,
-        },
-        select: { id: true },
-      });
+    const created = await createStakePositionV2({
+      userId: dbUserId,
+      email,
+      coin: product.coin,
+      productId: product.id,
+      principal: amount.toFixed(),
+      fundingSource: 'USER_BALANCE',
     });
-  } catch (e) { return err(e); }
-
-  return NextResponse.json({ ok: true, data: { id: position.id, maturityAt: maturityAt.toISOString() } });
+    return NextResponse.json({ ok: true, data: { id: created.id, maturityAt: created.maturityAt } });
+  } catch (e) {
+    return err(mapStakeError(e));
+  }
 }
