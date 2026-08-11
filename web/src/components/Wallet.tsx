@@ -253,7 +253,7 @@ export default function Wallet({ onNavigate }: WalletProps) {
             </button>
           </div>
 
-          {/* Staked coin + live earnings (only shows if the user has a stake) */}
+          {/* Staked coin + recorded yield, server-sourced only (only shows if the user has a stake) */}
           <StakedSummaryCard onOpen={() => onNavigate('STAKING_INTERFACE', 'push')} />
 
           {/* Balances */}

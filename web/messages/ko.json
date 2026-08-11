@@ -1112,10 +1112,8 @@
   },
   "stakedSummary": {
     "title": "스테이킹",
-    "live": "실시간",
     "staked": "스테이킹 중",
-    "earning": "실시간 수익",
-    "credited": "지급됨"
+    "recordedLabel": "기록됨"
   },
   "adminCoins": {
     "pageTitle": "코인",

@@ -1112,10 +1112,8 @@
   },
   "stakedSummary": {
     "title": "质押",
-    "live": "实时",
     "staked": "质押中",
-    "earning": "实时收益",
-    "credited": "已发放"
+    "recordedLabel": "已记录"
   },
   "adminCoins": {
     "pageTitle": "币种",

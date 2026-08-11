@@ -1112,10 +1112,8 @@
   },
   "stakedSummary": {
     "title": "สเตกกิ้ง",
-    "live": "เรียลไทม์",
     "staked": "กำลังสเตก",
-    "earning": "กำไรเรียลไทม์",
-    "credited": "จ่ายแล้ว"
+    "recordedLabel": "บันทึกแล้ว"
   },
   "adminCoins": {
     "pageTitle": "เหรียญ",

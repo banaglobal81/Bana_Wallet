@@ -1112,10 +1112,8 @@
   },
   "stakedSummary": {
     "title": "ステーキング",
-    "live": "ライブ",
     "staked": "ステーキング中",
-    "earning": "リアルタイム収益",
-    "credited": "支払済み"
+    "recordedLabel": "記録済み"
   },
   "adminCoins": {
     "pageTitle": "コイン",

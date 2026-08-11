@@ -1112,10 +1112,8 @@
   },
   "stakedSummary": {
     "title": "Staking",
-    "live": "Live",
     "staked": "Staked",
-    "earning": "Earning now",
-    "credited": "Credited"
+    "recordedLabel": "Recorded"
   },
   "adminCoins": {
     "pageTitle": "Coins",

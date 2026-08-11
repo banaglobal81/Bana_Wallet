@@ -650,7 +650,7 @@ export default function Dashboard({ settings, onNavigate }: DashboardProps) {
         </div>
       </section>
 
-      {/* Staked coin + live earnings (only shows if the user has a stake) */}
+      {/* Staked coin + recorded yield, server-sourced only (only shows if the user has a stake) */}
       <StakedSummaryCard onOpen={() => onNavigate('STAKING_INTERFACE', 'push')} />
 
       {/* 3. Main Split Board Layout */}

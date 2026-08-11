@@ -1112,10 +1112,8 @@
   },
   "stakedSummary": {
     "title": "Staking",
-    "live": "Trực tiếp",
     "staked": "Đang stake",
-    "earning": "Đang sinh lời",
-    "credited": "Đã ghi có"
+    "recordedLabel": "Đã ghi nhận"
   },
   "adminCoins": {
     "pageTitle": "Coin",

@@ -2,106 +2,98 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Coins, ChevronRight, TrendingUp } from 'lucide-react';
+import { Coins, ChevronRight } from 'lucide-react';
 import Decimal from 'decimal.js';
-import { getStakePositions, getStakingRewards } from '../../utils/stakingApi';
-import { accruedInterest } from '../../lib/stakingMath';
+import { getStakePositionsAndGame, getStakingRewards } from '../../utils/stakingApi';
 import CoinAvatar from '../wallet/CoinAvatar';
 
 /**
- * Compact "your staked coin + live earnings" card for the Wallet / Dashboard.
- * Display-only: it reads the staking ledger (positions + credited rewards) and
- * never moves funds. The "Earning now" figure is recomputed on the client every
- * second, so users see the number climb — matching the Staking page. Renders
- * nothing for users who have no positions, so it stays out of the way.
+ * Compact "your staked coins" card for the Wallet / Dashboard.
+ *
+ * Display-only, and 100% server-sourced (addendum SS —
+ * docs/specs/staking-page-v2-screen-flow-frd-addendum-ss.md §3 SS-2):
+ * - Principal per coin comes straight from `getStakePositionsAndGame().lockedPrincipal`,
+ *   the SAME per-coin figure the withdrawal route uses to compute the lock (R-D2) —
+ *   never summed/derived on the client (AC-V6/AC-SS-2).
+ * - Recorded yield per coin comes straight from `getStakingRewards().totalByCoin`,
+ *   never merged across coins into one scalar (AC-V2/AC-SS-3).
+ * - There is deliberately no client-side interest projection, no timer driving
+ *   any amount shown here (AC-SS-1), and no "Live" badge — so the figures stay
+ *   fixed while `stakingWorkerEnabled=false` / settlement is paused (AC-V20/AC-SS-4).
+ *   A maturity countdown clock was considered and explicitly descoped (SS-2a,
+ *   M-1): with multiple positions per coin "which position's maturity" is
+ *   undefined, and a clock would resurrect the same timer this fix removes.
+ *   The slot is left empty rather than filled with a substitute.
  */
 export default function StakedSummaryCard({ onOpen }: { onOpen?: () => void }) {
   const t = useTranslations('stakedSummary');
-  const [staked, setStaked] = useState<Decimal | null>(null);
-  const [credited, setCredited] = useState(new Decimal(0));
-  const [coin, setCoin] = useState('BANA');
-  const [live, setLive] = useState(new Decimal(0));
-  const [now, setNow] = useState(() => Date.now());
-
-  // Keep the raw ACTIVE positions so we can recompute accrual live each tick.
-  const [active, setActive] = useState<
-    Array<{ principal: string; baseDailyRatePct: string; startAt: string; termDays: number }>
-  >([]);
+  // null = still loading. Once loaded, always an object (possibly empty).
+  const [staked, setStaked] = useState<Record<string, string> | null>(null);
+  const [recorded, setRecorded] = useState<Record<string, string>>({});
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [positions, rewards] = await Promise.all([getStakePositions(), getStakingRewards()]);
+        const [{ lockedPrincipal }, rewards] = await Promise.all([
+          getStakePositionsAndGame(),
+          getStakingRewards(),
+        ]);
         if (cancelled) return;
-        const act = positions.filter((p) => p.status === 'ACTIVE');
-        setActive(act.map((p) => ({ principal: p.principal, baseDailyRatePct: p.baseDailyRatePct, startAt: p.startAt, termDays: p.termDays })));
-        setStaked(act.reduce((s, p) => s.plus(p.principal || '0'), new Decimal(0)));
-        if (positions[0]?.coin) setCoin(positions[0].coin);
-        setCredited(
-          Object.values(rewards.totalByCoin ?? {}).reduce((s, a) => s.plus(a || '0'), new Decimal(0)),
-        );
+        setStaked(lockedPrincipal ?? {});
+        setRecorded(rewards.totalByCoin ?? {});
       } catch {
-        if (!cancelled) setStaked(new Decimal(0));
+        if (!cancelled) setStaked({});
       }
     })();
     return () => { cancelled = true; };
   }, []);
 
-  // Tick the live accrual once a second.
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    const nowDate = new Date(now);
-    setLive(
-      active.reduce(
-        (s, p) => s.plus(accruedInterest(p.principal, p.baseDailyRatePct, p.startAt, p.termDays, nowDate)),
-        new Decimal(0),
-      ),
-    );
-  }, [active, now]);
-
-  // Still loading, or nothing staked and nothing ever earned → render nothing.
+  // Still loading → render nothing yet.
   if (staked === null) return null;
-  if (staked.lte(0) && credited.lte(0)) return null;
+
+  // AC-SS-3: per-coin only — never merged into a single scalar with one
+  // coin's symbol as the label. Union of coins with a nonzero locked
+  // principal or a nonzero recorded yield, even though today only BANA is
+  // stakeable (SS-2c — no single-coin shortcuts).
+  const coins = Array.from(new Set([...Object.keys(staked), ...Object.keys(recorded)]))
+    .filter((c) => new Decimal(staked[c] || '0').gt(0) || new Decimal(recorded[c] || '0').gt(0))
+    .sort();
+
+  // SS-2d: nothing staked and nothing ever recorded, in any coin → render nothing.
+  if (coins.length === 0) return null;
 
   return (
     <button
       onClick={onOpen}
-      className="w-full text-left p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] hover:border-emerald-400/40 transition-colors flex flex-col sm:flex-row sm:items-center gap-4 cursor-pointer group"
+      className="w-full text-left p-5 rounded-2xl bg-[#112643]/70 border border-[#1E3559] hover:border-emerald-400/40 transition-colors flex flex-col gap-4 cursor-pointer group"
     >
-      <div className="flex items-center gap-3 min-w-0 flex-1">
-        <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400 shrink-0"><Coins className="h-5 w-5" /></div>
-        <div className="min-w-0">
-          <div className="text-[11px] font-mono text-[#8c90a0] uppercase tracking-wider flex items-center gap-1.5">
-            {t('title')}
-            <span className="inline-flex items-center gap-1 text-emerald-400 text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
-              <span className="w-1 h-1 rounded-full bg-emerald-400 animate-ping block" /> {t('live')}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 mt-1">
-            <CoinAvatar symbol={coin} size={22} />
-            <span className="text-sm font-bold text-white font-mono">{staked.toSignificantDigits(8).toString()}</span>
-            <span className="text-xs text-[#8c90a0]">{coin} · {t('staked')}</span>
-          </div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400 shrink-0"><Coins className="h-5 w-5" /></div>
+          <div className="text-[11px] font-mono text-[#8c90a0] uppercase tracking-wider">{t('title')}</div>
         </div>
+        <ChevronRight className="h-4 w-4 text-[#8c90a0] group-hover:translate-x-0.5 transition-transform shrink-0" />
       </div>
 
-      <div className="flex items-center gap-5 shrink-0 pl-1">
-        <div className="text-right">
-          <div className="text-[10px] font-mono text-[#8c90a0] uppercase tracking-wide">{t('earning')}</div>
-          <div className="text-sm font-bold text-emerald-400 font-mono flex items-center gap-1 justify-end">
-            <TrendingUp className="h-3.5 w-3.5" />+{live.toSignificantDigits(8).toString()}
-          </div>
-        </div>
-        <div className="text-right hidden sm:block">
-          <div className="text-[10px] font-mono text-[#8c90a0] uppercase tracking-wide">{t('credited')}</div>
-          <div className="text-sm font-bold text-white font-mono">{credited.toSignificantDigits(8).toString()}</div>
-        </div>
-        <ChevronRight className="h-4 w-4 text-[#8c90a0] group-hover:translate-x-0.5 transition-transform" />
+      <div className="flex flex-col gap-3 pl-1">
+        {coins.map((coin) => {
+          const s = new Decimal(staked[coin] || '0');
+          const r = new Decimal(recorded[coin] || '0');
+          return (
+            <div key={coin} className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 min-w-0">
+                <CoinAvatar symbol={coin} size={22} />
+                <span className="text-sm font-bold text-white font-mono">{s.toSignificantDigits(8).toString()}</span>
+                <span className="text-xs text-[#8c90a0]">{coin} · {t('staked')}</span>
+              </div>
+              <div className="text-right shrink-0">
+                <div className="text-[10px] font-mono text-[#8c90a0] uppercase tracking-wide">{t('recordedLabel')}</div>
+                <div className="text-sm font-bold text-white font-mono">{r.toSignificantDigits(8).toString()}</div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </button>
   );
