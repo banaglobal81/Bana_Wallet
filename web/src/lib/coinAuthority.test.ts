@@ -47,6 +47,7 @@ import {
   changeAuthorityDirectly,
   DirectAuthorityChangeUnavailableError,
   assertDepositAddressAllowed,
+  assertExecutionAllowed,
   CoinAuthorityBlockedError,
 } from './coinAuthority';
 
@@ -268,5 +269,113 @@ describe('assertDepositAddressAllowed (A-2 §4.4, X-7) — hub markets response 
     niaRequestMock.mockResolvedValue(REALISTIC_MARKETS_RESPONSE);
 
     await expect(assertDepositAddressAllowed('BTC')).resolves.toBeUndefined();
+  });
+});
+
+// A-2 §4.3 — assertExecutionAllowed (WITHDRAWAL/SETTLEMENT/NEW_POSITION execution
+// gate). This is the function CS-2′ (staking-yield-system-v2-prd-rev04) and the
+// auto-renew safeguard both depend on: stakingV2.ts's createPosition calls this with
+// kind='NEW_POSITION' BEFORE opening its transaction (see stakingV2.ts comment at the
+// assertExecutionAllowed call site). loadGateRow (the shared query underneath both
+// assertIssuanceAllowed and assertExecutionAllowed) reads straight off the module-level
+// `prisma` — not through a caller-supplied tx — so it is exercised here via the same
+// managedCoinFindUnique mock used by the assertDepositAddressAllowed suite above.
+describe('assertExecutionAllowed (A-2 §4.3) — WITHDRAWAL/SETTLEMENT/NEW_POSITION execution gate', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function gateRow(overrides: Partial<{
+    authorityAlertStage: 'CLEAR' | 'T1_WARNING' | 'T2_HALTED';
+    directAuthorityChangeInProgress: boolean;
+    authorityTransitions: { id: string; status: string }[];
+  }> = {}) {
+    return {
+      id: 'mc-1',
+      authorityAlertStage: 'CLEAR' as const,
+      directAuthorityChangeInProgress: false,
+      authorityTransitions: [] as { id: string; status: string }[],
+      ...overrides,
+    };
+  }
+
+  it('no-op (resolves) when there is no ManagedCoin row at all, for every kind', async () => {
+    managedCoinFindUnique.mockResolvedValue(null);
+    for (const kind of ['WITHDRAWAL', 'SETTLEMENT', 'NEW_POSITION'] as const) {
+      await expect(assertExecutionAllowed('BANA', kind)).resolves.toBeUndefined();
+    }
+    expect(recordAuditMock).not.toHaveBeenCalled();
+  });
+
+  it('T2_HALTED blocks every kind, including WITHDRAWAL/SETTLEMENT (unlike T1_WARNING)', async () => {
+    managedCoinFindUnique.mockResolvedValue(gateRow({ authorityAlertStage: 'T2_HALTED' }));
+    for (const kind of ['WITHDRAWAL', 'SETTLEMENT', 'NEW_POSITION'] as const) {
+      await expect(assertExecutionAllowed('BANA', kind)).rejects.toMatchObject({
+        name: 'CoinAuthorityBlockedError',
+        reason: 'T2_HALTED',
+      });
+    }
+  });
+
+  it('directAuthorityChangeInProgress blocks every kind', async () => {
+    managedCoinFindUnique.mockResolvedValue(gateRow({ directAuthorityChangeInProgress: true }));
+    for (const kind of ['WITHDRAWAL', 'SETTLEMENT', 'NEW_POSITION'] as const) {
+      await expect(assertExecutionAllowed('BANA', kind)).rejects.toMatchObject({ reason: 'DIRECT_CHANGE_IN_PROGRESS' });
+    }
+  });
+
+  it('an in-flight CoinAuthorityTransition blocks every kind, and the message names the transition', async () => {
+    managedCoinFindUnique.mockResolvedValue(
+      gateRow({ authorityTransitions: [{ id: 'trans-1', status: 'SNAPSHOTTED' }] }),
+    );
+    await expect(assertExecutionAllowed('BANA', 'NEW_POSITION')).rejects.toMatchObject({
+      reason: 'TRANSITION_IN_PROGRESS',
+      message: expect.stringContaining('trans-1'),
+    });
+  });
+
+  it('T1_WARNING blocks NEW_POSITION without an explicit admin override (new issuance requires one)', async () => {
+    managedCoinFindUnique.mockResolvedValue(gateRow({ authorityAlertStage: 'T1_WARNING' }));
+    await expect(assertExecutionAllowed('BANA', 'NEW_POSITION')).rejects.toMatchObject({
+      reason: 'T1_WARNING_NO_OVERRIDE',
+    });
+    expect(recordAuditMock).not.toHaveBeenCalled();
+  });
+
+  it('T1_WARNING + NEW_POSITION resolves with an explicit admin override, and audits it', async () => {
+    managedCoinFindUnique.mockResolvedValue(gateRow({ authorityAlertStage: 'T1_WARNING' }));
+    await expect(
+      assertExecutionAllowed('BANA', 'NEW_POSITION', { adminOverride: { adminId: 'admin-1', adminEmail: 'a@x.com' } }),
+    ).resolves.toBeUndefined();
+    expect(recordAuditMock).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'AUTHORITY_T1_OVERRIDE', targetId: 'mc-1' }),
+    );
+  });
+
+  it('T1_WARNING does NOT block WITHDRAWAL — X-3′: T1 blocks only new issuance, withdrawals stay live', async () => {
+    managedCoinFindUnique.mockResolvedValue(gateRow({ authorityAlertStage: 'T1_WARNING' }));
+    await expect(assertExecutionAllowed('BANA', 'WITHDRAWAL')).resolves.toBeUndefined();
+    expect(recordAuditMock).not.toHaveBeenCalled();
+  });
+
+  it('T1_WARNING does NOT block SETTLEMENT either, and requires no override', async () => {
+    managedCoinFindUnique.mockResolvedValue(gateRow({ authorityAlertStage: 'T1_WARNING' }));
+    await expect(assertExecutionAllowed('BANA', 'SETTLEMENT')).resolves.toBeUndefined();
+    expect(recordAuditMock).not.toHaveBeenCalled();
+  });
+
+  it('CLEAR resolves for every kind with no override and no audit entry', async () => {
+    managedCoinFindUnique.mockResolvedValue(gateRow());
+    for (const kind of ['WITHDRAWAL', 'SETTLEMENT', 'NEW_POSITION'] as const) {
+      await expect(assertExecutionAllowed('BANA', kind)).resolves.toBeUndefined();
+    }
+    expect(recordAuditMock).not.toHaveBeenCalled();
+  });
+
+  it('T2_HALTED takes priority over an in-flight transition (checked first) — message reports T2, not TRANSITION_IN_PROGRESS', async () => {
+    managedCoinFindUnique.mockResolvedValue(
+      gateRow({ authorityAlertStage: 'T2_HALTED', authorityTransitions: [{ id: 'trans-1', status: 'FROZEN' }] }),
+    );
+    await expect(assertExecutionAllowed('BANA', 'SETTLEMENT')).rejects.toMatchObject({ reason: 'T2_HALTED' });
   });
 });

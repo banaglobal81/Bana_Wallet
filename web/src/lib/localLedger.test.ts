@@ -4,7 +4,27 @@
 // placeHold takes its Prisma transaction client as a plain parameter (never opens its
 // own transaction — A-3 §4.3's "tx is required" contract), so it can be unit tested
 // with a hand-rolled fake `tx` object with no '@/lib/db' mocking needed at all.
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+
+// reconcileStakePrincipalHolds (INV-P5, A-3 §4.4bis) reads straight off the
+// module-level `prisma` singleton (unlike placeHold/creditLocalLedger/debitLocalLedger/
+// executeHold above, which always take an explicit caller-supplied `tx` and never touch
+// this import) and calls recordAudit on mismatch — so it needs '@/lib/db' + '@/lib/audit'
+// mocked. This is safe to add at file scope: every other function tested in this file
+// is exercised exclusively through a hand-rolled fake `tx` object and never reaches the
+// real `prisma` import, so replacing it here does not change their behavior.
+const localBalanceHoldFindManyMock = vi.fn();
+const stakePositionV2FindManyMock = vi.fn();
+const recordAuditMock = vi.fn();
+
+vi.mock('@/lib/db', () => ({
+  prisma: {
+    localBalanceHold: { findMany: (...args: unknown[]) => localBalanceHoldFindManyMock(...args) },
+    stakePositionV2: { findMany: (...args: unknown[]) => stakePositionV2FindManyMock(...args) },
+  },
+}));
+vi.mock('@/lib/audit', () => ({ recordAudit: (...args: unknown[]) => recordAuditMock(...args) }));
+
 import {
   evaluateReserveGate,
   isReserveGateBlocked,
@@ -14,6 +34,7 @@ import {
   creditLocalLedger,
   debitLocalLedger,
   executeHold,
+  reconcileStakePrincipalHolds,
   LocalLedgerIdempotencyConflictError,
 } from './localLedger';
 import type { Prisma } from '@prisma/client';
@@ -517,5 +538,114 @@ describe('debitLocalLedger — AC-11/N-48 available-balance enforcement', () => 
       where: { id: 'hold-1', status: 'ACTIVE' },
       data: { status: 'EXECUTED', executedLedgerEntryId: 'entry-new' },
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// reconcileStakePrincipalHolds (INV-P5, A-3 §4.4bis) — Σ ACTIVE STAKE_PRINCIPAL_LOCK
+// holds for a coin must equal Σ principal of ACTIVE USER_BALANCE-funded StakePositionV2
+// rows for that coin. This is the same cross-check runReserveVerification performs
+// inline (stakeHoldMatchesPrincipal) before allowing a PASS result — a standalone
+// regression suite here protects the invariant independent of the full PoR run.
+// ---------------------------------------------------------------------------
+
+describe('reconcileStakePrincipalHolds (A-3 §4.4bis / INV-P5)', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('matches when Σ holds equals Σ principal exactly', async () => {
+    localBalanceHoldFindManyMock.mockResolvedValue([{ amount: '100' }, { amount: '50' }]);
+    stakePositionV2FindManyMock.mockResolvedValue([{ principal: '150' }]);
+
+    const result = await reconcileStakePrincipalHolds('BANA');
+
+    expect(result).toEqual({ holdTotal: '150', principalTotal: '150', matches: true });
+    expect(recordAuditMock).not.toHaveBeenCalled();
+  });
+
+  it('both totals are zero (no holds, no positions) — matches, no audit', async () => {
+    localBalanceHoldFindManyMock.mockResolvedValue([]);
+    stakePositionV2FindManyMock.mockResolvedValue([]);
+
+    const result = await reconcileStakePrincipalHolds('BANA');
+
+    expect(result).toEqual({ holdTotal: '0', principalTotal: '0', matches: true });
+    expect(recordAuditMock).not.toHaveBeenCalled();
+  });
+
+  it('reports a mismatch (does not throw) and records an audit entry with both totals', async () => {
+    localBalanceHoldFindManyMock.mockResolvedValue([{ amount: '100' }]);
+    stakePositionV2FindManyMock.mockResolvedValue([{ principal: '90' }]);
+
+    const result = await reconcileStakePrincipalHolds('BANA');
+
+    expect(result).toEqual({ holdTotal: '100', principalTotal: '90', matches: false });
+    expect(recordAuditMock).toHaveBeenCalledTimes(1);
+    expect(recordAuditMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'STAKE_PRINCIPAL_HOLD_MISMATCH',
+        targetType: 'ReserveVerificationRun',
+        targetId: 'BANA',
+        detail: expect.stringContaining('stakePrincipalHoldTotal=100'),
+      }),
+    );
+    expect(recordAuditMock.mock.calls[0][0].detail).toEqual(expect.stringContaining('activeUserFundedPrincipalTotal=90'));
+  });
+
+  it('decimal.js precision: 0.1 + 0.2 sums to exactly 0.3, matching a 0.3 principal (would false-mismatch under plain float addition)', async () => {
+    localBalanceHoldFindManyMock.mockResolvedValue([{ amount: '0.1' }, { amount: '0.2' }]);
+    stakePositionV2FindManyMock.mockResolvedValue([{ principal: '0.3' }]);
+
+    const result = await reconcileStakePrincipalHolds('BANA');
+
+    expect(result.matches).toBe(true);
+    expect(result.holdTotal).toBe('0.3');
+  });
+
+  it('detects a sub-cent mismatch that a naive/rounded comparison could hide', async () => {
+    // decimal.js's default precision is 20 significant digits (Decimal.js docs) — this
+    // difference (1e-14) is well within that window, so it must not get rounded away.
+    localBalanceHoldFindManyMock.mockResolvedValue([{ amount: '100.00000000000001' }]);
+    stakePositionV2FindManyMock.mockResolvedValue([{ principal: '100' }]);
+
+    const result = await reconcileStakePrincipalHolds('BANA');
+
+    expect(result.matches).toBe(false);
+    expect(recordAuditMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('queries only ACTIVE STAKE_PRINCIPAL_LOCK holds for the given coin', async () => {
+    localBalanceHoldFindManyMock.mockResolvedValue([]);
+    stakePositionV2FindManyMock.mockResolvedValue([]);
+
+    await reconcileStakePrincipalHolds('BANA');
+
+    expect(localBalanceHoldFindManyMock).toHaveBeenCalledWith({
+      where: { coin: 'BANA', reasonCode: 'STAKE_PRINCIPAL_LOCK', status: 'ACTIVE' },
+      select: { amount: true },
+    });
+  });
+
+  it('queries only ACTIVE USER_BALANCE-funded StakePositionV2 rows for the given coin — PLATFORM_GRANT positions never inflate this side (H-2′)', async () => {
+    localBalanceHoldFindManyMock.mockResolvedValue([]);
+    stakePositionV2FindManyMock.mockResolvedValue([]);
+
+    await reconcileStakePrincipalHolds('BANA');
+
+    expect(stakePositionV2FindManyMock).toHaveBeenCalledWith({
+      where: { coin: 'BANA', fundingSource: 'USER_BALANCE', status: 'ACTIVE' },
+      select: { principal: true },
+    });
+  });
+
+  it('scopes independently per coin — a different coin\'s holds/positions never leak in (mock call args reflect the coin argument)', async () => {
+    localBalanceHoldFindManyMock.mockResolvedValue([{ amount: '5' }]);
+    stakePositionV2FindManyMock.mockResolvedValue([{ principal: '5' }]);
+
+    await reconcileStakePrincipalHolds('USDT');
+
+    expect(localBalanceHoldFindManyMock).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ coin: 'USDT' }) }));
+    expect(stakePositionV2FindManyMock).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ coin: 'USDT' }) }));
   });
 });
