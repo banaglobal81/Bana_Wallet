@@ -3,7 +3,8 @@ import Decimal from 'decimal.js';
 import { prisma } from '@/lib/db';
 import { daysElapsed, dailyInterest, DAY_MS } from '@/lib/stakingMath';
 import { payReferralBonuses, type ReferralBonusRunResult } from '@/lib/referralBonus';
-import { matureOrRenewPosition, sendRenewalOutcomeIfNeeded, AUTO_RENEW_MAX_TERM_DAYS } from '@/lib/stakingRenew';
+import { matureOrRenewPosition, sendRenewalOutcomeIfNeeded } from '@/lib/stakingRenew';
+import { reminderLeadMs } from '@/lib/stakingRenewMath';
 import { sendMaturityReminderEmail } from '@/lib/email/resend';
 
 export interface SettlementResult {
@@ -27,20 +28,9 @@ export interface SettlementResult {
   referral: ReferralBonusRunResult; // MLM commission run (no-op unless enabled)
 }
 
-/**
- * Pre-maturity reminder lead time by term length (PRD §7.1, M-1 — mandatory
- * ship condition). The `> AUTO_RENEW_MAX_TERM_DAYS` row is a DEFENSIVE
- * BRANCH ONLY — unreachable through the offering while the 90-day cap is in
- * force (R-2) — kept so a downward cap change or a direct DB write is still
- * covered; keep it OUT of the product description (ruling §2.3). The 90-day
- * boundary here is derived from AUTO_RENEW_MAX_TERM_DAYS rather than a
- * second hardcoded "90", per copy-spec §7 F-7 (the two constants must agree).
- */
-function reminderLeadMs(termDays: number): number {
-  if (termDays <= 10) return DAY_MS * 1;
-  if (termDays <= AUTO_RENEW_MAX_TERM_DAYS) return DAY_MS * 3;
-  return DAY_MS * 7;
-}
+// reminderLeadMs moved to stakingRenewMath.ts (rev05 CUT-3, T-6) — see that
+// file's doc comment. Both this legacy engine and stakingV2.ts's
+// runStakingSettlementV2 now import the single shared table.
 
 // The daily staking settlement. For every ACTIVE position it PAYS the interest
 // earned for each elapsed day that hasn't been paid yet — one auditable row per
@@ -162,7 +152,7 @@ export async function runStakingSettlement(now: Date = new Date()): Promise<Sett
   for (const p of reminderCandidates) {
     // "Never late" (PRD §7.1): maturityAt > now is already enforced by the
     // query above; additionally only send once inside the lead window.
-    const lead = reminderLeadMs(p.termDays);
+    const lead = reminderLeadMs(p.termDays, DAY_MS);
     if (p.maturityAt.getTime() - now.getTime() > lead) continue;
 
     const user = await prisma.user.findUnique({ where: { id: p.userId }, select: { email: true, locale: true } });

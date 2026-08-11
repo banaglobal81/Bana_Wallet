@@ -1069,7 +1069,7 @@
       "activeN": "{n} active",
       "runNow": "Run accrual now",
       "runNowTitle": "Record today's interest on the ledger (idempotent). This does not send anything to user wallets.",
-      "runResult": "Recorded {amount} {coin} across {days} day(s) on the ledger; {matured} matured, {deferred} deferred. Nothing was sent to user wallets.",
+      "runResult": "Recorded {amount} {coin} across {days} day(s) on the ledger; {matured} matured, {skipped} skipped (coin halted). Nothing was sent to user wallets.",
       "runResultNoop": "Up to date — nothing new to record ({n} active)."
     },
     "autoRenewWarning": {

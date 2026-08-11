@@ -1069,7 +1069,7 @@
       "activeN": "활성 {n}",
       "runNow": "지금 적립 실행",
       "runNowTitle": "오늘 이자를 장부에 기록합니다(멱등). 사용자 지갑으로는 아무것도 전송되지 않습니다.",
-      "runResult": "장부에 {days}일치 {amount} {coin}을(를) 기록했습니다. {matured}건 만기, {deferred}건 갱신 보류. 사용자 지갑으로는 아무것도 전송되지 않았습니다.",
+      "runResult": "장부에 {days}일치 {amount} {coin}을(를) 기록했습니다. {matured}건 만기, {skipped}건 건너뜀(코인 정지). 사용자 지갑으로는 아무것도 전송되지 않았습니다.",
       "runResultNoop": "최신 상태입니다 — 새로 기록할 항목 없음 (활성 {n})."
     },
     "autoRenewWarning": {

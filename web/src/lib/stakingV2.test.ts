@@ -53,14 +53,34 @@ function fakeTx() {
 const transactionMock = vi.fn((cb: (tx: unknown) => unknown) => cb(fakeTx()));
 
 const prismaStakePositionV2FindMany = vi.fn();
+const prismaStakePositionV2Update = vi.fn();
+const stakePositionV2CountMock = vi.fn();
 const localBalanceHoldFindMany = vi.fn();
+const userFindUnique = vi.fn();
+const sendMaturityReminderEmailMock = vi.fn();
 
 vi.mock('@/lib/db', () => ({
   prisma: {
     $transaction: (cb: (tx: unknown) => unknown) => transactionMock(cb),
-    stakePositionV2: { findMany: (...args: unknown[]) => prismaStakePositionV2FindMany(...args) },
+    stakePositionV2: {
+      findMany: (...args: unknown[]) => prismaStakePositionV2FindMany(...args),
+      update: (...args: unknown[]) => prismaStakePositionV2Update(...args),
+      // R-AR-1 (docs/specs/staking-v2-auto-renew-cutover-ruling.md §4): the
+      // AUTO_RENEW_V2_ENABLED=false invariant check queries a count, not a
+      // findMany — kept as a distinct mock so it can never accidentally share
+      // a `.mockResolvedValueOnce` queue with the findMany-based tests above.
+      count: (...args: unknown[]) => stakePositionV2CountMock(...args),
+    },
     localBalanceHold: { findMany: (...args: unknown[]) => localBalanceHoldFindMany(...args) },
+    user: { findUnique: (...args: unknown[]) => userFindUnique(...args) },
   },
+}));
+
+// CP-9 relies on payReferralBonuses' own REFERRAL_BONUS_ENABLED-gated early
+// return (unmocked — see the test-env note near the CP-9 describe block
+// below), so only the Pass 2 email sender needs mocking here.
+vi.mock('@/lib/email/resend', () => ({
+  sendMaturityReminderEmail: (...args: unknown[]) => sendMaturityReminderEmailMock(...args),
 }));
 
 vi.mock('@/lib/coinAuthority', async (importOriginal) => {
@@ -116,6 +136,13 @@ beforeEach(() => {
   stakePositionV2Create.mockResolvedValue({ id: 'pos-1' });
   stakePositionV2UpdateTx.mockResolvedValue({});
   placeHoldMock.mockResolvedValue({ id: 'hold-1' });
+  prismaStakePositionV2Update.mockResolvedValue({});
+  userFindUnique.mockResolvedValue({ email: 'u1@example.com', locale: 'en' });
+  sendMaturityReminderEmailMock.mockResolvedValue(undefined);
+  // R-AR-1 default: no rogue autoRenew=true rows. A persistent
+  // `.mockResolvedValue` (not `.mockResolvedValueOnce`) so it never leaks
+  // between tests or needs to be re-queued per call.
+  stakePositionV2CountMock.mockResolvedValue(0);
 });
 
 // ---------------------------------------------------------------------------
@@ -361,6 +388,9 @@ describe('runStakingSettlementV2', () => {
 
   it('inserts exactly the newly-due days\' ledger rows and increments (never recomputes) the cache totals', async () => {
     const now = new Date('2026-07-31T00:00:00.000Z'); // dueDays=30, daysPaid=29 => 1 new day
+    // Pass 2 (rev05 CUT-3) is gated off by AUTO_RENEW_V2_ENABLED=false (R-AR-1)
+    // and calls stakePositionV2.count, not .findMany, so only one findMany
+    // queue slot (the main settlement candidates) is needed here.
     prismaStakePositionV2FindMany.mockResolvedValueOnce([{ id: 'pos-1' }]);
     stakePositionV2FindUniqueTx.mockResolvedValueOnce(positionRow());
     queryRaw
@@ -414,6 +444,82 @@ describe('runStakingSettlementV2', () => {
 
     expect(stakeYieldLedgerEntryCreateMany).not.toHaveBeenCalled();
     expect(result).toMatchObject({ processed: 0, daysCredited: 0, matured: 0, skippedHalted: 0 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// runStakingSettlementV2 — Pass 2 / R-AR-1 gate (rev05 CUT-3, T-6 email
+// migration, docs/specs/staking-v2-auto-renew-cutover-ruling.md §4) and CP-9
+// (rev05 §6.2) referral-commission relocation
+// ---------------------------------------------------------------------------
+//
+// AUTO_RENEW_V2_ENABLED is a hardcoded, non-exported module constant
+// (deliberately — R-AR-1: not a PlatformSetting, not an env var, not a test
+// override hook either). So these tests exercise exactly the one state that
+// can exist in this codebase today (disabled) — they do NOT flip the
+// constant to exercise the "enabled" branch, because no supported mechanism
+// to do that exists outside a code change once the T-20 engine lands.
+
+describe('runStakingSettlementV2 — R-AR-1 auto-renew-reminder gate + CP-9 referral relocation', () => {
+  it('R-AR-1 item 2: while disabled (always, today), never queries reminder candidates or sends an email — only ONE stakePositionV2.findMany call happens (the settlement candidates), not a second for Pass 2', async () => {
+    const now = new Date('2026-07-01T00:00:00.000Z');
+    prismaStakePositionV2FindMany.mockResolvedValueOnce([]); // settlement candidates only
+    stakePositionV2CountMock.mockResolvedValueOnce(0); // no rogue autoRenew=true rows
+
+    const result = await runStakingSettlementV2(now);
+
+    expect(prismaStakePositionV2FindMany).toHaveBeenCalledTimes(1);
+    expect(stakePositionV2CountMock).toHaveBeenCalledWith({ where: { autoRenew: true } });
+    expect(userFindUnique).not.toHaveBeenCalled();
+    expect(sendMaturityReminderEmailMock).not.toHaveBeenCalled();
+    expect(prismaStakePositionV2Update).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ processed: 0 });
+  });
+
+  it('R-AR-1 item 3: logs an invariant violation (console.error) when autoRenew=true rows exist while the flag is disabled — and still never sends the email', async () => {
+    const now = new Date('2026-07-01T00:00:00.000Z');
+    prismaStakePositionV2FindMany.mockResolvedValueOnce([]);
+    stakePositionV2CountMock.mockResolvedValueOnce(2); // rogue rows — unsupported path created them
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const result = await runStakingSettlementV2(now);
+
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('INVARIANT VIOLATION'));
+    expect(sendMaturityReminderEmailMock).not.toHaveBeenCalled();
+    // The invariant-violation branch must never throw the settlement cycle.
+    expect(result).toMatchObject({ processed: 0 });
+    expect(result.referral).toBeDefined();
+
+    errorSpy.mockRestore();
+  });
+
+  it('never throws the settlement cycle even if the stakePositionV2.count invariant check itself fails', async () => {
+    const now = new Date('2026-07-01T00:00:00.000Z');
+    prismaStakePositionV2FindMany.mockResolvedValueOnce([]);
+    stakePositionV2CountMock.mockRejectedValueOnce(new Error('db down'));
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const result = await runStakingSettlementV2(now);
+
+    expect(errorSpy).toHaveBeenCalled();
+    expect(result).toMatchObject({ processed: 0 });
+    expect(result.referral).toBeDefined();
+
+    errorSpy.mockRestore();
+  });
+
+  it('every settlement result carries a `referral` field (CP-9) — disabled/no-op by default', async () => {
+    const now = new Date('2026-07-01T00:00:00.000Z');
+    prismaStakePositionV2FindMany.mockResolvedValueOnce([]);
+    stakePositionV2CountMock.mockResolvedValueOnce(0);
+
+    const result = await runStakingSettlementV2(now);
+
+    // REFERRAL_BONUS_ENABLED is unset in the test env, so payReferralBonuses
+    // (unmocked, real implementation) takes its own gated early-return path —
+    // this asserts CP-9's relocation actually wired the call through, not
+    // just that the field exists.
+    expect(result.referral).toMatchObject({ enabled: false, uplinesPaid: 0, totalPaid: '0' });
   });
 });
 

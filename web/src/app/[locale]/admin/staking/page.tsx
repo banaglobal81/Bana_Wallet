@@ -100,13 +100,12 @@ export default function AdminStakingPage() {
     setRunning(true); setError(null); setRunMsg(null);
     try {
       const r = await runStakingSettlement();
-      // A4-C1 (docs/specs/staking-auto-renew-assumption-ruling.md §4): a
-      // RENEWAL_DEFERRED outcome can occur with daysCredited === 0 (a position
-      // already fully paid, still retrying a stalled renewal) — the noop
-      // branch must not swallow that. Fall into the result message whenever
-      // there is anything to report, not only when new days were credited.
-      setRunMsg(r.daysCredited > 0 || r.matured > 0 || r.renewalsDeferred > 0
-        ? t('settlement.runResult', { amount: r.totalPaid, coin: 'BANA', days: r.daysCredited, matured: r.matured, deferred: r.renewalsDeferred })
+      // CUT-3: V2 engine has no auto-renew, so there's no RENEWAL_DEFERRED
+      // outcome — `skippedHalted` (SETTLE-2) is the equivalent "don't let the
+      // noop branch swallow it" case: a position whose coin was T2_HALTED at
+      // settlement time, retried next cycle.
+      setRunMsg(r.daysCredited > 0 || r.matured > 0 || r.skippedHalted > 0
+        ? t('settlement.runResult', { amount: r.totalLedgered, coin: 'BANA', days: r.daysCredited, matured: r.matured, skipped: r.skippedHalted })
         : t('settlement.runResultNoop', { n: r.processed }));
       await load();
     } catch (e) { setError((e as Error).message); }
@@ -247,8 +246,8 @@ export default function AdminStakingPage() {
             <div className="flex flex-col gap-1 text-xs font-mono text-[#8c90a0]">
               <span className="text-[11px] uppercase tracking-wider text-[#d8e2ff] font-bold">{t('settlement.title')}</span>
               <span>
-                {t('settlement.lastAccrual', { when: status?.lastPayoutAt ? new Date(status.lastPayoutAt).toLocaleString() : t('settlement.never') })}
-                {'  ·  '}{t('settlement.accruedToday', { amount: formatLedgerAmount(status?.totalPaidToday ?? '0').display, count: status?.payoutsToday ?? 0 })}
+                {t('settlement.lastAccrual', { when: status?.lastLedgeredAt ? new Date(status.lastLedgeredAt).toLocaleString() : t('settlement.never') })}
+                {'  ·  '}{t('settlement.accruedToday', { amount: formatLedgerAmount(status?.totalLedgeredToday ?? '0').display, count: status?.ledgerEntriesToday ?? 0 })}
                 {'  ·  '}{t('settlement.activeN', { n: status?.activeCount ?? 0 })}
               </span>
               {runMsg && <span data-testid="settlement-msg" className="text-[#afc6ff]">{runMsg}</span>}

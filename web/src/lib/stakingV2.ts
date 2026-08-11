@@ -26,7 +26,10 @@ import { prisma } from '@/lib/db';
 import { assertExecutionAllowed, assertIssuanceAllowed, CoinAuthorityBlockedError } from '@/lib/coinAuthority';
 import { placeHold, releaseHold } from '@/lib/localLedger';
 import { getPlatformSettings } from '@/lib/platformSettings';
-import { daysElapsed, dailyInterest, stakingDayMs } from '@/lib/stakingMath';
+import { daysElapsed, dailyInterest, stakingDayMs, DAY_MS } from '@/lib/stakingMath';
+import { payReferralBonuses, type ReferralBonusRunResult } from '@/lib/referralBonus';
+import { reminderLeadMs } from '@/lib/stakingRenewMath';
+import { sendMaturityReminderEmail } from '@/lib/email/resend';
 
 type TxClient = Prisma.TransactionClient;
 
@@ -363,9 +366,19 @@ async function matureInTx(tx: TxClient, position: MaturableRow, now: Date): Prom
  * matureOrRenewPosition's guard (stakingRenew.ts) against maturing a position with
  * unpaid days. Idempotent: MATURED is a no-op, not an error.
  *
- * Deliberately does NOT implement auto-renewal — that decision belongs to the V2
- * counterpart of stakingRenew.ts (CUT-3, out of this CUT-1 file's scope per rev05
- * §5.1/§5.2). A-4 §9 item 2's own contract text likewise says nothing about renewal.
+ * Deliberately does NOT implement auto-renewal, and this is now a settled,
+ * `pm`-adjudicated deferral, not just an unscoped gap: CP-3's original text
+ * (rev05 §3.2 ⓓ) named "`maturePositionV2` (+ auto-renew branch)" as a
+ * precondition for opening the stake route, but
+ * `docs/specs/staking-v2-auto-renew-cutover-ruling.md` (R-AR-7-a) struck the
+ * "(+ auto-renew branch)" parenthetical from CP-3 — CP-3's actual concern
+ * (§3.2 ⓓ: a hold that never releases at maturity) holds with or without
+ * renewal, since a matured-without-renewal position returns principal *more*
+ * certainly, not less. The V2 renewal DECISION engine (this function's
+ * legacy counterpart, `matureOrRenewPosition` in stakingRenew.ts) is
+ * deferred to a new track, T-20 — see that ruling §7.1 for why (three
+ * undecided policy questions, one of them breaking CP-10's interest-cap
+ * arithmetic) — not merely "out of this file's CUT-1 scope."
  */
 export async function maturePositionV2(positionId: string, now: Date = new Date()): Promise<void> {
   await prisma.$transaction(async (tx) => {
@@ -555,15 +568,140 @@ export interface StakingSettlementV2Result {
   matured: number;
   skippedHalted: number;
   at: string;
+  referral: ReferralBonusRunResult; // MLM commission run (no-op unless enabled) — CP-9
+}
+
+// R-AR-1 (docs/specs/staking-v2-auto-renew-cutover-ruling.md §4, P1 — the
+// single most urgent requirement in that ruling). `sendMaturityRemindersV2`
+// below sends a reminder email whose FIXED copy (messages/*.json,
+// emails.autoRenewReminder) actively promises a renewal — subject "...and is
+// set to renew", body "the same amount ... will be staked again". No V2
+// renewal DECISION engine exists (deferred to T-20 per that ruling), so
+// today this is only harmless because zero StakePositionV2 rows happen to
+// have autoRenew=true — a DATA fact, not a CODE guarantee. Nothing blocks a
+// manual DB fix / admin script / partial migration / backup restore from
+// creating such a row, at which point this code would mail out a promise
+// BANA cannot keep (the ruling calls this a "potential false notice", worse
+// than a silent gap).
+//
+// This is a NAMED CODE CONSTANT, not a `PlatformSetting` field, an env var,
+// or anything operator-editable — same rationale the legacy assumption
+// ruling (staking-auto-renew-assumption-ruling.md §5, R-3) already applied
+// to `AUTO_RENEW_MAX_TERM_DAYS`: a policy value this consequential must not
+// be a lever anyone can flip without a code change and review. Flipping it
+// to `true` is only possible once the T-20 renewal engine actually exists,
+// which is the entire point — it makes "turn the promise on" and "build the
+// thing that keeps the promise" the same act.
+const AUTO_RENEW_V2_ENABLED = false;
+
+/**
+ * Pass 2 (rev05 CUT-3, T-6 "이메일 이설") — pre-maturity reminder emails, ported
+ * from stakingSettle.ts's legacy Pass 2 onto StakePositionV2. Every field this
+ * pass reads/writes (autoRenew, maturityReminderSentAt, maturityAt) was
+ * deliberately carried forward unchanged onto StakePositionV2 (schema.prisma
+ * comment: "unchanged structure, carried forward from StakePosition"), so
+ * this is a straight table swap, not a redesign. Best-effort per email, same
+ * as the legacy pass — one failed send never blocks another candidate's send
+ * or the settlement result being returned.
+ *
+ * R-AR-1 items 2-3: while `AUTO_RENEW_V2_ENABLED` is false (today, always),
+ * this function returns immediately WITHOUT running the reminder-candidate
+ * query at all — the promised copy must never even become reachable while
+ * it isn't true, not merely "reachable but always empty". It separately runs
+ * a narrow existence check (`autoRenew: true`, no other filter) purely to
+ * detect the invariant violation this whole requirement exists to catch: no
+ * supported code path can ever set `autoRenew=true` today (the v1 grant/stake
+ * routes are fail-closed, CUT-4's V2 stake route hasn't shipped, and no V2
+ * write path ever sets it to true), so if this ever finds a row, something
+ * unsupported did it, and that must be LOUD (console.error), never a silent
+ * skip — the same defensive role the legacy assumption ruling gave
+ * `FAILED_GRANTED_POSITION`: a guard for a broken invariant runs before any
+ * rule that assumes the invariant holds.
+ *
+ * Deliberately NOT ported here (independent of the flag above): the legacy
+ * Pass 3 (retry sweep for RENEWED/RENEWAL_FAILED outcome emails,
+ * stakingSettle.ts's `notifyRetryCandidates` block). That pass exists to
+ * retry a `sendRenewalOutcomeIfNeeded` claim that a *decision* pass
+ * (`matureOrRenewPosition`, stakingRenew.ts) left unclaimed. No V2 counterpart
+ * of `matureOrRenewPosition` exists yet — `maturePositionV2` above
+ * deliberately performs only a plain maturity (see its own doc comment).
+ * Concretely: `renewalStatus`/`renewalProcessedAt` are never written on any
+ * StakePositionV2 row today, so a Pass-3-shaped retry sweep here would only
+ * ever scan zero rows — not a skip of real work, dead code. This gap (and
+ * the fixed reminder-copy problem this function now guards against) is what
+ * prompted `docs/specs/staking-v2-auto-renew-cutover-ruling.md`, which
+ * formally defers the whole V2 renewal decision engine + Pass 3 to a new
+ * track, T-20 (`stakingRenew.ts`/`stakingRenewMath.ts` are explicitly kept
+ * in the repo, unexecuted, as that track's only executable spec — not
+ * deleted, per that ruling §7.1's "삭제 금지").
+ */
+async function sendMaturityRemindersV2(now: Date): Promise<void> {
+  if (!AUTO_RENEW_V2_ENABLED) {
+    const rogueCount = await prisma.stakePositionV2.count({ where: { autoRenew: true } });
+    if (rogueCount > 0) {
+      console.error(
+        `[stakingV2] INVARIANT VIOLATION (R-AR-1): ${rogueCount} StakePositionV2 row(s) have autoRenew=true ` +
+        'while AUTO_RENEW_V2_ENABLED=false. No supported code path can set this today — investigate immediately ' +
+        '(manual DB edit / admin script / partial migration / backup restore are the only ways this happens). ' +
+        'The reminder-renewal email is NOT being sent for these rows on purpose: its fixed copy ' +
+        '(emails.autoRenewReminder) promises a renewal the V2 engine cannot perform ' +
+        '(docs/specs/staking-v2-auto-renew-cutover-ruling.md §4).',
+      );
+    }
+    return; // No candidate query. No email. The promise-making copy stays unreachable.
+  }
+
+  const candidates = await prisma.stakePositionV2.findMany({
+    where: { status: 'ACTIVE', autoRenew: true, maturityReminderSentAt: null, maturityAt: { gt: now } },
+    select: {
+      id: true, userId: true, coin: true, principal: true, termDays: true, maturityAt: true,
+      product: { select: { name: true } },
+    },
+  });
+  for (const p of candidates) {
+    const lead = reminderLeadMs(p.termDays, DAY_MS);
+    if (p.maturityAt.getTime() - now.getTime() > lead) continue;
+
+    const user = await prisma.user.findUnique({ where: { id: p.userId }, select: { email: true, locale: true } });
+    if (!user?.email) continue;
+
+    try {
+      await sendMaturityReminderEmail(user.email, user.locale, {
+        productName: p.product?.name ?? '',
+        principal: p.principal,
+        coin: p.coin,
+        termDays: p.termDays,
+        maturityAt: p.maturityAt,
+      });
+      await prisma.stakePositionV2.update({ where: { id: p.id }, data: { maturityReminderSentAt: now } });
+    } catch (e) {
+      console.error('[stakingV2] reminder email failed for position', p.id, e);
+      // Stamp stays null — retried next cycle, same as the legacy pass, as
+      // long as maturityAt is still in the future (never sent late).
+    }
+  }
 }
 
 /**
- * A-4 §9 item 3 (SETTLE-1/SETTLE-2 batch entry point). Shared by the future cron
- * endpoint and admin "run now" action (CUT-3) — not called by anything yet in this
- * CUT-1 merge. Loops every ACTIVE position and settles each in its own transaction
- * via settleOnePositionV2 (never a single all-positions transaction — a lock held
- * across every row for the whole run would serialize the entire settlement cycle
- * against every concurrent placeHold/withdrawal on any of those positions' coins).
+ * A-4 §9 item 3 (SETTLE-1/SETTLE-2 batch entry point). Shared by the cron
+ * endpoint (CUT-3, api/cron/staking/route.ts) and the admin "run now" action
+ * (a parallel CUT-3 change, web-admin-expert's api/admin/staking/run/route.ts —
+ * not touched by this file). Loops every ACTIVE position and settles each in
+ * its own transaction via settleOnePositionV2 (never a single all-positions
+ * transaction — a lock held across every row for the whole run would
+ * serialize the entire settlement cycle against every concurrent
+ * placeHold/withdrawal on any of those positions' coins).
+ *
+ * CP-9 (rev05 §6.2, required): the MLM referral commission run
+ * (`payReferralBonuses`) is relocated here, to the exact position the legacy
+ * `runStakingSettlement()` called it from (stakingSettle.ts:199 — its very
+ * last line, after every other pass) — i.e. after base interest has been
+ * ledgered for this cycle. Idempotency is `@@unique([userId, dayKey])` +
+ * `skipDuplicates` (already in place, unchanged by this move), so this call
+ * and the legacy call are individually safe to leave both wired — but per
+ * rev05 §6.2, this cutover does NOT run them concurrently: CUT-3 flips
+ * `stakingWorkerEnabled=false` in the same deploy that turns this on via
+ * `stakingV2WorkerEnabled=true`.
  */
 export async function runStakingSettlementV2(now: Date = new Date()): Promise<StakingSettlementV2Result> {
   let processed = 0;
@@ -587,7 +725,19 @@ export async function runStakingSettlementV2(now: Date = new Date()): Promise<St
     if (outcome.matured) matured += 1;
   }
 
-  return { processed, daysCredited, totalLedgered: totalLedgered.toFixed(), matured, skippedHalted, at: now.toISOString() };
+  // Pass 2 (rev05 CUT-3 email migration) — best-effort, never throws, run
+  // after every position's base interest for this cycle has been ledgered.
+  await sendMaturityRemindersV2(now).catch((e) => {
+    console.error('[stakingV2] sendMaturityRemindersV2 failed for this settlement cycle', e);
+  });
+
+  // CP-9 — same position as the legacy engine's last line (see doc comment above).
+  const referral = await payReferralBonuses(now);
+
+  return {
+    processed, daysCredited, totalLedgered: totalLedgered.toFixed(), matured, skippedHalted,
+    at: now.toISOString(), referral,
+  };
 }
 
 // ---------------------------------------------------------------------------

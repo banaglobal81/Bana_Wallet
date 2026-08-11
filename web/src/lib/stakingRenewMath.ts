@@ -33,6 +33,30 @@ import Decimal from 'decimal.js';
 export const AUTO_RENEW_MAX_TERM_DAYS = 90;
 
 /**
+ * Pre-maturity reminder lead time by term length (PRD §7.1, M-1 — mandatory
+ * ship condition; copy-spec §7 F-7: this table and AUTO_RENEW_MAX_TERM_DAYS
+ * above must agree, which is why it derives its boundary from that constant
+ * rather than a second hardcoded "90"). The `> AUTO_RENEW_MAX_TERM_DAYS` row
+ * is a DEFENSIVE BRANCH ONLY — unreachable through the offering while the
+ * 90-day cap is in force (R-2) — kept so a downward cap change or a direct DB
+ * write is still covered; keep it OUT of the product description (ruling
+ * §2.3).
+ *
+ * Moved here (rev05 CUT-3, T-6) from stakingSettle.ts's Pass 2 — this is now
+ * the single source of truth both the legacy engine (stakingSettle.ts) and
+ * the V2 engine (stakingV2.ts's runStakingSettlementV2) import, so the two
+ * can never silently disagree on when a reminder is due. `DAY_MS` is passed
+ * in rather than imported from stakingMath.ts, keeping this module free of
+ * any import (this file deliberately has none — see header comment — so it
+ * stays trivially unit-testable without a database or 'server-only').
+ */
+export function reminderLeadMs(termDays: number, dayMs: number): number {
+  if (termDays <= 10) return dayMs * 1;
+  if (termDays <= AUTO_RENEW_MAX_TERM_DAYS) return dayMs * 3;
+  return dayMs * 7;
+}
+
+/**
  * Every non-NONE, non-RENEWED value `StakePosition.renewalStatus` can take
  * where the renewal was refused AND an outcome email is owed. Deliberately
  * EXCLUDES `FAILED_ACCOUNT_INACTIVE`: copy-spec §4 "Never sent" table says

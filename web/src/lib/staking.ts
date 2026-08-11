@@ -2,7 +2,8 @@ import 'server-only';
 import Decimal from 'decimal.js';
 import { prisma } from '@/lib/db';
 import { accruedInterest, fullInterest, aprPct } from '@/lib/stakingMath';
-import { matureOrRenewPosition, AUTO_RENEW_MAX_TERM_DAYS } from '@/lib/stakingRenew';
+import { AUTO_RENEW_MAX_TERM_DAYS } from '@/lib/stakingRenew';
+import { settleMaturedPositionsV2, lockedPrincipalForLocal } from '@/lib/stakingV2';
 
 type Position = {
   id: string;
@@ -24,56 +25,46 @@ type Position = {
 };
 
 /**
- * Flip a matured position to MATURED (which unlocks its principal, and — per
- * docs/specs/staking-auto-renew-prd.md §6 — decides/executes any standing
- * auto-renew instruction) ONLY once every day of its term has actually been
- * paid. Lazy settlement — called on read so statuses stay current without a
- * background job.
+ * Flip a matured position to MATURED (unlocking its principal). Lazy
+ * settlement — called on read so statuses stay current without waiting for
+ * the next batch settlement cycle.
  *
- * CRITICAL: we must NOT mature a position that still has unpaid days. The daily
- * settlement job (`runStakingSettlement`) credits ACTIVE (and matured-but-unpaid)
- * positions; if this lazy path flipped a position to MATURED before its final
- * day(s) were credited, that interest could be stranded. So here we only unlock
- * positions with `daysPaid >= termDays`, and leave the rest ACTIVE for the
- * settlement job to credit-then-mature.
- *
- * The actual flip (and any renewal) goes through `matureOrRenewPosition` —
- * the ONLY code permitted to write MATURED — so this path and the settlement
- * worker behave identically by construction (PRD §1.3/§6, AC-19). One
- * transaction per position (never a batch), so each candidate is handled
- * with its own `matureOrRenewPosition` call.
+ * rev05 CUT-3 (T-6, §5.2 ②): delegates straight to `settleMaturedPositionsV2`
+ * (lib/stakingV2.ts) — the V2 engine is now the only settlement path (the v1
+ * `StakePosition` execution route has been fail-closed since CUT-0/CS-1′, and
+ * the v1 grant route since the same cutover, so no new v1 position can be
+ * created; CS-2′ confirmed the v1 table holds 0 rows before this cutover).
+ * Signature and best-effort/never-throws contract are unchanged, so every
+ * existing caller (api/staking/positions/route.ts, api/nia/withdrawals/route.ts)
+ * keeps working without its own edit.
  */
 export async function settleMaturedPositions(userId?: string): Promise<void> {
-  try {
-    const candidates = await prisma.stakePosition.findMany({
-      where: { status: 'ACTIVE', maturityAt: { lte: new Date() }, ...(userId ? { userId } : {}) },
-      select: { id: true, daysPaid: true, termDays: true },
-    });
-    const now = new Date();
-    for (const p of candidates) {
-      if (p.daysPaid >= p.termDays) {
-        await matureOrRenewPosition(p.id, now);
-      }
-      // else: leave ACTIVE — the settlement job still owes it unpaid days.
-    }
-  } catch {
-    /* best-effort */
-  }
+  await settleMaturedPositionsV2(userId);
 }
 
 /**
  * Sum of soft-locked (non-withdrawable) principal per coin for a user.
- * Only ACTIVE positions lock funds — once MATURED the principal is released back
- * to the available balance.
+ *
+ * rev05 CUT-3 (T-6, §5.2 ②): delegates to `lockedPrincipalForLocal`
+ * (lib/stakingV2.ts) per coin, instead of summing `StakePosition.principal`
+ * directly. This is not just a table swap — it fixes a real double-count the
+ * old v1 approach had once A-3 holds exist: `lockedPrincipalForLocal` sums
+ * ACTIVE `LocalBalanceHold(STAKE_PRINCIPAL_LOCK)` rows, which are created
+ * ONLY for `fundingSource:'USER_BALANCE'` positions (A-4 principle 5 — a
+ * `PLATFORM_GRANT` position never locks any of the user's own balance, so it
+ * must never count as "locked" here). Summing `StakePositionV2.principal`
+ * directly, the way the v1 version did, would have wrongly counted grant
+ * principal as user-owned locked funds.
  */
 export async function lockedPrincipalByCoin(userId: string): Promise<Map<string, Decimal>> {
-  const rows = await prisma.stakePosition.findMany({
+  const coins = await prisma.stakePositionV2.findMany({
     where: { userId, status: 'ACTIVE' },
-    select: { coin: true, principal: true },
+    select: { coin: true },
+    distinct: ['coin'],
   });
   const m = new Map<string, Decimal>();
-  for (const r of rows) {
-    m.set(r.coin, (m.get(r.coin) ?? new Decimal(0)).plus(new Decimal(r.principal)));
+  for (const { coin } of coins) {
+    m.set(coin, await lockedPrincipalForLocal(userId, coin));
   }
   return m;
 }

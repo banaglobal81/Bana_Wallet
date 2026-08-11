@@ -21,14 +21,14 @@
 | 그랜트 락 구조(G-A~G-D) | 개정 01 §6 (단 **V2-CORE에서는 그랜트 생성 자체를 차단** — 개정 04 §1.8 G-E, **v1 라우트 소급 봉쇄는 개정 05 §2.2 CS-1′**) |
 | 상한 체계(L-1~L-5) | 개정 01 §7 (단 L-4는 개정 02 §4.3에서 PoR의 하위 구획으로 재정의) |
 | 데이터 모델 의미 요구·수수료/한도 설정(T-1~T-8) | 개정 01 §8 (단 T-2는 개정 03 W-7의 T-2′로 권위별 분기) |
-| 고지 문구 판정 | 개정 01 §10 (+ **체결 화면 확장은 개정 05 CP-1**, **관리자 크레딧 경고 3문장은 개정 05 §4A.2 AC-2**) |
-| 화면 요구(R-U1~R-U30) | 개정 01 §11 (+ 개정 03 A-7에서 로컬 잔고·BANA 출금 표면 추가, **+ S-STAKE v2는 개정 05 §7.1 / 관리자 크레딧 화면은 §7.3으로 `product-planner` 인계**) |
+| 고지 문구 판정 | 개정 01 §10 (+ **체결 화면 확장은 개정 05 CP-1 → 확정 카피는 T-8 §6·§9**, **관리자 크레딧 경고 3문장은 개정 05 §4A.2 AC-2 → T-16 §4.2**) |
+| 화면 요구(R-U1~R-U30) | 개정 01 §11 (+ 개정 03 A-7에서 로컬 잔고·BANA 출금 표면 추가, **+ S-STAKE v2 체결 화면은 T-8, 관리자 크레딧 화면은 T-16이 소유**) |
 | **잔고 권위 모델 (C)** | 개정 02 §2 |
 | **준비금 불변식** | **개정 04 §1 — PoR-1″.** 좌변은 개정 04가 소유(개정 02 §4.2·개정 03 §3.4 좌변 폐기). **우변 정의는 개정 03 §3.4 승계.** **표시 항목 1건 추가(`adminAdjustmentNetCreditTotal`, `SUBSET_OF_LOCAL_BALANCE`, `leftTotal`에 미가산) — 개정 05 §4A.5 AC-9** |
 | **부채 스트림 등록부(PoR-S1)·레퍼럴/보상 플랜 처리** | **개정 04 §2** (+ **레퍼럴 트리 SQL의 V2 이설은 개정 05 §6.1 CP-8**) |
-| **배타성 요구** | **개정 03 §2 (X-1′/X-2/X-3′/X-4′/X-6/X-7/X-8)** — X-7 해석은 **개정 04 §4.1 N-6**. **X-3′ T2의 "신규 체결 정지" 배선은 개정 05 §3.2 ⓑ CP-2** |
-| **BANA 입금 레일** | **개정 03 §3** + A-7 §7 (해석 확정: 개정 04 §4.1 N-6). **레일 부재가 만드는 체결 불가는 개정 05 §1.4.** **Q-M5 여전히 미회신 — 관리자 크레딧(§4A)은 입금 레일의 대체가 아니다(AC-1)** |
-| **BANA 출금 실행·승인 큐** | **개정 03 §4** + A-5. 수수료 필드 의미는 **개정 04 §4.1 N-4/N-5**. **관리자 조정 크레딧 잔고의 큐 표식은 개정 05 §4A.6 AC-10** |
+| **배타성 요구** | **개정 03 §2 (X-1′/X-2/X-3′/X-4′/X-6/X-7/X-8)** — X-7 해석은 **개정 04 §4.1 N-6**. **X-3′ T2의 "신규 체결 정지" 배선은 개정 05 §3.2 ⓑ CP-2, 그 화면 표현은 T-8 §3.3·§5.4** |
+| **BANA 입금 레일** | **개정 03 §3** + A-7 §7 (해석 확정: 개정 04 §4.1 N-6). **레일 부재가 만드는 체결 불가는 개정 05 §1.4, 그 화면 표현은 T-8 §5.2.** **Q-M5 여전히 미회신 — 관리자 크레딧(§4A)은 입금 레일의 대체가 아니다(AC-1)** |
+| **BANA 출금 실행·승인 큐** | **개정 03 §4** + A-5. 수수료 필드 의미는 **개정 04 §4.1 N-4/N-5**. **관리자 조정 크레딧 잔고의 큐 표식은 개정 05 §4A.6 AC-10 → T-16 §8** |
 | **로컬 원장 크레딧 표면(관리자 조정)** | **개정 05 §4A 전체 (AC-1~AC-14)** — A-3 §4.2의 게이트 제외 판정을 승계하되, 용도 한정·3중 한도·타이핑 확인·분리 가시성을 이 절이 추가한다 |
 | **전환/마이그레이션 전략** | **개정 03 §5 — 개정 01 §5는 폐기됨(프로덕션 0건)** |
 | **컷오버 실행 순서·영향 범위·담당 배정** | **개정 05 §5 · §7** (개정 04 §6.2 순서 2~8을 대체). **CUT-2b(관리자 크레딧)는 최종 확정 시 신설** |
@@ -47,11 +47,21 @@
 | A-4 | `staking-yield-system-v2-design-a4-staking-schema.md` | `prisma-db-expert` | **스키마만 완료. §9의 인터페이스 계약 4종 미구현** → 개정 05 T-3 |
 | A-5 | `staking-yield-system-v2-design-a5-withdrawal-queue.md` | `web-shared-expert` | 구현·배포 완료. **§1.6 abandon-onchain은 여전히 미승인** — 그 마찰 확인 수준(타이핑 확인)은 개정 05 AC-3이 승계 |
 | A-6 | `staking-yield-system-v2-design-a6-deepcore-adapter.md` | `game-planner` | 어댑터 V2 컷오버 완료 (`deepCoreProgress.ts`) |
-| A-7 | `staking-yield-system-v2-design-a7-screen-flow-frd.md` | `product-planner` | 완료. **단 체결 흐름(S-STAKE)은 범위 밖** → 개정 05 §7.1 |
+| A-7 | `staking-yield-system-v2-design-a7-screen-flow-frd.md` | `product-planner` | 완료. **단 체결 흐름(S-STAKE)은 범위 밖** → 개정 05 §7.1 → **T-8이 그 공백을 채움.** **AC-A7-08(T1_WARNING 무표시)의 범위는 T-8 §3.3 T8-R1로 "체결 표면 제외" 축소됨** |
 | A-8 | `staking-yield-system-v2-design-a8-admin-dashboard-frd.md` | `product-planner` | 완료. **데이터 계약 1건 추가**(`adminAdjustmentNetCreditTotal`) → 개정 05 AC-9 |
 | A-9 | `docs/research/2026-08-10-bsc-deposit-detection-and-band-legal-issues.md` | `researcher` | 완료 (확정 깊이 숫자 미확정 유지) |
 | A-10 | (`wallet-security-expert` 리뷰 — A-3/A-5에 반영됨) | `wallet-security-expert` | 완료. **컷오버 리뷰는 개정 05 T-4, 관리자 크레딧 표면 리뷰는 T-19(배포 게이트)로 재소집** |
 | A-11 | (미착수 — 시각 설계·디자인 토큰) | `ui-ux-designer` | 착수 가능 (+ 개정 05 T-14의 경고 배너 주의색 토큰) |
+
+## 컷오버 산출물 (개정 05 §7 — T-8 / T-16)
+
+A-2~A-11과 별개로 **개정 05가 신규 발주한 화면 FRD 2건**이다. 둘 다 `product-planner` 소유이며
+구현 담당(T-9 / T-18)의 직접 입력이다.
+
+| ID | 문서 | 담당 | 상태 |
+|----|------|------|------|
+| **T-8** | `staking-yield-system-v2-design-t8-stake-flow-frd.md` | `product-planner` | **완료(2026-08-11) · 개정 01 반영(2026-08-11).** S-STAKE V2 컷오버 화면·카피. 진입 상태 7종 + 우선순위, 가용 잔고 출처 교체(허브 → BANA 잔고), **빈 상태 6종**(§7.1 ⓐⓑⓒ + `LOCKED_OUT`·`MIGRATING`·`BALANCE_UNKNOWN`), CP-1 지급 비함의 문구, 신규 에러 3종 6로케일, 데이터 계약 DC-1~DC-11, AC-T8-01~32 → **CUT-4 / T-9 입력**.<br>**개정 01 — `staking-v2-auto-renew-cutover-ruling.md`(R-AR-3 · R-AR-4) 반영:** 자동갱신 토글·상태 문구를 **미렌더**(비활성 노출 아님 — §6.4 AR-1~AR-7, 제거 대상 코드 실측 명시. `PositionsSheet`·`InlineNotices`·`renewalCopy`도 **T-9 범위**), STEP 3 고지에 **ⓕ `noRestake` 신설**(*"약정이 끝나도 자동으로 다시 시작되지 않는다"* — ⓔ와 함께 접기 불가, 6로케일, `autoRenewRail`로 **자동 소멸**), **DC-10**(`autoRenewRail`, `AUTO_RENEW_V2_ENABLED` 파생) · **DC-11**(체결 본문에 `autoRenew` 부재·거부), N-22~N-24, **AC-T8-28~32**. **CP1-7은 교체됨**(구 "자동갱신 카피 승계" 폐기) |
+| **T-16** | `staking-yield-system-v2-design-t16-admin-credit-frd.md` | `product-planner` | 완료. 관리자 크레딧 화면(AC-2 경고 3문장·AC-3 타이핑 확인·AC-4 사유 유형·AC-11 거부 안내·AC-10 출금 큐 표식·신규 에러 6종 6로케일). 후속 판정은 `...-prd-rev05a-admin-credit-rulings.md` · `...-prd-rev05b-*` → **CUT-2b / T-18 입력** |
 
 ## 인접 문서
 
@@ -59,4 +69,4 @@
 - `deep-core-04-yield-linkage-GATED.md` — 개정 01 §3.5가 흡수·부분 폐기
 - `staking-debt-b5-query-result.md` — 프로덕션 실측(포지션 0건). 개정 03 N-27의 근거. **컷오버 당일 재조회는 개정 05 §5.0 CS-2′**(관리자 계정 수·`LocalLedgerEntry` 사유별 기준선 추가)
 - `admin-staking-debt-visibility-frd.md` — V2-CORE로 흡수(개정 03 §5.5), 데이터 계약은 A-8이 대체
-- `staking-page-v2-screen-flow-frd.md` (PS-A) — 시트 기반 스테이킹 화면 구조. 데이터 소스만 V2로 교체(개정 05 §5.2 ④)
+- `staking-page-v2-screen-flow-frd.md` (PS-A) — 시트 기반 스테이킹 화면 구조. 데이터 소스만 V2로 교체(개정 05 §5.2 ④). **S-STAKE §4.4의 v2 갱신분은 T-8이 소유**

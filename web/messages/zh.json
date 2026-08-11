@@ -1069,7 +1069,7 @@
       "activeN": "活跃 {n}",
       "runNow": "立即执行计息",
       "runNowTitle": "将今日利息记录到账本（幂等操作）。不会向任何用户钱包发送资金。",
-      "runResult": "已在账本中记录 {days} 天、共 {amount} {coin}；{matured} 笔到期，{deferred} 笔续期延迟。未向任何用户钱包发送资金。",
+      "runResult": "已在账本中记录 {days} 天、共 {amount} {coin}；{matured} 笔到期，{skipped} 笔因币种暂停而跳过。未向任何用户钱包发送资金。",
       "runResultNoop": "数据已是最新 — 没有新内容需要记录（活跃 {n}）。"
     },
     "autoRenewWarning": {

@@ -411,16 +411,17 @@ export async function getStakingStats(): Promise<AdminStakingStat[]> {
   return Array.isArray(r.data) ? r.data : [];
 }
 
+// CUT-3 (docs/specs/staking-yield-system-v2-prd-rev05-creation-path-cutover.md
+// §5.1): StakePositionV2 / runStakingSettlementV2 result shape. V2-CORE has no
+// auto-renew, so there is no `renewalsDeferred` here — `skippedHalted` is the
+// SETTLE-2 analogue (a position's coin was T2_HALTED at settlement time and was
+// skipped, not errored; it catches up once the halt clears).
 export interface StakingRunResult {
   processed: number;
   matured: number;
-  // A4-C1 (docs/specs/staking-auto-renew-assumption-ruling.md §4): a
-  // RENEWAL_DEFERRED outcome does NOT increment `matured` (the position stays
-  // ACTIVE, not yet resolved). Must be surfaced wherever `matured` is —
-  // otherwise a held-past-maturity principal looks like nothing happened.
-  renewalsDeferred: number;
+  skippedHalted: number;
   daysCredited: number;
-  totalPaid: string;
+  totalLedgered: string;
   at: string;
 }
 
@@ -431,13 +432,13 @@ export async function runStakingSettlement(): Promise<StakingRunResult> {
 }
 
 export interface StakingRunStatus {
-  lastPayoutAt: string | null;
-  payoutsToday: number;
-  totalPaidToday: string;
+  lastLedgeredAt: string | null;
+  ledgerEntriesToday: number;
+  totalLedgeredToday: string;
   activeCount: number;
 }
 
-/** Settlement status — when interest was last paid, paid today, active count. */
+/** Settlement status — when interest was last ledgered, ledgered today, active count. */
 export async function getStakingRunStatus(): Promise<StakingRunStatus> {
   const r = await getJson<{ ok: boolean; data: StakingRunStatus }>('/api/admin/staking/run');
   return r.data;

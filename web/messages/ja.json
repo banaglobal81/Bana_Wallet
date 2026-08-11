@@ -1069,7 +1069,7 @@
       "activeN": "アクティブ{n}件",
       "runNow": "今すぐ計上実行",
       "runNowTitle": "本日の利息を帳簿に記録します（冪等）。ユーザーのウォレットには何も送金されません。",
-      "runResult": "帳簿に{days}日分の{amount} {coin}を記録しました。{matured}件が満期、{deferred}件が更新保留。ユーザーのウォレットには何も送金されていません。",
+      "runResult": "帳簿に{days}日分の{amount} {coin}を記録しました。{matured}件が満期、{skipped}件がスキップ(コイン停止中)。ユーザーのウォレットには何も送金されていません。",
       "runResultNoop": "最新の状態です — 新たに記録する項目はありません（アクティブ{n}件）。"
     },
     "autoRenewWarning": {

@@ -1069,7 +1069,7 @@
       "activeN": "{n} đang hoạt động",
       "runNow": "Chạy tích lũy ngay",
       "runNowTitle": "Ghi nhận lãi hôm nay vào sổ sách (thao tác lặp lại không đổi kết quả). Không gửi bất kỳ khoản nào vào ví người dùng.",
-      "runResult": "Đã ghi nhận {amount} {coin} vào sổ sách qua {days} ngày; {matured} vị thế đáo hạn, {deferred} vị thế hoãn gia hạn. Không có khoản nào được gửi vào ví người dùng.",
+      "runResult": "Đã ghi nhận {amount} {coin} vào sổ sách qua {days} ngày; {matured} vị thế đáo hạn, {skipped} vị thế bị bỏ qua (đồng coin bị tạm dừng). Không có khoản nào được gửi vào ví người dùng.",
       "runResultNoop": "Đã cập nhật — không có gì mới để ghi nhận ({n} đang hoạt động)."
     },
     "autoRenewWarning": {
