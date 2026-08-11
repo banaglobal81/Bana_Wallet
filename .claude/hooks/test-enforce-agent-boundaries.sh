@@ -72,17 +72,17 @@ echo "-- rule 6: railway blocked for non-deploy-manager --"
 case_ "main: railway status blocked (wrong caller)" main           'railway status'                  deny
 case_ "qa-lead: railway logs blocked"                qa-lead        'railway logs'                    deny
 
-echo "-- rule 6b: railway redeploy/restart/up force 'ask' even for deploy-manager --"
-case_ "deploy-manager: railway redeploy asks"        deploy-manager 'railway redeploy'                 ask
-case_ "deploy-manager: railway restart asks"         deploy-manager 'railway restart'                  ask
-case_ "deploy-manager: railway up asks"              deploy-manager 'railway up'                       ask
+echo "-- rule 6b: railway redeploy/restart/up auto-allow for deploy-manager (no confirmation gate) --"
+case_ "deploy-manager: railway redeploy allowed"     deploy-manager 'railway redeploy'                 allow
+case_ "deploy-manager: railway restart allowed"      deploy-manager 'railway restart'                  allow
+case_ "deploy-manager: railway up allowed"           deploy-manager 'railway up'                       allow
 
 echo "-- rule 6a: env-var/secret changes and service create/delete are human-only — deny even for deploy-manager --"
 case_ "deploy-manager: railway variables set denied"  deploy-manager 'railway variables set FOO=bar'    deny
 case_ "deploy-manager: railway variables delete denied" deploy-manager 'railway variables delete FOO'   deny
 case_ "deploy-manager: railway service delete denied" deploy-manager 'railway service delete'           deny
 case_ "deploy-manager: railway service create denied" deploy-manager 'railway service create'           deny
-case_ "deploy-manager: railway variables get (read) still asks, not denied" deploy-manager 'railway variables get FOO' ask
+case_ "deploy-manager: railway variables get (read) allowed, not denied" deploy-manager 'railway variables get FOO' allow
 
 echo "-- review-only agents: Bash write-vector boundary --"
 case_ "routine-tasks: sed -i blocked"                routine-tasks  'sed -i "" "s/a/b/" file.ts'       deny
@@ -98,7 +98,7 @@ case_ "leading-space rm no longer bypasses (write-vector)" routine-tasks ' rm fi
 case_ "backtick subshell git commit caught"          web-wallet-expert '`git commit -m x`'              deny
 case_ "\$() subshell git commit caught"              web-wallet-expert 'result=$(git commit -m x)'      deny
 case_ "then-keyword git commit caught"               web-wallet-expert 'true && then git commit -m x'   deny
-case_ "leading-space railway redeploy still routed through gate" deploy-manager ' railway redeploy'     ask
+case_ "leading-space railway redeploy still recognized as railway" deploy-manager ' railway redeploy'   allow
 
 echo "-- new agents (game-planner/game-designer/game-developer): boundaries apply automatically --"
 case_ "game-developer: git commit blocked (deploy-manager-only)" game-developer 'git commit -m "x"'    deny

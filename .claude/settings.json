@@ -20,6 +20,7 @@
       "Bash(git commit:*)",
       "Bash(git push)",
       "Bash(git push origin main)",
+      "Bash(railway:*)",
       "Bash(grep:*)",
       "Bash(rg:*)",
       "Bash(curl:*)",

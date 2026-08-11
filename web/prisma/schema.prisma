@@ -54,6 +54,18 @@ enum StakePositionStatus {
   ACTIVE
   MATURED
   PAID
+  // Added 2026-08-11 by prisma-db-expert (staking V2 cutover, rev05 CUT-3/T-6
+  // follow-up). Not part of the original design — MATURED means "term
+  // completed", which would misrepresent a position abandoned mid-term.
+  // PAID (see model comment above) means "principal+interest settled back
+  // to the wallet", equally false here, and it is otherwise dead: rev03's
+  // schema comment on StakePositionV2Status confirms no code path ever
+  // assigns it. CANCELLED is for legacy StakePosition rows taken out of the
+  // ACTIVE settlement pool by the V2 cutover (CS-2' §5.0) without having
+  // reached maturity — the CS-2' precondition assumed zero such rows in
+  // production (confirmed true by the 2026-08-11 requery) and never actually
+  // needed this value; it is expected to remain local-dev-only in practice.
+  CANCELLED
 }
 
 // Outcome of the maturity-time auto-renewal decision (see

@@ -11,8 +11,9 @@
 #    route around that — wallet-security-expert, code-compliance-checker, routine-tasks,
 #    deploy-manager (deploy-manager's job is git/Railway CLI calls, not file edits).
 # 3) CLAUDE.md rule 6 (Railway control): any `railway` CLI invocation is deploy-manager-only.
-#    Read-only verbs (status/logs/whoami/help) auto-allow; anything else (redeploy/restart/up/
-#    down/variables/service/...) forces a live "ask" permission prompt — see rule 3b below.
+#    All verbs auto-allow (no per-call "ask" prompt, including redeploy/restart) except
+#    env var/secret changes and service create/delete, which stay hard-denied — see rule 3a
+#    below. (Confirmation-prompt requirement removed 2026-08-11 at user's explicit request.)
 # 4) CLAUDE.md rule 5 (QA gate): deploy-manager's `git commit` requires a fresh
 #    .claude/.qa-passed marker (written by qa-lead after a passing run); missing it
 #    forces an "ask" rather than a hard deny. Single-use — consumed on every commit.
@@ -116,15 +117,10 @@ if flagged "${ANCHOR}railway\\b" '\brailway\b'; then
   if [ "$agent" != "deploy-manager" ]; then
     deny "CLAUDE.md rule 6: Railway control (status/logs/redeploy/restart) is deploy-manager-only (caller: $agent)."
   fi
-  # 3b) Even for deploy-manager: read-only verbs auto-allow, everything else (redeploy/
-  # restart/up/down/link/run/...) forces a live confirmation prompt. This makes
-  # CLAUDE.md rule 6's "redeploy/restart needs explicit user confirmation first"
-  # technically enforced instead of resting purely on deploy-manager.md convention —
-  # the hook cannot see conversation state to check whether confirmation already
-  # happened, so it asks every time a non-read-only verb is invoked, by design.
-  if ! echo "$cmd" | grep -qE '\brailway\s+(status|logs|whoami|list|help|--help|-h)\b'; then
-    ask "CLAUDE.md rule 6: this Railway command is not on the read-only allowlist (status/logs/whoami/list/help) — confirm before deploy-manager runs it, since it may affect live traffic."
-  fi
+  # 3b) Everything not caught by the 3a hard-deny above (status/logs/whoami/list/help,
+  # and also redeploy/restart/variables-read/etc.) auto-allows for deploy-manager — no
+  # live confirmation prompt. Removed 2026-08-11 at the user's explicit request; the
+  # env var/secret + service create/delete ban in 3a is unaffected and stays absolute.
 fi
 
 # Review/detect-only agents: Bash is for read-only inspection, never for writing files.

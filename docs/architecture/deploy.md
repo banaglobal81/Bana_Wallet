@@ -54,9 +54,8 @@ run from `web/`. `web/.env.production.local` (gitignored) holds the production
 hostname only resolves between services inside the Railway project. Only `deploy-manager`
 may fetch/refresh that value (`railway variables`, scoped to the Postgres service) — this
 is a read of an existing secret, not a change, so it's distinct from the env-var-change
-ban below; it still goes through the Railway CLI ask-gate since `variables` isn't on the
-read-only allowlist. **Never `prisma db push`** on the production database (CLAUDE.md
-rule 7).
+ban below; it runs autonomously, no confirmation prompt (removed 2026-08-11). **Never
+`prisma db push`** on the production database (CLAUDE.md rule 7).
 
 ### Schema sync is an invariant, not a periodic chore (CLAUDE.md rule 7)
 Because production doesn't auto-migrate, local and production schema can only drift if
@@ -160,9 +159,9 @@ have permission to push to the repository, the push will be rejected with HTTP 4
 must run **before every push**, not once at setup.
 
 ## Ongoing Railway operations (`deploy-manager`)
-Scope: status/log queries (autonomous) and redeploy/restart triggers (**user confirmation
-required first** — see `deploy-manager.md` § Railway control). Env var/secret changes and
-service creation/deletion are never in scope here, confirmed or not.
+Scope: status/log queries and redeploy/restart triggers — all run autonomously, no
+per-call user confirmation (see `deploy-manager.md` § Railway control). Env var/secret
+changes and service creation/deletion are never in scope here, regardless.
 
 - Status: `railway status`
 - Logs: `railway logs` (add `--deployment` for a specific past deployment if the current

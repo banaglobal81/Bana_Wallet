@@ -1,13 +1,12 @@
-# BSC 자체 입금 감지 패턴 + 밴드형 스테이킹 상품 법무 쟁점 (A-9, 비구속 예비 조사)
+# BSC 자체 입금 감지 패턴 (A-9, 비구속 예비 조사)
 
 > 요청 출처: `docs/specs/staking-yield-system-v2-prd-rev03-rebuild-and-exclusivity.md` §7.2 A-9
-> 지위: **비구속.** 기술 조사는 설계 참고자료, 법무 조사는 **인간 법률 자문에게 넘길 쟁점 정리**이며
-> 최종 법률 판단이 아니다. 최종 확정 숫자(확정 깊이, 최소 입금액 등)는 이 문서 + 자체 가스 실측
-> 이후 별도 결정 사항이다(rev03 §11-16).
+> 지위: **비구속.** 설계 참고자료다. 최종 확정 숫자(확정 깊이, 최소 입금액 등)는 이 문서 + 자체 가스
+> 실측 이후 별도 결정 사항이다(rev03 §11-16).
 
 ---
 
-## ⓐ BSC 입금 감지 패턴 (기술 조사)
+## BSC 입금 감지 패턴 (기술 조사)
 
 ## Summary
 
@@ -134,7 +133,7 @@ Osaka 하드포크로 블록타임이 0.45초까지 줄고 "Fast Finality"가 �
   필요하다"는 원칙과 정확히 부합한다.
   confidence: medium — source: [Understanding the Idempotency Key in Bitcoin and Fintech — Lightspark](https://www.lightspark.com/glossary/idempotency-key), [What Is Idempotency in Crypto?](https://cryptoprocessing.com/glossary/what-is-idempotency-crypto)
 
-## Contradictions (ⓐ)
+## Contradictions
 
 - **BSC 이론적 확정 속도 vs 거래소 실무 확정 속도.** BNB Chain 공식 자료는 "Fast Finality"로
   1~2초, 최신 하드포크 이후 0.65초대 확정을 주장하지만, 동시대 실무 참고 자료(Eco)는 Binance가
@@ -145,7 +144,7 @@ Osaka 하드포크로 블록타임이 0.45초까지 줄고 "Fast Finality"가 �
   평가한 벤치마크를 인용하고 있어 독립적 검증이 필요하다. QuickNode·Moralis 자료도 마찬가지로
   각 벤더 발행 콘텐츠일 가능성이 높다.
 
-## Open Questions (ⓐ)
+## Open Questions
 
 1. 2026-08 현재 Binance 등 주요 거래소가 BEP-20 입금 컨펌 요구치를 블록타임 단축(0.45초)에 맞춰
    실제로 하향 조정했는지 — 확인하려면 Binance/기타 거래소의 **최신 공식 지원 문서**를 직접 조회.
@@ -159,120 +158,13 @@ Osaka 하드포크로 블록타임이 0.45초까지 줄고 "Fast Finality"가 �
 
 ---
 
-## ⓑ H-3 법무 쟁점 정리 (비구속, 쟁점만 — 법률 자문 아님)
-
-> **명시:** 이 섹션은 인간 법률 자문에게 넘길 **쟁점 목록**이며, 어떤 법역에도 특정하지 않고
-> 자주 제기되는 일반적 패턴만 정리한다. **최종 법률 판단이 아니다.** 고위험·법적 구속력이 있는
-> 결정이 필요하면 `/deep-research` 워크플로 실행을 권고하며, 궁극적으로는 인간 법률 자문의
-> 검토가 필요하다.
-
-## Summary
-
-"게임 진행도가 계약 수익률의 일부를 결정하는" 상품(V2-BAND의 밴드형 가산율)은 두 개의 서로 다른
-규제 렌즈에 동시에 걸릴 수 있는 쟁점이 자주 제기된다 — ① 투자계약/증권성 판단(수익 기대가 발행자의
-"관리 노력"에서 나오는지 여부를 따지는 Howey류 프레임워크), ② 게이미피케이션/다크패턴 소비자보호
-규제(사용자의 행동을 유도해 위험 감수를 부추기는 UX 설계에 대한 규제 관심 증가). 밴드 상단(최대
-가산율) 표기는 소비자금융 광고 규제에서 반복적으로 등장하는 패턴 — "대표 이율(representative
-rate)"·"51% 원칙" 같은 장치나 "up to X%" 표현에 대한 규제 당국의 misleading-advertising 이슈 —
-와 구조적으로 유사한 문제를 안고 있다. 크립토 수익률 마케팅 자체에 대한 최근 실제 집행 사례
-(뉴욕주 검찰총장 대 Uphold, 2026-05)도 존재해, "밴드 상단을 헤드라인으로 내세우는 마케팅"이
-추상적 우려가 아니라 실제 집행 대상이 될 수 있음을 시사한다.
-
-## Findings
-
-### 1. 규제 프레임 쟁점 (증권성 / 게이미피케이션 / 소비자보호)
-
-- **claim:** "제3자(발행자)의 관리·기술적 노력에서 나오는 수익 기대"가 있는 스테이킹형 상품은
-  일부 법역에서 투자계약/증권으로 판단된 실제 집행 사례가 있다 — 대표적으로 미국 SEC 대 Kraken
-  (2023년 3천만 달러 화해), SEC 대 Coinbase(스테이킹 프로그램 관련 소송에서 법원이 "토큰이
-  이전·풀링되어 발행자의 관리·기술 능력에 대한 수익 기대와 함께 스테이킹된다"는 논리로 증권성을
-  인정)가 있다. 반대로 Coinbase 측은 "보상은 프로토콜이 정하고 서비스 제공자는 검증 작업만
-  수행할 뿐 관리 노력이 아니다"라는 반론을 공식적으로 제기하고 있어, **동일한 스테이킹 구조에
-  대해서도 결론이 갈릴 수 있음**을 보여준다.
-  confidence: high (구체적 판례·집행 사례 존재) — source: [Kraken Crypto Staking Program... Manatt](https://www.manatt.com/insights/newsletters/client-alert/kraken-crypto-staking-program-for-us-investors-sh), [Federal Courts Weigh in on Crypto-Asset Securities Under Howey Test in Coinbase and Kraken Cases](https://uk.practicallaw.thomsonreuters.com/w-044-7787), [Coinbase's staking services are not securities. And here's why. (Coinbase 공식 반론)](https://www.coinbase.com/blog/coinbases-staking-services-are-not-securities-and-heres-why)
-- **claim:** **밴드형 상품(V2-BAND)은 위 스테이킹 판례군보다 증권성 논거가 한 단계 더 강해질 수
-  있는 쟁점**이다 — "게임 진행도"라는, 발행자가 설계·운영하는 별도 메커니즘이 수익률의 일부를
-  직접 결정하기 때문에, "수익이 순수하게 프로토콜/시장에서 나온다"는 반론(Coinbase류 논거)을
-  쓰기가 더 어려워진다. **이는 이번 조사에서 확인된 사실이 아니라 위 판례 논리를 유추한 쟁점
-  제기이며, 실제 법적 결론은 법역·상품 구조의 구체적 사실관계에 좌우된다.**
-  confidence: low(유추 판단, 밴드형 상품에 대한 직접 판례는 발견하지 못함) — source: 위와 동일 소스의 논리 연장
-- **claim:** 게이미피케이션 자체에 대한 소비자보호 규제 관심이 별도 트랙으로 존재한다. 미국
-  FTC는 "다크패턴"(사용자를 속이거나 가두는 UX 설계) 집행 정책성명(2021)을 발표했고, 게이미피케이션이
-  다크패턴/플랫폼 중독과 결부되어 언급된다. 증권 규제 학계 문헌은 게이미피케이션이 "투자자
-  보호 기능을 약화시키면서 브로커-딜러의 이익을 위해 과도한 거래를 유도하는" 관행으로 문제
-  삼아질 수 있다고 지적하며, 실제로 미국 매사추세츠 증권국이 2024년 1월 Robinhood를 게이미피케이션
-  기법을 이유로 증권법 위반 혐의로 제소한 사례가 있다.
-  confidence: medium (핀테크/증권 브로커리지 맥락 사례이며 크립토 스테이킹에 직접 적용된 사례는
-  아님 — 유추 적용) — source: [FTC Dark Patterns Crackdown](https://performline.com/blog-post/ftc-dark-patterns-enforcement-policy/), [Gamification and securities regulation — James Fallows Tierney](https://am.aals.org/wp-content/uploads/sites/4/2022/02/Tierney-Securities-Regulation.pdf), [The Gamification of Investments: US/EU Comparative — Berkeley Tech Law Journal](https://btlj.org/2025/11/the-gamification-of-investments-a-comparative-approach-between-the-us-and-eu/)
-- **claim:** 미국·EU는 게이미피케이션 규제 철학이 다르다는 학술 비교가 있다 — 미국은 시장 자유를
-  강조하고 사후 구제(집행)에 의존하는 반면, EU는 사전 조화(harmonization)와 소비자보호를 더
-  중시하는 경향이 있다는 비교 분석. **이는 법역별 접근 차이가 실재함을 보여주는 근거이지,
-  BANA가 어느 법역에 속하는지에 대한 판단은 아니다**(요청에 따라 법역 특정 안 함).
-  confidence: medium (학술 비교 논문, 2025-11 발행) — source: [The Gamification of Investments: A Comparative Approach Between the US and EU — Berkeley Technology Law Journal](https://btlj.org/2025/11/the-gamification-of-investments-a-comparative-approach-between-the-us-and-eu/)
-
-### 2. 밴드 상단(최대 가산율) 표기의 광고/마케팅 규제 쟁점
-
-- **claim:** 소비자금융 광고 규제에서 "최고 이율"만 헤드라인으로 강조하고 그 이율이 실제로 대다수
-  이용자에게 적용되지 않는 경우를 오인 유도로 다루는 것은 **반복적으로 등장하는 규제 패턴**이다.
-  대표 사례가 영국 소비자신용 광고 규제의 "대표 이율(Representative APR)" 제도 — 광고주가
-  합리적으로 예상하기에 **광고로 성사되는 계약의 최소 51%가 그 이율 이하로 제공될 것**이라는
-  기준을 충족해야 그 이율을 대표값으로 광고에 쓸 수 있다. 이는 "최대치만 크게 보여주고 실제
-  분포는 감추는" 마케팅에 대한 정면 대응 장치다.
-  confidence: high (구체적 법제 존재, 소비자신용 맥락) — source: [Representative APR — Wikipedia](https://en.wikipedia.org/wiki/Representative_APR), [The Consumer Credit (Advertisements) Regulations 2010](https://www.legislation.gov.uk/uksi/2010/1012/regulation/1/made/data.xht?wrap=true)
-- **claim:** 미국 저축상품(예금성) 광고 규제(Regulation DD / 12 CFR 1030.8)도 유사한 원리를 갖는다
-  — 계층형(tiered-rate) 계좌의 APY를 광고할 때는 해당 APY가 적용되는 **하한 금액**을 함께 표기해야
-  하고, 정기예금은 그 APY를 받기 위한 **필요 기간**을 표기해야 한다. 신용상품 광고 규제(Reg Z류)도
-  "실제로 제공되지 않을 낮은 금리를 광고하는 것"을 금지한다. 두 규제 모두 **"조건부 최댓값/최솟값을
-  조건 설명 없이 헤드라인으로 쓰는 것"을 직접 규율 대상으로 삼는다**는 공통 원리를 보여준다.
-  confidence: high (연방 규정 1차 소스) — source: [§ 1030.8 Advertising — CFPB](https://www.consumerfinance.gov/rules-policy/regulations/1030/8/), [Comment for 1030.8 — Advertising — CFPB](https://www.consumerfinance.gov/rules-policy/regulations/1030/interp-8/)
-- **claim:** 크립토 수익률 마케팅에 대한 실제 집행 사례가 존재한다 — 뉴욕주 검찰총장이 Uphold를
-  상대로, 제3자(Cred)의 고위험 크립토 대출 상품(CredEarn)을 "안전한 저축형 상품"처럼 마케팅한
-  것에 대해 500만 달러 화해를 이끌어낸 사례(2026-05 보도). 이는 "밴드 상단"과 직접 같은 사실관계는
-  아니지만, **크립토 수익률 상품의 마케팅 문구가 실제 리스크·조건과 괴리되면 규제 집행의 실제
-  대상이 된다**는 것을 보여주는 최근 사례다.
-  confidence: medium (원문 기사 자체는 접근 실패(403)했으나, 검색 스니펫에서 날짜·당사자·금액이
-  구체적으로 확인됨 — 원문 직접 대조는 못함) — source: [Crypto Company Settles With New York AG Over Allegedly Misleading Crypto Yield Promotions — Regulatory Oversight](https://www.regulatoryoversight.com/2026/05/crypto-company-settles-with-new-york-ag-over-allegedly-misleading-crypto-yield-promotions/)
-- **claim:** 위 패턴들을 종합하면, "밴드 상단(최대 가산율)"을 두드러지게 표기하는 마케팅에 자주
-  제기되는 쟁점은 다음 세 갈래로 요약할 수 있다 — (1) **대표성 문제**: 최대치가 실제로 대다수
-  사용자에게 도달 가능한 값인지(rev03 A7·DC-3이 이미 "게임 진행도가 원금 비례가 아니라 약정일수
-  기준"이라는 제약을 두고 있으므로, 이 쟁점은 "밴드 상단 도달 비율"을 실측·공개할 수 있는지의
-  문제로 좁혀질 수 있다). (2) **조건 누락 문제**: 최대치를 얻기 위한 조건(게임 진행 요건)이
-  헤드라인과 같은 시야에 명확히 표기되는지. (3) **보장성 오인 문제**: "최대 X%"라는 표현이
-  "보장 수익률"처럼 읽히지 않도록 하는 표기 설계(다수 규제가 "guaranteed"류 단어 자체를 금지하는
-  경향과 맞닿아 있다).
-  confidence: medium (개별 근거들의 종합 판단, 밴드형 상품에 직접 적용된 선례는 아님) — source: 위 세 항목 종합
-
-## Contradictions (ⓑ)
-
-- 발견되지 않음. 다만 **Coinbase의 공식 반론**(증권성 부인)과 **SEC/법원의 판단**(Coinbase
-  케이스에서 증권성 인정 방향으로 진행 중)은 같은 사실관계에 대한 정반대 입장이며, 이 대립 자체가
-  "스테이킹형 수익 상품의 증권성"이 법적으로 확정되지 않고 진행 중인 쟁점임을 보여준다 — 어느
-  쪽이 맞는지 이 조사에서 판정하지 않는다.
-
-## Open Questions (ⓑ)
-
-1. V2-BAND처럼 "게임 진행도가 수익률의 일부를 결정"하는 구조에 대한 **직접적인 판례·규제
-   가이던스**가 존재하는지 — 이번 조사에서는 발견하지 못했다. 스테이킹 증권성 판례와 게이미피케이션
-   소비자보호 판례를 유추 결합했을 뿐이다.
-2. 뉴욕주 검찰총장 대 Uphold 건의 1차 소스(보도자료·화해 합의서 원문)는 접근이 차단(403)되어
-   직접 대조하지 못했다 — 원문 확인이 필요하다.
-3. 밴드 상단 표기에 대한 크립토 산업 특정 광고 규제(증권법이 아닌 순수 광고/마케팅법 차원)의
-   구체적 판례는 확인하지 못했다 — 소비자신용/예금 광고 규제에서의 유추일 뿐이다.
-4. **이 조사는 어떤 법역도 특정하지 않았다.** BANA의 실제 대상 시장·법인 소재지가 정해지면
-   그 법역의 증권법·전자금융/가상자산업법·광고표시법을 인간 법률 자문이 별도로 검토해야 한다.
-
----
-
 ## 종합 권고 (비구속)
 
-- ⓐ 기술 조사는 rev03의 D-B2(입금 컨트랙트) 우선 방향과 DP-1~DP-7 요구사항이 업계 일반 패턴과
+- 기술 조사는 rev03의 D-B2(입금 컨트랙트) 우선 방향과 DP-1~DP-7 요구사항이 업계 일반 패턴과
   정합적임을 뒷받침한다. 단 **확정 깊이(DP-2)의 정확한 숫자는 이번 조사만으로 확정하지 말 것** —
   거래소 실무치(15 컨펌)와 프로토콜 이론치(2블록 내외) 사이에 상당한 간극이 있고, 그 간극이
   최신 블록타임 축소를 반영한 최신 정책 차이인지 관성적 보수치인지 확인되지 않았다. `researcher`가
   Open Question 1을 추가 조사하거나, 자체 가스/블록 실측으로 보완하는 것을 권고한다.
-- ⓑ 법무 쟁점은 인간 법률 자문에게 그대로 넘길 수 있는 수준으로 정리됐다. **고위험 판단**(V2-BAND
-  첫 상품 개설 여부, H-3 최종 판정)은 이 문서로 결정하지 말고, 필요시 `/deep-research`로 대상
-  법역을 특정한 뒤 적대적 검증을 거친 심층 조사를 추가로 수행할 것을 권고한다.
 
 ## Sources
 
@@ -302,14 +194,3 @@ rate)"·"51% 원칙" 같은 장치나 "up to X%" 표현에 대한 규제 당국�
 - https://medium.com/@wahyubagus1910/idempotency-keys-how-to-prevent-duplicate-request-and-api-chaos-3ad6b1cdfe30
 - https://www.lightspark.com/glossary/idempotency-key
 - https://cryptoprocessing.com/glossary/what-is-idempotency-crypto
-- https://www.manatt.com/insights/newsletters/client-alert/kraken-crypto-staking-program-for-us-investors-sh
-- https://uk.practicallaw.thomsonreuters.com/w-044-7787
-- https://www.coinbase.com/blog/coinbases-staking-services-are-not-securities-and-heres-why
-- https://performline.com/blog-post/ftc-dark-patterns-enforcement-policy/
-- https://am.aals.org/wp-content/uploads/sites/4/2022/02/Tierney-Securities-Regulation.pdf
-- https://btlj.org/2025/11/the-gamification-of-investments-a-comparative-approach-between-the-us-and-eu/
-- https://en.wikipedia.org/wiki/Representative_APR
-- https://www.legislation.gov.uk/uksi/2010/1012/regulation/1/made/data.xht?wrap=true
-- https://www.consumerfinance.gov/rules-policy/regulations/1030/8/
-- https://www.consumerfinance.gov/rules-policy/regulations/1030/interp-8/
-- https://www.regulatoryoversight.com/2026/05/crypto-company-settles-with-new-york-ag-over-allegedly-misleading-crypto-yield-promotions/ (원문 접근 403 — 검색 스니펫으로만 확인)
