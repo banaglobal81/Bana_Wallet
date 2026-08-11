@@ -34,27 +34,39 @@ interface BalanceRow { walletType: string; currency: string; balance: string; lo
  * balances" even for a user who has coins staked. Reported as locked (not
  * available), because that is exactly what it is.
  *
- * ACTIVE and MATURED both still hold the principal — only PAID has settled it
- * back to the wallet. Filtering to ACTIVE alone made a matured stake disappear
- * from the balances entirely, which is exactly when the user most wants to see it.
+ * ACTIVE and MATURED both still hold the principal in this row's own model
+ * (no v1-style third 'PAID' status exists any more — rev05 §5.2①/DC-8).
+ * Filtering to ACTIVE alone made a matured stake disappear from the balances
+ * entirely, which is exactly when the user most wants to see it. In practice
+ * this whole row only ever applies to a HUB-authority coin today — every
+ * live V2-CORE staking product is BANA, and BANA is LOCAL-authority, so
+ * `localAuthorityCoins` below excludes it before this loop ever sums it.
  *
- * `alreadyShownInLocalGroup` — A-7 LB-C1: for a LOCAL-authority coin, once the
- * v2 local ledger actually holds that coin's principal (A-3
- * STAKE_PRINCIPAL_LOCK, surfaced as Group 2's "locked for staking" figure),
- * this legacy row would double the same principal on screen. Today no
- * StakePositionV2 rows exist for any coin (V2-CORE staking isn't wired to any
- * creation path yet), so this set is always empty in production and nothing
- * here changes visually — the guard only activates the day that stops being
- * true, so real legacy-staked balances are never hidden prematurely.
+ * `localAuthorityCoins` — A-7 LB-C1: a LOCAL-authority coin's ENTIRE
+ * principal picture — both currently-locked (A-3 STAKE_PRINCIPAL_LOCK,
+ * surfaced as Group 2's holds) and already-released-at-maturity (V2 has no
+ * v1-style "still locked until claimed" limbo: `maturePositionV2` calls
+ * `releaseHold` immediately, not a later "paid" step — rev05 §5.2②) — is
+ * owned by Group 2 (`LocalBalanceGroup`), never by this legacy synthetic
+ * row. The exclusion is therefore by COIN (any coin this user's local-balance
+ * response carries a row for at all), not by "does this coin currently have
+ * a nonzero hold" — the latter would under-exclude the moment a position
+ * matures and its hold releases: the coin's current hold would read `0`
+ * (so the older, narrower guard would stop excluding it), yet this function
+ * would still sum that MATURED position's principal into a `locked: …` row
+ * that is no longer true — the exact same principal is by then already
+ * showing, correctly, as `available` in Group 2. Sourced from `localCoins`
+ * by coin symbol alone (present even on that coin's own 'error' row) —
+ * see the call site's own comment for why load success/failure must not
+ * change which coins this excludes.
  */
 function stakedRows(
   positions: { coin: string; principal: string; status: string }[],
-  alreadyShownInLocalGroup: Set<string>,
+  localAuthorityCoins: Set<string>,
 ): BalanceRow[] {
   const byCoin = new Map<string, Decimal>();
   for (const p of positions) {
-    if (p.status === 'PAID') continue;
-    if (alreadyShownInLocalGroup.has(p.coin.toUpperCase())) continue;
+    if (localAuthorityCoins.has(p.coin.toUpperCase())) continue;
     byCoin.set(p.coin, (byCoin.get(p.coin) ?? new Decimal(0)).plus(p.principal || '0'));
   }
   return [...byCoin.entries()]
@@ -150,27 +162,28 @@ export default function Wallet({ onNavigate }: WalletProps) {
         getNiaMarkets().catch(() => null),
         getManagedCoins().catch(() => []),
       ]);
-      // Every coin the local-balance group already carries a nonzero staking
-      // hold for — LB-C1: don't let this legacy synthetic row double it. Best
-      // effort against whatever localCoins currently holds (may still be
-      // loading/empty on first paint; that's fine, see stakedRows' own note).
-      const shownInLocalGroup = new Set(
-        localCoins
-          .filter((c) => c.state === 'ok' && c.holds && !/^0(\.0+)?$/.test(c.holds.stakePrincipal))
-          .map((c) => c.coin.toUpperCase()),
-      );
+      // LB-C1/LB-C3 — every coin the local-balance response carries a row
+      // for at all is LOCAL-authority (that route already scopes to
+      // balanceAuthority=LOCAL, visible=true) REGARDLESS of whether that
+      // particular row's own balance fetch succeeded — `coin` is set on the
+      // 'error' shape too (`{ coin, state: 'error' }`), only `balance`/
+      // `available`/`holds` are missing. This ONE set is reused for both
+      // guards below: LB-C1 (stakedRows' legacy synthetic "locked" row must
+      // never re-show a LOCAL coin's principal — active or already
+      // matured/released, see stakedRows' own doc comment) and LB-C3 (the
+      // HUB zero-catalogue must never pad in a coin Group 2 already owns —
+      // including one Group 2 currently shows in its own error state; that
+      // failure must never be papered over by a second, HUB-shaped row for
+      // the same coin appearing elsewhere on the page).
+      const localAuthoritySymbols = new Set(localCoins.map((c) => c.coin.toUpperCase()));
       const held: BalanceRow[] = [
         ...(Array.isArray(data?.wallets) ? data.wallets : []),
         ...(Array.isArray(data?.tradingBalances) ? data.tradingBalances : []),
         ...(Array.isArray(data) ? data : []),
-        ...stakedRows(positions, shownInLocalGroup),
+        ...stakedRows(positions, localAuthoritySymbols),
         // INSURANCE is an internal Nia-Hub wallet, never shown to users.
       ].filter((r) => (r.walletType ?? '').toUpperCase() !== 'INSURANCE');
       setRows(held);
-      // LB-C3 — LOCAL-authority coins (BANA) live in Group 2, not the HUB zero
-      // catalogue. Excluded here by symbol, sourced from ManagedCoin rows the
-      // local-balance route already scoped to balanceAuthority=LOCAL.
-      const localAuthoritySymbols = new Set(localCoins.map((c) => c.coin.toUpperCase()));
       // Kept separate from `rows` so the toggle never re-fetches: the catalogue
       // is only *displayed* on demand, not loaded on demand.
       setAllZeroRows(zeroRows(held, supportedSymbols(markets, managed, localAuthoritySymbols)));

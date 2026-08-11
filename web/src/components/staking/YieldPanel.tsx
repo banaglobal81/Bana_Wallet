@@ -13,7 +13,7 @@ import ClaimSlot from './ClaimSlot';
 
 export interface YieldPanelRow {
   coin: string;
-  /** ① — server SUM(paidInterest), a decimal string. Never client-recomputed (R-U7). */
+  /** ① — server SUM(ledgeredYield), a decimal string. Never client-recomputed (R-U7). */
   ledgered: string;
   /** ② — always "0" in PS-A: no claim rail exists to have moved anything to the wallet yet. */
   claimed: string;

@@ -105,15 +105,17 @@ describe('DeepCoreEmbed', () => {
     expect(scrollSpy).not.toHaveBeenCalled();
   });
 
-  it('CH-1 fallback — the empty-rig HUD CTA scrolls to #staking-earn-section when onOpenStake is absent', () => {
+  // T-12 ruling §3 (EG-T9-3/EG-T9-5) — this test used to assert a scroll
+  // fallback to `#staking-earn-section`, an element that has never existed
+  // anywhere in `web/src` (confirmed by full-tree grep) — the fallback was a
+  // guaranteed dead click, not a safety net, and has been removed outright.
+  // Inverted per the ruling's own instruction: when `onOpenStake` is absent,
+  // no CTA renders at all (not "renders and does something else").
+  it('CH-1 — the empty-rig HUD CTA does not render when onOpenStake is absent (no scroll fallback)', () => {
     const scrollSpy = vi.fn();
     Element.prototype.scrollIntoView = scrollSpy;
-    const target = document.createElement('div');
-    target.id = 'staking-earn-section';
-    document.body.appendChild(target);
     render(<DeepCoreEmbed game={baseGame({ surfaceState: 'S4_IDLE_RIG', activeWellCount: 0 })} loading={false} />);
-    fireEvent.click(screen.getByTestId('deep-core-empty-cta'));
-    expect(scrollSpy).toHaveBeenCalledTimes(1);
-    target.remove();
+    expect(screen.queryByTestId('deep-core-empty-cta')).toBeNull();
+    expect(scrollSpy).not.toHaveBeenCalled();
   });
 });

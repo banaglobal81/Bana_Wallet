@@ -2,25 +2,35 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import CoinAvatar from '../../wallet/CoinAvatar';
 import WellBadge from '../deep-core/WellBadge';
 import SheetShell from './SheetShell';
-import { setAutoRenew, type StakePosition, type StakingProduct, type DeepCoreGameState } from '../../../utils/stakingApi';
+import type { StakePosition, StakingProduct, DeepCoreGameState } from '../../../utils/stakingApi';
 import { msToMaturity } from '../../../lib/stakingMath';
-import { AUTO_RENEW_MAX_TERM_DAYS, fmtDate, outcomeFor, localizeAutoRenewError } from '../renewalCopy';
+import { outcomeFor } from '../renewalCopy';
 
-// docs/specs/staking-page-v2-screen-flow-frd.md §4.5 — S-POS. Carries the
-// existing auto-renew toggle / 6-row precedence table / confirm sheet /
-// error mapping over from the old inline "My Stakes" section with NO logic
-// change (§2.4 hand-off table) — only the display of accrual (PR-1: ledgered
-// yield, not a live client-side projection) and progress (PR-2: settled
-// days, not elapsed days) changed, per R-U7/AC-V5.
-
+// docs/specs/staking-page-v2-screen-flow-frd.md §4.5 — S-POS.
+//
+// staking-v2-auto-renew-cutover-ruling.md R-AR-3 + T-8 FRD AR-5 — the
+// standing auto-renew on/off TOGGLE (turn-on confirm sheet, turn-off
+// one-tap, the 6-row precedence label) is removed from this screen: while
+// `AUTO_RENEW_V2_ENABLED=false`, every V2 position is
+// `autoRenewEligible=true` / `autoRenew=false` (no code path sets it
+// otherwise — see `lib/staking.ts`'s `serializePositionV2`), so the toggle
+// this file used to render was reachable and would always end in a 409
+// `AUTO_RENEW_UNAVAILABLE` after the confirm step — exactly the "active
+// control, guaranteed failure" shape R-AR-3 forbids (the same judgment
+// S-STAKE's own STEP 2 checkbox removal makes, applied here per AR-5's
+// explicit hand-off). The per-position renewal OUTCOME line
+// (`renderMaturedOutcome`, below) is left in place: it is purely a read of
+// `renewalStatus`, which the server also guarantees stays `'NONE'` while the
+// engine is off, so it already renders nothing today — no control, no
+// request, nothing to remove — and T-20 can turn it back on by shipping the
+// engine alone, no screen change required.
 const STATUS_STYLE: Record<string, string> = {
   ACTIVE: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/25',
   MATURED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25',
-  PAID: 'bg-slate-500/10 text-slate-300 border-slate-500/25',
 };
 
 function fmtCountdown(ms: number): string {
@@ -37,7 +47,6 @@ export default function PositionsSheet({
   now,
   focusPositionId,
   onClearFocus,
-  onPositionsChange,
   onFocusWell,
   onClose,
 }: {
@@ -48,7 +57,6 @@ export default function PositionsSheet({
   /** UF-5 — a well clicked on the canvas opens this sheet focused on its position. */
   focusPositionId: string | null;
   onClearFocus: () => void;
-  onPositionsChange: (next: StakePosition[]) => void;
   /** UF-5 (reverse direction) / CH-2 — a position row's well badge was
    *  clicked; the parent closes this sheet and hands the well id to
    *  DeepCoreEmbed's `focusWellId` so the canvas can pan/highlight it. */
@@ -58,10 +66,6 @@ export default function PositionsSheet({
   const t = useTranslations('staking');
   const ar = useTranslations('staking.autoRenew');
 
-  const [renewPending, setRenewPending] = useState<string | null>(null);
-  const [renewError, setRenewError] = useState<Record<string, string>>({});
-  const [confirmFor, setConfirmFor] = useState<StakePosition | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -73,95 +77,6 @@ export default function PositionsSheet({
     return () => clearTimeout(hideTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusPositionId]);
-
-  // S2 — one-tap off. Must succeed regardless of eligibility/maintenanceMode
-  // (M-3 / copy spec §2.2) — never gated, never confirmed.
-  const handleToggleOff = async (p: StakePosition) => {
-    setRenewPending(p.id);
-    setRenewError((prev) => { const n = { ...prev }; delete n[p.id]; return n; });
-    try {
-      const updated = await setAutoRenew(p.id, false);
-      onPositionsChange(positions.map((x) => (x.id === p.id ? { ...x, ...updated } : x)));
-      setToast(ar('offToast', { date: fmtDate(p.maturityAt) }));
-      setTimeout(() => setToast(null), 3000);
-    } catch (e) {
-      setRenewError((prev) => ({ ...prev, [p.id]: localizeAutoRenewError(e as Error & { code?: string }, ar, p) }));
-    } finally {
-      setRenewPending(null);
-    }
-  };
-
-  // S2 — turning on, only reachable from the confirm sheet.
-  const confirmTurnOn = async () => {
-    if (!confirmFor) return;
-    const p = confirmFor;
-    setRenewPending(p.id);
-    setRenewError((prev) => { const n = { ...prev }; delete n[p.id]; return n; });
-    try {
-      const updated = await setAutoRenew(p.id, true);
-      onPositionsChange(positions.map((x) => (x.id === p.id ? { ...x, ...updated } : x)));
-      setConfirmFor(null);
-    } catch (e) {
-      setRenewError((prev) => ({ ...prev, [p.id]: localizeAutoRenewError(e as Error & { code?: string }, ar, p) }));
-    } finally {
-      setRenewPending(null);
-    }
-  };
-
-  // S2 — position row auto-renew state (6-row precedence table, copy spec §1.3).
-  const renderAutoRenewRow = (p: StakePosition) => {
-    if (p.status !== 'ACTIVE') return null;
-
-    const overCap = p.termDays > AUTO_RENEW_MAX_TERM_DAYS;
-    const grantedIneligible = !p.autoRenewEligible && !overCap;
-
-    // Row 1 — not eligible, off: render nothing at all.
-    if (!p.autoRenewEligible && !p.autoRenew) return null;
-
-    const productOpen = products.some((pr) => pr.id === p.productId);
-    const pending = renewPending === p.id;
-    const err = renewError[p.id];
-
-    let label: string;
-    let toneClass = 'text-[#8c90a0]';
-    if (p.autoRenew && grantedIneligible) {
-      label = ar('stateOnGranted', { date: fmtDate(p.maturityAt) });
-    } else if (p.autoRenew && overCap) {
-      label = ar('stateOnOverCap', { maxTermDays: AUTO_RENEW_MAX_TERM_DAYS, date: fmtDate(p.maturityAt) });
-    } else if (p.autoRenew && !productOpen) {
-      label = ar('stateOnClosed');
-    } else if (p.autoRenew) {
-      label = ar('stateOn', { date: fmtDate(p.maturityAt) });
-      toneClass = 'text-[#afc6ff]';
-    } else {
-      label = ar('stateOff');
-    }
-
-    const onToggle = () => (p.autoRenew ? handleToggleOff(p) : setConfirmFor(p));
-
-    return (
-      <div className="flex flex-col gap-1 mt-1 pt-2 border-t border-[#1E3559]/40">
-        <div className="flex items-center justify-between gap-3">
-          <span data-testid="autorenew-label" className={`text-[11px] font-mono ${toneClass}`}>{label}</span>
-          <button
-            type="button"
-            data-testid="autorenew-toggle"
-            disabled={pending}
-            aria-pressed={p.autoRenew}
-            onClick={onToggle}
-            className={`w-10 h-6 rounded-full p-0.5 transition-colors duration-300 relative cursor-pointer outline-none border shrink-0 disabled:opacity-50 ${
-              p.autoRenew ? 'bg-[#2E7DFF]/15 border-[#528dff]/40' : 'bg-[#020d24] border-[#1E3559]'
-            }`}
-          >
-            <div className={`w-5 h-5 rounded-full transition-all duration-300 absolute top-0.5 ${
-              p.autoRenew ? 'right-0.5 bg-[#528dff]' : 'left-0.5 bg-[#4a5568]'
-            }`} />
-          </button>
-        </div>
-        {err && <span data-testid="autorenew-error" className="text-[10px] font-mono text-rose-400">{err}</span>}
-      </div>
-    );
-  };
 
   // S2 — matured position, single outcome line.
   const renderMaturedOutcome = (p: StakePosition) => {
@@ -219,14 +134,14 @@ export default function PositionsSheet({
                         )}
                       </div>
                       {/* PR-2 — settled days (p.daysPaid), never client-computed elapsed days. */}
-                      <div className="text-[11px] font-mono text-[#8c90a0]">{t('position.settledDays', { d: p.daysPaid, total: p.termDays })} · {p.dailyRatePct}% {t('dailyRate')}</div>
+                      <div className="text-[11px] font-mono text-[#8c90a0]">{t('position.settledDays', { d: p.daysPaid, total: p.termDays })} · {p.baseDailyRatePct}% {t('dailyRate')}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-5 shrink-0">
                     <div className="text-right">
-                      {/* PR-1 — server-ledgered recorded yield (paidInterest), never a
-                          live ticking projection (R-U7 / AC-V5). */}
-                      <div data-testid="position-recorded" className="text-sm font-bold text-emerald-400 font-mono">+{p.paidInterest}</div>
+                      {/* PR-1 — server-ledgered recorded yield (ledgeredYield),
+                          never a live ticking projection (R-U7 / AC-V5). */}
+                      <div data-testid="position-recorded" className="text-sm font-bold text-emerald-400 font-mono">+{p.ledgeredYield}</div>
                       <div className="text-[10px] font-mono text-[#8c90a0] uppercase tracking-wide">{t('position.recordedLabel')}</div>
                     </div>
                     <div className="text-right min-w-[92px]">
@@ -236,46 +151,11 @@ export default function PositionsSheet({
                     </div>
                   </div>
                 </div>
-                {renderAutoRenewRow(p)}
                 {renderMaturedOutcome(p)}
               </div>
             );
           })}
           <p className="text-[11px] font-mono text-[#8c90a0] px-1">{t('position.maturedNote')}</p>
-        </div>
-      )}
-
-      {/* S2 — confirm sheet, shown only when turning auto-renew ON. */}
-      {confirmFor && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div data-testid="autorenew-confirm-sheet" className="w-full max-w-sm rounded-2xl bg-[#0b1220] border border-[#1E3559] p-6 flex flex-col gap-3 shadow-2xl">
-            <h2 className="text-base font-extrabold text-white">{ar('confirmTitle')}</h2>
-            <p className="text-xs font-mono text-[#8c90a0] leading-relaxed">
-              {ar('confirmBody1', {
-                maturityDate: fmtDate(confirmFor.maturityAt),
-                principal: confirmFor.principal,
-                coin: confirmFor.coin,
-                productName: confirmFor.productName,
-                termDays: confirmFor.termDays,
-              })}
-            </p>
-            <p data-testid="autorenew-confirm-lock" className="text-xs font-bold text-amber-300 leading-relaxed">{ar('confirmLock')}</p>
-            <p className="text-xs font-mono text-[#8c90a0] leading-relaxed">{ar('confirmBody2')}</p>
-            <p className="text-xs font-mono text-[#8c90a0] leading-relaxed">{ar('confirmBody3', { maturityDate: fmtDate(confirmFor.maturityAt) })}</p>
-            {renewError[confirmFor.id] && <p className="text-[11px] font-mono text-rose-400">{renewError[confirmFor.id]}</p>}
-            <div className="flex gap-2 mt-1">
-              <button disabled={renewPending === confirmFor.id} onClick={() => setConfirmFor(null)} className="flex-1 py-2.5 rounded-xl bg-[#020d24]/60 hover:bg-[#112643] text-[#8c90a0] hover:text-white text-sm font-bold border border-[#1E3559]/80 cursor-pointer disabled:opacity-50">{ar('confirmCancel')}</button>
-              <button disabled={renewPending === confirmFor.id} onClick={confirmTurnOn} className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#2E7DFF] to-[#528dff] hover:brightness-110 text-white font-bold text-sm border border-[#528dff]/40 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5">
-                {renewPending === confirmFor.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {ar('confirmYes')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {toast && (
-        <div data-testid="autorenew-toast" className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] px-4 py-2.5 rounded-xl bg-[#112643] border border-[#1E3559] text-xs font-mono text-[#d8e2ff] shadow-lg">
-          {toast}
         </div>
       )}
     </SheetShell>

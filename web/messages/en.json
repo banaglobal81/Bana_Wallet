@@ -234,7 +234,7 @@
     "confirmStake": "Confirm stake",
     "cancel": "Cancel",
     "earnPreview": "You'll earn ~{interest} {coin} over {days} days.",
-    "stakeSuccess": "Staked successfully",
+    "stakeSuccess": "Recorded. The principal is locked in your {coin} balance.",
     "noProducts": "No staking offers available right now.",
     "noStakes": "You don't have any stakes yet.",
     "accrued": "Earned",
@@ -445,10 +445,32 @@
       "step": "Step {current} of {total}",
       "back": "Back"
     },
+    "stakeEntry": {
+      "chipUnavailable": "Staking not available",
+      "migratingTitle": "New staking is paused",
+      "migratingBody": "Existing positions and recorded interest are unchanged.",
+      "haltedTitle": "New staking for {coin} is stopped",
+      "haltedBody": "Your {coin} balance and your existing positions are recorded as they are.",
+      "noFundsTitle": "Staking uses your {coin} balance",
+      "noFundsBalance": "Available: {available} {coin}",
+      "noFundsNoPath": "{coin} cannot be deposited, and there is no other way to add {coin} to this balance.",
+      "noFundsTerms": "The terms of each product are shown below.",
+      "lockedOutTitle": "Your {coin} is locked",
+      "lockedOutBody": "{amount} {coin} is locked in positions you already opened. It becomes available again when a term ends.",
+      "lockedOutBodyWithdrawal": "{amount} {coin} is held for a withdrawal request you already made.",
+      "balanceUnknown": "Your {coin} balance could not be loaded. The terms of each product are shown below.",
+      "reload": "Reload"
+    },
     "stakeSheet": {
-      "contractTerms": "Base yield over {days} days: {baseTotal} {coin}",
+      "balanceSource": "Staking uses your {coin} balance, which is separate from your deposit and withdrawal account.",
+      "contractTerms": "Interest recorded over {days} days at the contracted rate: {baseTotal} {coin}",
       "notEstimate": "These figures come from the contracted rates, not from a forecast.",
-      "lockNote": "Staked funds cannot be withdrawn before the term ends."
+      "principalStays": "Nothing is transferred out of your balance. The principal is locked where it is.",
+      "lockNote": "The principal stays in your {coin} balance and cannot be withdrawn until the term ends.",
+      "recordedNotPaid": "Interest is recorded in your staking ledger each day. It is not added to your {coin} balance.",
+      "claimSeparate": "Moving recorded interest to your {coin} balance is a separate action that is not available yet.",
+      "maturityNote": "When the term ends, the lock on the principal is released and it is available in your {coin} balance again. Recorded interest is not moved automatically.",
+      "noRestake": "This stake does not start again automatically when the term ends. To stake again, you open a new position yourself."
     },
     "position": {
       "recordedLabel": "Recorded",
@@ -468,6 +490,9 @@
       "STAKE_BELOW_MIN": "The minimum for this product is {min} {coin}.",
       "STAKE_ABOVE_MAX": "The maximum for this product is {max} {coin}.",
       "STAKE_INSUFFICIENT_AVAILABLE": "Available balance is {available} {coin}.",
+      "STAKE_PATH_MIGRATING": "New staking is paused. Your existing positions and recorded interest are unchanged.",
+      "STAKE_COIN_HALTED": "New staking for this asset is stopped. Your balance and existing positions are recorded as they are.",
+      "STAKE_INSUFFICIENT_LOCAL_BALANCE": "Your available {coin} balance is {available} {coin}.",
       "UNAUTHENTICATED": "Your session ended. Sign in again to continue.",
       "GENERIC": "The request did not complete."
     }

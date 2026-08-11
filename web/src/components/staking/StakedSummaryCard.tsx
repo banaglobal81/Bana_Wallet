@@ -25,7 +25,7 @@ export default function StakedSummaryCard({ onOpen }: { onOpen?: () => void }) {
 
   // Keep the raw ACTIVE positions so we can recompute accrual live each tick.
   const [active, setActive] = useState<
-    Array<{ principal: string; dailyRatePct: string; startAt: string; termDays: number }>
+    Array<{ principal: string; baseDailyRatePct: string; startAt: string; termDays: number }>
   >([]);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export default function StakedSummaryCard({ onOpen }: { onOpen?: () => void }) {
         const [positions, rewards] = await Promise.all([getStakePositions(), getStakingRewards()]);
         if (cancelled) return;
         const act = positions.filter((p) => p.status === 'ACTIVE');
-        setActive(act.map((p) => ({ principal: p.principal, dailyRatePct: p.dailyRatePct, startAt: p.startAt, termDays: p.termDays })));
+        setActive(act.map((p) => ({ principal: p.principal, baseDailyRatePct: p.baseDailyRatePct, startAt: p.startAt, termDays: p.termDays })));
         setStaked(act.reduce((s, p) => s.plus(p.principal || '0'), new Decimal(0)));
         if (positions[0]?.coin) setCoin(positions[0].coin);
         setCredited(
@@ -58,7 +58,7 @@ export default function StakedSummaryCard({ onOpen }: { onOpen?: () => void }) {
     const nowDate = new Date(now);
     setLive(
       active.reduce(
-        (s, p) => s.plus(accruedInterest(p.principal, p.dailyRatePct, p.startAt, p.termDays, nowDate)),
+        (s, p) => s.plus(accruedInterest(p.principal, p.baseDailyRatePct, p.startAt, p.termDays, nowDate)),
         new Decimal(0),
       ),
     );

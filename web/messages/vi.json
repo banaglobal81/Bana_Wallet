@@ -234,7 +234,7 @@
     "confirmStake": "Xác nhận",
     "cancel": "Hủy",
     "earnPreview": "Bạn sẽ nhận ~{interest} {coin} trong {days} ngày.",
-    "stakeSuccess": "Staking thành công",
+    "stakeSuccess": "Đã ghi nhận. Tiền gốc đang bị khóa trong số dư {coin} của bạn.",
     "noProducts": "Hiện chưa có gói staking nào.",
     "noStakes": "Bạn chưa có khoản staking nào.",
     "accrued": "Đã nhận",
@@ -445,10 +445,32 @@
       "step": "Bước {current}/{total}",
       "back": "Quay lại"
     },
+    "stakeEntry": {
+      "chipUnavailable": "Không thể staking",
+      "migratingTitle": "Đã tạm dừng mở vị thế mới",
+      "migratingBody": "Các vị thế hiện có và tiền lãi đã ghi nhận không thay đổi.",
+      "haltedTitle": "Đã dừng mở vị thế {coin} mới",
+      "haltedBody": "Số dư {coin} và các vị thế hiện có của bạn vẫn được ghi nhận nguyên vẹn.",
+      "noFundsTitle": "Staking sử dụng số dư {coin} của bạn",
+      "noFundsBalance": "Khả dụng: {available} {coin}",
+      "noFundsNoPath": "Không thể nạp {coin}, và không có cách nào khác để tăng số dư này.",
+      "noFundsTerms": "Điều khoản của từng gói được hiển thị bên dưới.",
+      "lockedOutTitle": "{coin} của bạn đang bị khóa",
+      "lockedOutBody": "{amount} {coin} đang bị khóa trong các vị thế bạn đã mở. Số này khả dụng trở lại khi kỳ hạn kết thúc.",
+      "lockedOutBodyWithdrawal": "{amount} {coin} đang được giữ cho một yêu cầu rút tiền bạn đã tạo.",
+      "balanceUnknown": "Không tải được số dư {coin} của bạn. Điều khoản của từng gói được hiển thị bên dưới.",
+      "reload": "Tải lại"
+    },
     "stakeSheet": {
-      "contractTerms": "Lãi cơ sở trong {days} ngày: {baseTotal} {coin}",
+      "balanceSource": "Staking sử dụng số dư {coin} của bạn, tách biệt với tài khoản nạp và rút.",
+      "contractTerms": "Tiền lãi được ghi nhận trong {days} ngày theo lãi suất hợp đồng: {baseTotal} {coin}",
       "notEstimate": "Con số này được tính từ lãi suất đã cam kết, không phải là dự báo.",
-      "lockNote": "Không thể rút tiền đã stake trước khi hết kỳ hạn."
+      "principalStays": "Không có khoản nào được chuyển ra khỏi số dư của bạn. Tiền gốc bị khóa tại chỗ.",
+      "lockNote": "Tiền gốc vẫn nằm trong số dư {coin} của bạn và không thể rút cho đến khi kết thúc kỳ hạn.",
+      "recordedNotPaid": "Tiền lãi được ghi vào sổ staking mỗi ngày. Khoản này không được cộng vào số dư {coin} của bạn.",
+      "claimSeparate": "Việc chuyển tiền lãi đã ghi nhận vào số dư {coin} là một thao tác riêng và hiện chưa khả dụng.",
+      "maturityNote": "Khi kỳ hạn kết thúc, tiền gốc được mở khóa và có thể sử dụng lại trong số dư {coin}. Tiền lãi đã ghi nhận không được chuyển tự động.",
+      "noRestake": "Khoản staking này không tự động bắt đầu lại khi kỳ hạn kết thúc. Để stake tiếp, bạn tự mở một vị thế mới."
     },
     "position": {
       "recordedLabel": "Đã ghi nhận",
@@ -468,6 +490,9 @@
       "STAKE_BELOW_MIN": "Mức tối thiểu cho gói này là {min} {coin}.",
       "STAKE_ABOVE_MAX": "Mức tối đa cho gói này là {max} {coin}.",
       "STAKE_INSUFFICIENT_AVAILABLE": "Số dư khả dụng là {available} {coin}.",
+      "STAKE_PATH_MIGRATING": "Đã tạm dừng mở vị thế mới. Các vị thế hiện có và tiền lãi đã ghi nhận không thay đổi.",
+      "STAKE_COIN_HALTED": "Đã dừng mở vị thế mới cho tài sản này. Số dư và các vị thế hiện có của bạn vẫn được ghi nhận nguyên vẹn.",
+      "STAKE_INSUFFICIENT_LOCAL_BALANCE": "Số dư {coin} khả dụng của bạn là {available} {coin}.",
       "UNAUTHENTICATED": "Phiên đăng nhập đã kết thúc. Vui lòng đăng nhập lại để tiếp tục.",
       "GENERIC": "Yêu cầu chưa hoàn tất."
     }

@@ -1,13 +1,17 @@
 import { test, expect } from '@playwright/test';
 import { E2E } from './global-setup';
 
-// docs/specs/staking-page-v2-screen-flow-frd.md — the DEEP CORE-centric v2
-// layout. Product list and position list moved from the page body into the
-// S-STAKE / S-POS sheets (L-1); B2 YIELD PANEL now shows the server-ledgered
-// recorded yield instead of a client-computed live "accrued interest"
-// counter (R-U7), which for this fixture is seeded at "0" (`paidInterest`
-// starts at 0 until the daily settlement worker actually runs) rather than
-// the old client-side projection.
+// docs/specs/staking-page-v2-screen-flow-frd.md + T-8 FRD (CUT-4) — the DEEP
+// CORE-centric v2 layout, now backed by StakingProductV2/StakePositionV2/
+// StakeYieldLedgerEntry (global-setup.ts). Product list and position list
+// moved from the page body into the S-STAKE / S-POS sheets (L-1); B2 YIELD
+// PANEL now shows the server-ledgered recorded yield instead of a
+// client-computed live "accrued interest" counter (R-U7), which for this
+// fixture is seeded at "0" (`ledgeredYield` starts at 0 until the daily
+// settlement worker actually runs) rather than the old client-side
+// projection. The seeded position's principal is fully held
+// (STAKE_PRINCIPAL_LOCK), so S-STAKE opens into `E-5 LOCKED_OUT` — the
+// product card (and its daily rate) still renders read-only per §3.4.
 test.describe('Staking', () => {
   test('user logs in and can see the product (in the Stake sheet) and their position (in the Positions sheet)', async ({ page }) => {
     // 1. Log in through the real credentials form.

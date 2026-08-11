@@ -17,11 +17,19 @@ export default function DeepCoreHud({
 }: {
   game: DeepCoreGameState;
   chapterName: string;
-  /** docs/specs/staking-page-v2-screen-flow-frd.md CH-1 — the empty-rig CTA
-   * opens the S-STAKE sheet in the (now sheet-based) v2 page layout. Falls
-   * back to the pre-v2 `#staking-earn-section` scroll when the caller
-   * doesn't pass this (keeps the component safe to render standalone, e.g.
-   * in tests, without throwing or dead-clicking). */
+  /** docs/specs/staking-page-v2-screen-flow-frd.md CH-1 — the empty-rig
+   * CTA opens the S-STAKE sheet in the (now sheet-based) v2 page layout.
+   *
+   * T-12 ruling §3 (EG-T9-1/EG-T9-2) — the caller only ever passes this when
+   * `entryState.kind === 'READY'` (i.e. a stake can actually be opened right
+   * now); every other entry state passes `undefined`. This component reads
+   * that presence/absence as the ENTIRE signal ("was I given an action" —
+   * EG-3, the game surface never learns *why* an action is or isn't
+   * available). When absent, the button is not rendered at all — there is
+   * no scroll fallback any more (removed per EG-T9-3: the element it used to
+   * target, `#staking-earn-section`, does not exist anywhere in `web/src`
+   * and the fallback was a guaranteed dead click, worse than rendering
+   * nothing). */
   onOpenStake?: () => void;
 }) {
   const t = useTranslations('staking.game');
@@ -64,14 +72,15 @@ export default function DeepCoreHud({
       {bannerKey && (
         <div className="self-center flex flex-col items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#020d24]/80 border border-[#1E3559] text-[#afc6ff] text-center max-w-[90%]">
           <span className="pointer-events-none">{t(bannerKey, { time: lastUpdatedLabel })}</span>
-          {surfaceState === 'S4_IDLE_RIG' && (
+          {/* EG-T9-2/EG-T9-3 — gated on `onOpenStake != null` alone, no
+              fallback. The banner text above stays regardless (EG-1: label
+              kept, only the button is removed when there's nothing it could
+              open). */}
+          {surfaceState === 'S4_IDLE_RIG' && onOpenStake != null && (
             <button
               type="button"
               data-testid="deep-core-empty-cta"
-              onClick={() => {
-                if (onOpenStake) { onOpenStake(); return; }
-                document.getElementById('staking-earn-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}
+              onClick={onOpenStake}
               className="pointer-events-auto text-[#528dff] hover:text-white font-bold cursor-pointer"
             >
               {t('empty.cta')}

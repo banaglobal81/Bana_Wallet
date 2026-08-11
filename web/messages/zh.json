@@ -234,7 +234,7 @@
     "confirmStake": "确认质押",
     "cancel": "取消",
     "earnPreview": "{days}天内约可赚取 {interest} {coin}。",
-    "stakeSuccess": "质押成功",
+    "stakeSuccess": "已记录。本金锁定在您的 {coin} 余额中。",
     "noProducts": "暂无可用的质押产品。",
     "noStakes": "您还没有任何质押。",
     "accrued": "已赚",
@@ -445,10 +445,32 @@
       "step": "步骤 {current}/{total}",
       "back": "返回"
     },
+    "stakeEntry": {
+      "chipUnavailable": "无法质押",
+      "migratingTitle": "已暂停新增质押",
+      "migratingBody": "已持有的仓位和已记录的利息保持不变。",
+      "haltedTitle": "已停止 {coin} 的新增质押",
+      "haltedBody": "您的 {coin} 余额和已持有的仓位仍按原样记录。",
+      "noFundsTitle": "质押使用您的 {coin} 余额",
+      "noFundsBalance": "可用：{available} {coin}",
+      "noFundsNoPath": "{coin} 无法充值，也没有其他方式增加该余额。",
+      "noFundsTerms": "各产品的条件显示在下方。",
+      "lockedOutTitle": "您的 {coin} 已被锁定",
+      "lockedOutBody": "{amount} {coin} 锁定在您已开立的仓位中。合约期结束后可再次使用。",
+      "lockedOutBodyWithdrawal": "{amount} {coin} 因您已提交的提现申请而处于保留状态。",
+      "balanceUnknown": "无法加载您的 {coin} 余额。各产品的条件显示在下方。",
+      "reload": "重新加载"
+    },
     "stakeSheet": {
-      "contractTerms": "{days}天基准利息：{baseTotal} {coin}",
+      "balanceSource": "质押使用您的 {coin} 余额，它与存取款账户相互独立。",
+      "contractTerms": "按合约利率在 {days} 天内记录的利息：{baseTotal} {coin}",
       "notEstimate": "此数值根据合同利率计算得出，并非预测值。",
-      "lockNote": "质押的资金在期限结束前无法提现。"
+      "principalStays": "没有任何资金从您的余额转出。本金在原处被锁定。",
+      "lockNote": "本金仍保留在您的 {coin} 余额中，在合约期结束前无法提现。",
+      "recordedNotPaid": "利息每天记录在您的质押账本中，不会计入 {coin} 余额。",
+      "claimSeparate": "将已记录的利息转入 {coin} 余额是另一项独立操作，目前尚未提供。",
+      "maturityNote": "合约期结束后，本金解锁并可在 {coin} 余额中再次使用。已记录的利息不会自动转移。",
+      "noRestake": "本次质押在合约期结束后不会自动重新开始。如需再次质押，需要您自行新开一笔。"
     },
     "position": {
       "recordedLabel": "已记录",
@@ -468,6 +490,9 @@
       "STAKE_BELOW_MIN": "该产品的最小金额为{min} {coin}。",
       "STAKE_ABOVE_MAX": "该产品的最大金额为{max} {coin}。",
       "STAKE_INSUFFICIENT_AVAILABLE": "可用余额为{available} {coin}。",
+      "STAKE_PATH_MIGRATING": "已暂停新增质押。您已持有的仓位和已记录的利息保持不变。",
+      "STAKE_COIN_HALTED": "已停止该资产的新增质押。您的余额和已持有的仓位仍按原样记录。",
+      "STAKE_INSUFFICIENT_LOCAL_BALANCE": "您可用的 {coin} 余额为 {available} {coin}。",
       "UNAUTHENTICATED": "会话已过期，请重新登录后继续。",
       "GENERIC": "请求未能完成。"
     }

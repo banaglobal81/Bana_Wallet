@@ -67,8 +67,12 @@ export interface DeepCoreEmbedProps {
   loading: boolean;
   onWellClick?: (positionId: string) => void;
   /** docs/specs/staking-page-v2-screen-flow-frd.md CH-1 — HUD's empty-rig CTA
-   * calls this instead of scrolling to the now-removed inline product list,
-   * so the parent (`Staking.tsx`) can open the S-STAKE deposit sheet. */
+   * calls this to open the S-STAKE deposit sheet.
+   *
+   * T-12 ruling EG-T9-1 — `Staking.tsx` only passes this when the S-STAKE
+   * entry state is actually `READY`; every other state passes `undefined`,
+   * and `DeepCoreHud` renders no CTA at all in that case (no disabled/no-op
+   * fallback — see that component's own doc comment). */
   onOpenStake?: () => void;
   /** docs/specs/staking-page-v2-screen-flow-frd.md CH-2 / UF-5 — set by the
    * parent when a position row's well badge is clicked (in the now

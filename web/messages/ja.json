@@ -234,7 +234,7 @@
     "confirmStake": "ステーキング確認",
     "cancel": "キャンセル",
     "earnPreview": "{days}日間で約{interest} {coin}を獲得します。",
-    "stakeSuccess": "ステーキング完了",
+    "stakeSuccess": "契約が記録されました。元本は{coin}残高でロックされています。",
     "noProducts": "現在利用可能なステーキング商品はありません。",
     "noStakes": "まだステーキングがありません。",
     "accrued": "獲得",
@@ -445,10 +445,32 @@
       "step": "ステップ {current}/{total}",
       "back": "戻る"
     },
+    "stakeEntry": {
+      "chipUnavailable": "ステーキング不可",
+      "migratingTitle": "新規ステーキングを一時停止しています",
+      "migratingBody": "保有中のポジションと記録済みの利息に変更はありません。",
+      "haltedTitle": "{coin}の新規ステーキングを停止しています",
+      "haltedBody": "{coin}の残高と保有中のポジションはそのまま記録されています。",
+      "noFundsTitle": "ステーキングは{coin}残高から預け入れます",
+      "noFundsBalance": "利用可能: {available} {coin}",
+      "noFundsNoPath": "{coin}は入金できません。この残高を増やす方法は他にありません。",
+      "noFundsTerms": "各商品の条件は下に表示されています。",
+      "lockedOutTitle": "{coin}がロックされています",
+      "lockedOutBody": "{amount} {coin}が保有中のポジションでロックされています。契約期間が終わると再び利用できます。",
+      "lockedOutBodyWithdrawal": "{amount} {coin}が申請済みの出金のため保留中です。",
+      "balanceUnknown": "{coin}残高を読み込めませんでした。各商品の条件は下に表示されています。",
+      "reload": "再読み込み"
+    },
     "stakeSheet": {
-      "contractTerms": "{days}日間の基準利息: {baseTotal} {coin}",
+      "balanceSource": "ステーキングは、入出金口座とは別の{coin}残高から預け入れます。",
+      "contractTerms": "契約利率で{days}日間に記録される利息: {baseTotal} {coin}",
       "notEstimate": "この数値は契約利率から計算された値であり、予測値ではありません。",
-      "lockNote": "ステークした資金は期間終了前に出金できません。"
+      "principalStays": "残高から外部へ送られるものはありません。元本はその場でロックされます。",
+      "lockNote": "元本は{coin}残高にそのまま残り、契約期間が終わるまで出金できません。",
+      "recordedNotPaid": "利息は毎日ステーキング台帳に記録されます。{coin}残高には加算されません。",
+      "claimSeparate": "記録された利息を{coin}残高へ移すことは別の操作であり、まだ提供されていません。",
+      "maturityNote": "契約期間が終わると元本のロックが解除され、{coin}残高で再び利用できます。記録された利息は自動的には移されません。",
+      "noRestake": "このステーキングは、契約期間が終わっても自動的に再開されることはありません。再びステーキングするには、ご自身で新しいポジションを開きます。"
     },
     "position": {
       "recordedLabel": "記録済み",
@@ -468,6 +490,9 @@
       "STAKE_BELOW_MIN": "この商品の最小金額は{min} {coin}です。",
       "STAKE_ABOVE_MAX": "この商品の最大金額は{max} {coin}です。",
       "STAKE_INSUFFICIENT_AVAILABLE": "利用可能な残高は{available} {coin}です。",
+      "STAKE_PATH_MIGRATING": "新規ステーキングを一時停止しています。保有中のポジションと記録済みの利息に変更はありません。",
+      "STAKE_COIN_HALTED": "この資産の新規ステーキングを停止しています。残高と保有中のポジションはそのまま記録されています。",
+      "STAKE_INSUFFICIENT_LOCAL_BALANCE": "利用可能な{coin}残高は{available} {coin}です。",
       "UNAUTHENTICATED": "セッションが終了しました。続けるには再度ログインしてください。",
       "GENERIC": "リクエストが完了しませんでした。"
     }

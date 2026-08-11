@@ -76,6 +76,9 @@ Verified 2026-08-08 against `web/prisma/schema.prisma`, `web/src/utils/stakingAp
   client-side). Consequence for any game surface: a renewal silently creates a **successor position**,
   so any "a new position appeared → celebrate" animation will fire on an automatic re-lock, which
   decision doc §4 B3(c) forbids. Suppress the animation, don't hide the position.
+  **Superseded for V2 (2026-08-11):** `staking-v2-auto-renew-cutover-ruling.md` defers the V2 renewal
+  engine to T-20 — `AUTO_RENEW_V2_ENABLED = false`, no supported path sets
+  `StakePositionV2.renewedFromPositionId`. The legacy files and rulings stay valid and revive at T-20.
 - **`ReferralPanel` no longer renders on `/staking`** — it moved to `/referral`
   (`docs/specs/referral-panel-relocation-frd.md`). Older notes citing `Staking.tsx:387` / `:118` are
   both stale; re-read before citing any line number in that file.
@@ -85,6 +88,10 @@ Verified 2026-08-08 against `web/prisma/schema.prisma`, `web/src/utils/stakingAp
   with `scrollToPosition` (`:195`) / `scrollToProducts` (`:200`) surviving as its only consumers.
   `phaser@3.90.0` is still in `web/package.json:51`. Verify the tree builds before assuming any
   prior game surface exists — and before writing a spec that says "replaces the existing embed".
+  **Update 2026-08-11:** `Staking.tsx` now renders `DeepCoreEmbed` (`./staking/deep-core/`), not
+  `OilFieldEmbed`. The dead leftover is the **locale side**: the whole `oilfield` namespace
+  (`messages/en.json:1126-1182`) survives with **zero references in `web/src`**. Do not cite any
+  `oilfield.*` key as live copy — the live DEEP CORE namespace is `staking.game.*`.
 - The engine config that survived that family's ship gate and is worth inheriting: **960×540 fixed
   internal buffer, `Scale.FIT`, `CENTER_BOTH`, `transparent: true`, `fps.target: 30`**, with the CSS
   box (`h-[220px] sm:h-[300px] lg:h-[380px]`) doing all per-breakpoint sizing. Per-breakpoint
@@ -122,6 +129,66 @@ Written 2026-08-10 while specifying the A-6 DEEP CORE adapter contract
   7 stay green under a wrong flag mapping or a diverged day-length source, because the pure function
   never sees where its inputs came from. Pair "old tests unmodified" with a short list of *new*
   adapter-boundary tests, or the criterion certifies the wrong thing.
+
+## Auditing "no impact on the game" claims
+
+Written 2026-08-11 during T-12 (`staking-yield-system-v2-t12-deep-core-impact-ruling.md`), verifying
+the V2 creation-path cutover against DEEP CORE.
+
+- **Ask what the removed feature was *suppressing*, not just what it was driving.** Auto-renew was
+  deferred, so `renewedFromPositionId` is permanently null. That field's only use in the game is an
+  *exclusion* (`continue`) guarding `charter_open` from renewal farming. Removing the feature doesn't
+  break the guard — it makes manual re-staking the only path, so every user now collects the award the
+  guard existed to suppress. "No impact" was right about the code and wrong about the incentive.
+- **Term-neutral XP is easy to lose in one term.** `lift` (flat/day) and `charter_complete`
+  (`min(300, ⌊10·t/3⌋)`, whose 300 cap binds at exactly t=90) are deliberately ~equal XP/day across
+  every term. A per-position one-shot award like `charter_open` is inherently term-*inverted*
+  (award ÷ termDays). Whenever a spec changes which terms are open or how often positions recycle,
+  recompute XP/day per term — the inversion only shows up in that table.
+- **A per-term liability argument that names auto-renew as "the only path" is usually wrong.** Manual
+  re-staking reproduces one term's interest liability on the same cadence with identical arithmetic;
+  the difference is friction, not the cap formula. Worth saying to `pm` even though the cap is not
+  the game's area — it changes the urgency of their own open question.
+- **Narrowing a term ladder can *improve* a relative-size visual.** `relativeSize = termDays/maxTermDays`
+  rendered as `18 + rel×46` px: the old 10/360 pair produced 19.3px against an 18px floor (invisible);
+  10/90 produces 23.1px. Check the extremes of the *value set*, not just "the formula still works" —
+  and check that every art variant behind a threshold (here `rel >= 0.5` → `large`) is still reachable.
+  The failure mode to warn about is the opposite one: a *single* open term makes everyone `rel = 1.0`,
+  which kills the small asset and makes every user's field identical.
+- **When told a file is untouched and you have no shell, verify by vocabulary and count.** Zero
+  occurrences of the new schema's words in the test file, `it()` count matching the number the spec
+  froze, and the adapter's forbidden-read `select` still literally two fields — three independent
+  signals, none of which need `git`. Say plainly which tool you lacked.
+- **The tempting read only becomes real when the writer ships.** The forbidden-read list (`amount`,
+  `bonusAmount`, `mpSnapshot`) was theoretical until the v2 settlement engine actually started writing
+  those columns. Re-verify the adapter's `select` on the commit that makes the temptation real, not on
+  the commit that adds the list.
+
+## Reading someone else's cross-area finding before implementing it
+
+Written 2026-08-11 while adjudicating `product-planner`'s S-7 / EG-1~EG-3 handoff (T-8 FRD §5.6).
+
+- **Verify the copy key exists before agreeing to preserve it.** EG-2 asked to keep
+  `deepCore.notEligibleBody`. No such key: it is `oilfield.notEligibleBody`, the namespace of a
+  *removed* game family, referenced nowhere in `web/src`. A cross-area finding written from a doc
+  rather than from the tree can point at dead strings; grep the key and grep its usages.
+- **The right verdict can arrive with the wrong reason, and the reason decides the fix.** "Dead end"
+  was inaccurate (the CTA says "View staking products" and the sheet does show products). The real
+  objection is that a CTA inside the game fiction promises a *game action* the platform can't honor —
+  and that reason also tells you not to replace it with a status chip, because wallet/compliance state
+  doesn't belong on the canvas overlay. Adopt the requirement, rewrite the rationale.
+- **Gate a game CTA on the presence of the callback, never on a new state prop.** Passing `E-*` into
+  the game component would make the game read staking eligibility and break the "game only reads game
+  state" boundary the same FRD asserts. `onOpenStake != null` carries "an action exists" without
+  carrying "why not".
+- **Optional-prop fallbacks are the trap in "just stop passing the handler".** The HUD fell back to
+  `scrollIntoView('#staking-earn-section')` — an element that no longer exists. Dropping the prop alone
+  leaves a rendering, dead-clicking button: worse than before. Always name the fallback deletion as its
+  own numbered instruction, and name the existing test that the deletion invalidates.
+- **Check when an "edge case" becomes the main path.** The empty-rig CTA is unreachable today (every
+  user is `S0_NOT_SHOWN`), which reads as low priority — but with no auto-renew and a 10-day product,
+  every user hits that state ~36×/year after first product open. Date the reachability, don't just
+  state it.
 
 ## Designing a game stat that moves real money
 

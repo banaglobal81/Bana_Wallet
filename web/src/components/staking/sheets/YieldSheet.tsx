@@ -67,7 +67,7 @@ export default function YieldSheet({
           {rows.map((r) => (
             <div key={r.id} data-testid="yield-log-row" className="border-b border-[#1E3559]/50 py-3 last:border-b-0 flex items-center justify-between gap-3 text-sm">
               <div className="min-w-0 flex flex-col gap-0.5">
-                <span className="text-[#8c90a0] font-mono text-xs">{fmtDate(r.paidAt)}</span>
+                <span className="text-[#8c90a0] font-mono text-xs">{fmtDate(r.settledAt)}</span>
                 <span className="text-white text-xs truncate">{labelFor(r.positionId)}</span>
               </div>
               {/* Server decimal string, as-is (N-3). */}

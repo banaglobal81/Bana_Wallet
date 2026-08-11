@@ -9,7 +9,7 @@ import {
   getStakingProducts, getStakePositionsAndGame, getStakingRewards, stake,
   type StakingProduct, type StakePosition, type StakingRewards, type DeepCoreGameState,
 } from '../utils/stakingApi';
-import { getNiaBalance } from '../utils/niaApi';
+import { getLocalBalance, type LocalBalanceCoin } from '../utils/localBalanceApi';
 import DeepCoreEmbed, { DeepCoreControlBar, deriveDeepCoreCrewState, useDeepCoreHidden } from './staking/deep-core/DeepCoreEmbed';
 import YieldPanel, { type YieldPanelRow } from './staking/YieldPanel';
 import VaultControlBar from './staking/VaultControlBar';
@@ -17,9 +17,8 @@ import InlineNotices from './staking/InlineNotices';
 import StakeSheet from './staking/sheets/StakeSheet';
 import PositionsSheet from './staking/sheets/PositionsSheet';
 import YieldSheet from './staking/sheets/YieldSheet';
-import {
-  AUTO_RENEW_MAX_TERM_DAYS, FOURTEEN_DAYS_MS, isRenewalNoticeDismissed, dismissRenewalNotices,
-} from './staking/renewalCopy';
+import { deriveStakeEntryState } from './staking/stakeEntryState';
+import { FOURTEEN_DAYS_MS, isRenewalNoticeDismissed, dismissRenewalNotices } from './staking/renewalCopy';
 
 // docs/specs/staking-page-v2-screen-flow-frd.md — the DEEP CORE-centric
 // staking page. Real-money state/status/notices render inline on the page
@@ -37,30 +36,41 @@ interface StakingProps {
   onNavigate: (toScreen: Screen, direction: 'push' | 'push_back' | 'slide_up' | 'none') => void;
 }
 
-// Aggregate free balance per coin from a Nia /wallets payload.
-function aggregateBalances(raw: unknown): Map<string, Decimal> {
-  const rows: unknown[] = Array.isArray(raw)
-    ? raw
-    : raw && typeof raw === 'object'
-      ? Object.values(raw as Record<string, unknown>).flatMap((v) => (Array.isArray(v) ? v : []))
-      : [];
-  const m = new Map<string, Decimal>();
-  for (const r of rows as Array<{ currency?: string; balance?: string }>) {
-    if (!r?.currency) continue;
-    m.set(r.currency, (m.get(r.currency) ?? new Decimal(0)).plus(new Decimal(r.balance ?? '0')));
-  }
-  return m;
-}
-
-// docs/specs/staking-page-v2-screen-flow-frd.md §7.1 R-D5 / §7.2 — map the
-// stake route's stable error `code` to a localized `staking.error.<code>`
-// string. Unknown/absent codes fall back to `error.GENERIC`; the raw
-// server-English message is never shown to the user (T-7 / AC-19).
+// docs/specs/staking-yield-system-v2-design-t8-stake-flow-frd.md §7.1 R-D5 /
+// §7.2 — map the stake route's stable error `code` to a localized
+// `staking.error.<code>` string. Unknown/absent codes fall back to
+// `error.GENERIC`; the raw server-English message is never shown to the user
+// (PS-A T-7 / AC-A7-19).
+//
+// S-5/ER-1 — the four internal reasons `assertExecutionAllowed` can throw for
+// (T2_HALTED, T1_WARNING_NO_OVERRIDE, DIRECT_CHANGE_IN_PROGRESS,
+// TRANSITION_IN_PROGRESS — coinAuthority.ts:158-203) are surfaced by
+// api/staking/stake/route.ts as FOUR DISTINCT codes (STAKE_COIN_HALTED /
+// STAKE_COIN_T1_WARNING / STAKE_COIN_AUTHORITY_CHANGE_IN_PROGRESS /
+// STAKE_COIN_AUTHORITY_TRANSITION_IN_PROGRESS — confirmed by reading that
+// route directly, not assumed from the FRD's own §7.1 table, which only
+// names two of the four). All four must render the SAME user string
+// (`error.STAKE_COIN_HALTED`) — the user has no reason to tell them apart,
+// and showing four different sentences would leak internal operating state.
+const STAKE_ERROR_CODE_TO_KEY: Record<string, 'error.STAKE_COIN_HALTED' | undefined> = {
+  STAKE_COIN_HALTED: 'error.STAKE_COIN_HALTED',
+  STAKE_COIN_T1_WARNING: 'error.STAKE_COIN_HALTED',
+  STAKE_COIN_AUTHORITY_CHANGE_IN_PROGRESS: 'error.STAKE_COIN_HALTED',
+  STAKE_COIN_AUTHORITY_TRANSITION_IN_PROGRESS: 'error.STAKE_COIN_HALTED',
+};
 const KNOWN_STAKE_ERROR_CODES = new Set([
-  'STAKE_INVALID_AMOUNT', 'STAKE_PRODUCT_NOT_FOUND', 'STAKE_PRODUCT_CLOSED', 'STAKE_PRODUCT_FULL',
-  'STAKE_BELOW_MIN', 'STAKE_ABOVE_MAX', 'STAKE_INSUFFICIENT_AVAILABLE', 'UNAUTHENTICATED',
+  'STAKE_PATH_MIGRATING', 'STAKE_INVALID_AMOUNT', 'STAKE_PRODUCT_NOT_FOUND', 'STAKE_PRODUCT_CLOSED',
+  'STAKE_PRODUCT_FULL', 'STAKE_BELOW_MIN', 'STAKE_ABOVE_MAX', 'STAKE_INSUFFICIENT_LOCAL_BALANCE',
+  'STAKE_INSUFFICIENT_AVAILABLE', 'UNAUTHENTICATED',
+  // Note: 'AUTO_RENEW_UNAVAILABLE' is deliberately absent — ER-7 requires the
+  // 409 a stray `autoRenew` key in the request body draws to fall through to
+  // `GENERIC`, not get its own sentence (a dedicated string would have to
+  // reuse renewal vocabulary the user should never see on this screen, for
+  // an input shape only a stale/tampered client could ever produce).
 ]);
 function localizeStakeError(err: Error & { code?: string; params?: Record<string, string> }, t: ReturnType<typeof useTranslations>): string {
+  const mapped = err.code ? STAKE_ERROR_CODE_TO_KEY[err.code] : undefined;
+  if (mapped) return t(mapped, err.params);
   const code = err.code && KNOWN_STAKE_ERROR_CODES.has(err.code) ? err.code : 'GENERIC';
   return t(`error.${code}` as 'error.GENERIC', err.params);
 }
@@ -72,7 +82,14 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
 
   const [products, setProducts] = useState<StakingProduct[]>([]);
   const [positions, setPositions] = useState<StakePosition[]>([]);
-  const [balances, setBalances] = useState<Map<string, Decimal>>(new Map());
+  // SB-1/SB-2/DC-4 — LOCAL-authority balance display, from BANA's own local
+  // ledger (`/api/wallet/local-balance`), never the hub. `available` is
+  // rendered/compared exactly as the server gives it (LB-2/LB-5) — holds are
+  // already netted out server-side, so this screen never subtracts a
+  // client-summed locked-principal figure from a hub balance again (that was
+  // the old bug: BANA is never listed in the hub's markets, so the previous
+  // `balances.get('BANA')` was always 0 regardless of the user's real stake).
+  const [localCoins, setLocalCoins] = useState<LocalBalanceCoin[]>([]);
   const [rewards, setRewards] = useState<StakingRewards | null>(null);
   const [gameState, setGameState] = useState<DeepCoreGameState | null>(null);
   // §4.2.2 ③ / R-D2 — server-computed, single source of truth. Never
@@ -102,15 +119,23 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
       // G-7 (docs/specs/deep-core-05-screen-flow-frd.md) — the game surface
       // does not add its own poll; its derived state rides along on this
       // same positions request (getStakePositionsAndGame), not a second one.
-      const [p, posAndGame, bal, rew] = await Promise.all([
-        getStakingProducts(), getStakePositionsAndGame(), getNiaBalance().catch(() => []),
+      //
+      // SB-2/AC-T8-08 — no hub balance call here (`getNiaBalance()`/
+      // `/api/nia/wallets` is gone outright, not merely unreached): every
+      // live staking product is BANA, and BANA is always LOCAL-authority
+      // (N-6), so a hub balance is a number this screen never displays.
+      // `getLocalBalance()` degrades to `[]` on failure (never throws into
+      // this Promise.all) — a fetch failure surfaces as `BALANCE_UNKNOWN`
+      // per-coin via `deriveStakeEntryState`, not as a blank/zero balance.
+      const [p, posAndGame, local, rew] = await Promise.all([
+        getStakingProducts(), getStakePositionsAndGame(), getLocalBalance().catch(() => []),
         getStakingRewards().catch(() => null),
       ]);
       setProducts(p);
       setPositions(posAndGame.positions);
       setGameState(posAndGame.game);
       setLockedPrincipal(posAndGame.lockedPrincipal);
-      setBalances(aggregateBalances(bal));
+      setLocalCoins(local);
       setRewards(rew);
     } catch { /* sections show empty state */ }
     finally { setLoading(false); }
@@ -124,16 +149,31 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
     return () => clearInterval(id);
   }, []);
 
-  // Available (free) balance per coin = Nia balance − server-reported locked principal.
-  const availableFor = (coin: string) =>
-    Decimal.max(0, (balances.get(coin) ?? new Decimal(0)).minus(new Decimal(lockedPrincipal[coin] ?? '0')));
+  // §4 SB-1 — the LOCAL-authority `available`, rendered exactly as the
+  // server gives it. NOT `available − lockedPrincipal` — the server already
+  // netted the STAKE_PRINCIPAL_LOCK hold out of `available` (double-
+  // subtracting it here was rev05's explicitly named double-count bug).
+  // Falls back to "0" for a coin the local-balance response doesn't (yet)
+  // carry an `ok` row for — real gating on that absence is
+  // `deriveStakeEntryState`'s job (BALANCE_UNKNOWN), not this display helper's.
+  const availableFor = (coin: string) => {
+    const lb = localCoins.find((c) => c.coin === coin);
+    return lb?.state === 'ok' && lb.available != null ? new Decimal(lb.available) : new Decimal(0);
+  };
 
-  const handleStakeSubmit = async (productId: string, amount: string, autoRenew: boolean) => {
+  const entryState = deriveStakeEntryState({ loading, products, localCoins });
+
+  const handleStakeSubmit = async (productId: string, amount: string) => {
     try {
-      await stake(productId, amount, autoRenew);
+      // AR-3/DC-11 — no `autoRenew` argument exists on `stake()` any more;
+      // the request body can never carry that key from this call site.
+      await stake(productId, amount);
       await load();
     } catch (e) {
-      throw new Error(localizeStakeError(e as Error & { code?: string; params?: Record<string, string> }, t));
+      const err = e as Error & { code?: string; params?: Record<string, string> };
+      const localized = new Error(localizeStakeError(err, t)) as Error & { code?: string };
+      localized.code = err.code;
+      throw localized;
     }
   };
 
@@ -159,7 +199,7 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
   }, [positions, now, noticeVersion]);
 
   // B2 YIELD PANEL rows — one per coin the user has ever staked. PS-A: ① is
-  // the server-ledgered SUM(paidInterest) (§7 rewards route), ② is always
+  // the server-ledgered SUM(ledgeredYield) (§7 rewards route), ② is always
   // "0" (no claim rail exists to have moved anything yet), ③ is the
   // server's own lockedPrincipal (never client-summed).
   const yieldRows: YieldPanelRow[] = useMemo(() => {
@@ -174,6 +214,11 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
   }, [positions, rewards, lockedPrincipal]);
 
   const activePositionCount = positions.filter((p) => p.status === 'ACTIVE').length;
+
+  // T-8 FRD §5.6 / T-12 ruling §3 (EG-T9-1) — the coin's own `yieldRail`
+  // (LEDGER_ONLY vs CLAIM_LIVE), read by StakeSheet's STEP 3 to decide
+  // whether `claimSeparate` (ⓓ) is still a true sentence (CP1-2).
+  const yieldRailFor = (coin: string) => localCoins.find((c) => c.coin === coin)?.yieldRail;
 
   // UF-5 (position → canvas): close S-POS, scroll the page back up to B1,
   // and hand the well id to DeepCoreEmbed so it can pan/highlight it (CH-2).
@@ -199,21 +244,33 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
           {/* B1 STAGE — DEEP CORE canvas + HUD.
               CH-1/CH-2 (§4.1): `onOpenStake` opens S-STAKE from the HUD's
               empty-rig CTA; `focusWellId` lets a position row's well badge
-              pan the canvas to that well (UF-5, position → canvas). */}
+              pan the canvas to that well (UF-5, position → canvas).
+              T-12 ruling EG-T9-1 — the prop is only ever HANDED to the game
+              at all when execution is actually `READY`; every other entry
+              state passes `undefined`, not a disabled/no-op callback, so
+              DeepCoreHud's own `onOpenStake != null` gate (EG-T9-2) can
+              suppress the CTA without the game surface knowing *why*
+              (EG-3 — the game reads "was I given an action", never "what
+              wallet/compliance state blocked it"). */}
           <DeepCoreEmbed
             game={gameState}
             loading={loading}
             onWellClick={(positionId) => { setFocusPositionId(positionId); setSheetOpen('positions'); }}
-            onOpenStake={() => setSheetOpen('stake')}
+            onOpenStake={entryState.kind === 'READY' ? () => setSheetOpen('stake') : undefined}
             focusWellId={focusWellId}
           />
 
           {/* B2 YIELD PANEL */}
           <YieldPanel rows={yieldRows} />
 
-          {/* B3 VAULT BAR */}
+          {/* B3 VAULT BAR — AC-T8-05: the [Stake] slot becomes a non-button
+              status chip (still opens S-STAKE, per §3.4's "STEP 1 진입:
+              열 수 있다" — only the promise-of-action styling/label changes,
+              never a `disabled` action button) whenever `entryState` isn't
+              `READY`. */}
           <VaultControlBar
             positionCount={activePositionCount}
+            stakeReady={entryState.kind === 'READY'}
             onStakeClick={() => setSheetOpen('stake')}
             onPositionsClick={() => setSheetOpen('positions')}
             onYieldClick={() => setSheetOpen('yield')}
@@ -242,9 +299,12 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
       {sheetOpen === 'stake' && (
         <StakeSheet
           products={products}
+          entryState={entryState}
           availableFor={availableFor}
-          autoRenewMaxTermDays={AUTO_RENEW_MAX_TERM_DAYS}
+          yieldRailFor={yieldRailFor}
           onSubmit={handleStakeSubmit}
+          onReload={load}
+          onOpenPositions={() => setSheetOpen('positions')}
           onClose={() => setSheetOpen(null)}
         />
       )}
@@ -256,7 +316,6 @@ export default function Staking({ onNavigate: _onNavigate }: StakingProps) {
           now={now}
           focusPositionId={focusPositionId}
           onClearFocus={() => setFocusPositionId(null)}
-          onPositionsChange={setPositions}
           onFocusWell={handleFocusWell}
           onClose={() => setSheetOpen(null)}
         />

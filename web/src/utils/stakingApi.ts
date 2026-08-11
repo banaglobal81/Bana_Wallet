@@ -6,16 +6,32 @@ export interface StakingProduct {
   coin: string;
   name: string;
   termDays: number;
-  dailyRatePct: string;
+  /** rev05 §5.2① — renamed from `dailyRatePct` (A-4 principle 3: "이름이
+   *  의미를 정한다" — a band model can add a bonus on top of this later). */
+  baseDailyRatePct: string;
   aprPct: string;
   minAmount: string | null;
   maxAmount: string | null;
   capacity: string | null;
   remaining: string | null;
   full: boolean;
+  /** T-8 FRD DC-1 — `'LIVE' | 'MIGRATING'`, same fail-closed module the stake
+   *  route's own guard reads. NOT YET served by `GET /api/staking/products`
+   *  (gap flagged to web-shared-expert in the T-9 report) — optional so the
+   *  client degrades to "not migrating" rather than crashing on an absent
+   *  field, and starts honoring it automatically the day the server adds it. */
+  stakeRail?: 'LIVE' | 'MIGRATING';
+  /** T-8 FRD DC-10 (R-AR-4/CP1-10) — `'UNAVAILABLE' | 'LIVE'`, derived
+   *  server-side from the `AUTO_RENEW_V2_ENABLED` code constant. Also NOT YET
+   *  served today (same gap as `stakeRail`) — callers must fail CLOSED
+   *  (treat a missing value as `'UNAVAILABLE'`), never open. */
+  autoRenewRail?: 'UNAVAILABLE' | 'LIVE';
 }
 
-export type StakeStatus = 'ACTIVE' | 'MATURED' | 'PAID';
+// rev05 §5.2① (DC-8) — no 'PAID' member. StakePositionV2Status is a 2-value
+// enum (ACTIVE | MATURED); a matured position's principal becomes available
+// again via its LocalBalanceHold being released, not a third status value.
+export type StakeStatus = 'ACTIVE' | 'MATURED';
 
 // docs/specs/staking-auto-renew-prd.md §3 — mirrors the Prisma StakeRenewalStatus enum.
 export type StakeRenewalStatus =
@@ -38,19 +54,31 @@ export interface StakePosition {
   productName: string;
   coin: string;
   principal: string;
-  dailyRatePct: string;
+  /** rev05 §5.2① — renamed from `dailyRatePct` (see `StakingProduct`). */
+  baseDailyRatePct: string;
   aprPct: string;
   termDays: number;
   startAt: string;
   maturityAt: string;
   status: StakeStatus;
-  accruedInterest: string;
+  // rev05 §5.2① (DC-8) — `accruedInterest` (a live day-elapsed projection) is
+  // DELETED, not renamed: V2 has no such concept. Only what the settlement
+  // engine has actually ledgered (`ledgeredYield`, below) may ever be shown
+  // as "earned" (A-4 principles 2/6, F-C fix).
   fullInterest: string;
   projectedTotal: string;
-  // Real amounts credited by the daily worker (the rewards ledger).
-  paidInterest: string;
+  /** Real amount credited by the V2 settlement engine (the yield ledger).
+   *  Renamed from `paidInterest` — rev05 §5.2① (DC-8). "Paid" implied a
+   *  wallet-balance movement that never happens while the claim rail is
+   *  off; "ledgered" matches what actually occurred (recorded, not moved). */
+  ledgeredYield: string;
   daysPaid: number;
   // --- Auto-renewal (docs/specs/staking-auto-renew-prd.md §4 S4) ---
+  // rev05 DC-11 / staking-v2-auto-renew-cutover-ruling.md AR-4: these fields
+  // are NOT removed (unlike `accruedInterest`) — they are T-20's asset and
+  // AC-C21's observation point. The requirement while
+  // `AUTO_RENEW_V2_ENABLED=false` is that no V2 screen *reads* them to
+  // render a control, not that the API stop serializing them.
   autoRenew: boolean;
   renewalStatus: StakeRenewalStatus;
   renewedIntoPositionId: string | null;
@@ -65,7 +93,10 @@ export interface StakingPayoutRow {
   coin: string;
   amount: string;
   dayIndex: number;
-  paidAt: string;
+  /** Renamed from `paidAt` — rev05 §5.2① (both the DB column and this JSON
+   *  field were renamed together for consistency with every other V2 rename
+   *  this cutover touches; see api/staking/rewards/route.ts's own comment). */
+  settledAt: string;
   positionId: string;
 }
 
@@ -238,18 +269,27 @@ export async function getStakingPositionLedger(
 }
 
 /**
- * Lock funds into a staking product. `autoRenew` is an optional rider (PRD §4
- * S1) — omit it, or pass `false`, for a plain stake. Throws on failure; the
- * thrown Error also carries a stable `.code` (docs/specs/staking-page-v2-screen-flow-frd.md
- * §7.1 R-D5 — e.g. `STAKE_BELOW_MIN`) plus, for the codes that need one,
- * `.params` (e.g. `{ min, coin }`) so the caller renders a localized
- * `staking.error.<code>` string instead of the raw server message.
+ * Lock funds into a staking product.
+ *
+ * staking-v2-auto-renew-cutover-ruling.md R-AR-2/R-AR-3 + T-8 FRD AR-3/DC-11
+ * — the request body must NOT contain an `autoRenew` key at all (not even
+ * `false`): the route rejects the mere presence of that key with 409
+ * `AUTO_RENEW_UNAVAILABLE`, value irrelevant, because V2 has no renewal
+ * decision engine yet (deferred to T-20). There is deliberately no
+ * `autoRenew` parameter on this function any more — the STAKE_SHEET UI has
+ * no control that could produce one (AR-2).
+ *
+ * Throws on failure; the thrown Error also carries a stable `.code`
+ * (docs/specs/staking-page-v2-screen-flow-frd.md §7.1 R-D5 — e.g.
+ * `STAKE_BELOW_MIN`) plus, for the codes that need one, `.params` (e.g.
+ * `{ min, coin }`) so the caller renders a localized `staking.error.<code>`
+ * string instead of the raw server message.
  */
-export async function stake(productId: string, amount: string, autoRenew?: boolean): Promise<{ id: string; maturityAt: string }> {
+export async function stake(productId: string, amount: string): Promise<{ id: string; maturityAt: string }> {
   const res = await fetch('/api/staking/stake', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ productId, amount, ...(autoRenew !== undefined ? { autoRenew } : {}) }),
+    body: JSON.stringify({ productId, amount }),
   });
   const body: { ok: boolean; data?: { id: string; maturityAt: string }; error?: string; code?: string; params?: Record<string, string> } =
     await res.json().catch(() => ({ ok: false }));

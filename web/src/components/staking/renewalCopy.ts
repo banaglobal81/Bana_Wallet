@@ -69,7 +69,7 @@ export function outcomeFor(
         coin: p.coin,
         productName: p.productName,
         termDays: successor?.termDays ?? p.termDays,
-        dailyRatePct: successor?.dailyRatePct ?? p.dailyRatePct,
+        dailyRatePct: successor?.baseDailyRatePct ?? p.baseDailyRatePct,
         startAt: fmtDate(successor?.startAt ?? p.maturityAt),
       }),
       renewed: true,
@@ -96,7 +96,7 @@ export function outcomeFor(
     case 'FAILED_ABOVE_MAX':
       return { heading: ar('notRenewedHeading'), body: ar('notRenewedAboveMaxCopy', { ...base, maxAmount: product?.maxAmount ?? '' }), renewed: false };
     case 'FAILED_RATE_LOWERED':
-      return { heading: ar('notRenewedHeading'), body: ar('notRenewedRateLoweredCopy', { ...base, dailyRatePct: product?.dailyRatePct ?? p.dailyRatePct, oldRate: p.dailyRatePct }), renewed: false };
+      return { heading: ar('notRenewedHeading'), body: ar('notRenewedRateLoweredCopy', { ...base, dailyRatePct: product?.baseDailyRatePct ?? p.baseDailyRatePct, oldRate: p.baseDailyRatePct }), renewed: false };
     case 'FAILED_TERMS_CHANGED':
       return { heading: ar('notRenewedHeading'), body: ar('notRenewedTermsChangedCopy', base), renewed: false };
     case 'FAILED_SYSTEM':
