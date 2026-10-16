@@ -92,6 +92,25 @@ describe('POST /api/nia/address — coin-authority gate (A-2 §4.4)', () => {
     expect(assertDepositAddressAllowedMock).not.toHaveBeenCalled();
   });
 
+  it('rejects a hidden hub symbol (VNX) with 400 before the gate or any hub call; VNXT is not hidden', async () => {
+    resolveSessionUserIdMock.mockResolvedValue('nia-user-1');
+
+    for (const currency of ['VNX', 'vnx']) {
+      const res = await POST(makeRequest({ currency, network: 'SOL' }));
+      const json = await res.json();
+      expect(res.status).toBe(400);
+      expect(json.ok).toBe(false);
+    }
+    expect(assertDepositAddressAllowedMock).not.toHaveBeenCalled();
+    expect(niaBearerRequestMock).not.toHaveBeenCalled();
+
+    assertDepositAddressAllowedMock.mockResolvedValue(undefined);
+    niaBearerRequestMock.mockResolvedValue({ address: '0xdef', memo: '' });
+    const res = await POST(makeRequest({ currency: 'VNXT', network: 'ETH' }));
+    expect(res.status).toBe(200);
+    expect(niaBearerRequestMock).toHaveBeenCalledTimes(1);
+  });
+
   it('propagates a non-CoinAuthorityBlockedError as an unhandled failure (fail-closed, not swallowed as 403)', async () => {
     resolveSessionUserIdMock.mockResolvedValue('nia-user-1');
     assertDepositAddressAllowedMock.mockRejectedValue(new Error('unexpected db error'));

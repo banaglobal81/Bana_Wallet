@@ -7,6 +7,7 @@ import { niaBearerRequest } from '@/lib/nia/client';
 import { resolveSessionUserId } from '@/lib/nia/resolve';
 import { niaState } from '@/lib/nia/state';
 import { ok, fail } from '@/lib/nia/respond';
+import { isHiddenHubSymbol } from '@/lib/nia/hidden';
 import { assertDepositAddressAllowed, CoinAuthorityBlockedError } from '@/lib/coinAuthority';
 
 // Asset/network codes are short alphanumeric tickers (e.g. USDC, ETH, TRX, BASE).
@@ -41,6 +42,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const network = typeof body.network === 'string' ? body.network.trim() : '';
   if (!CODE_RE.test(currency)) {
     return NextResponse.json({ ok: false, error: 'currency is required' }, { status: 400 });
+  }
+  if (isHiddenHubSymbol(currency)) {
+    // Product decision: hidden hub coins can't get a deposit address via direct API call.
+    return NextResponse.json({ ok: false, error: 'currency is not supported' }, { status: 400 });
   }
   if (!CODE_RE.test(network)) {
     return NextResponse.json({ ok: false, error: 'network is required' }, { status: 400 });
